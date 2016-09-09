@@ -64,7 +64,7 @@ SMTPPassword = "password123"
 
 [cors]
 Enabled = false
-Origin = "myhomework.space"`
+Origin = "http://myhomework.space"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
