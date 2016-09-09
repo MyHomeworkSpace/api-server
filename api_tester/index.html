@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>API tester</title>
+
+		<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+		<script src="/api_tester/tester.js"></script>
+
+		<style>
+		#path {
+			width: 200px;
+		}
+		.keyText {
+			width: 70px;
+		}
+		#response {
+			font-family: monospace;
+			min-width: 500px;
+			max-width: 500px;
+			min-height: 200px;
+			max-height: 200px;
+		}
+		</style>
+	</head>
+	<body>
+		<h1>API tester</h1>
+		<h2>Make request:</h2>
+
+		<select id="method">
+			<option value="GET">GET</option>
+			<option value="POST">POST</option>
+		</select>
+		<input type="text" id="path" placeholder="Path for request" value="/auth/me" />
+		<br />
+
+		<div id="parameters">
+			Parameters:
+			<ul id="paramContainer"></ul>
+			<button id="addParameter">+ Add</button>
+		</div>
+
+		<br />
+		<button id="submit">Submit</button>
+
+		<h2>Response</h2>
+		<div id="responseLine"></div>
+		<textarea id="response" disabled="disabled"></textarea>
+	</body>
+</html>
