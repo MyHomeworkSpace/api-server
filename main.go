@@ -30,6 +30,10 @@ func main() {
 	e := echo.New()
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if config.CORS.Enabled {
+				c.Response().Header().Set("Access-Control-Allow-Origin", config.CORS.Origin)
+				c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+			}
 			if strings.HasPrefix(c.Request().URI(), "/api_tester") {
 				return next(c)
 			}

@@ -13,6 +13,7 @@ type Config struct {
     Server ServerConfig
 	Database DatabaseConfig
 	Email EmailConfig
+	CORS CORSConfig
 }
 
 type ServerConfig struct {
@@ -36,6 +37,11 @@ type EmailConfig struct {
 	SMTPPassword string
 }
 
+type CORSConfig struct {
+	Enabled bool
+	Origin string
+}
+
 func CreateNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -54,7 +60,11 @@ SMTPHost = "localhost"
 SMTPPort = 465
 SMTPSecure = true
 SMTPUsername = "accounts@myhomework.space"
-SMTPPassword = "password123"`
+SMTPPassword = "password123"
+
+[cors]
+Enabled = false
+Origin = "myhomework.space"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
