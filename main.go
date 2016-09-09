@@ -11,6 +11,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/auth"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/labstack/echo/engine/standard"
 )
 
@@ -28,6 +29,7 @@ func main() {
 	auth.DB = DB
 
 	e := echo.New()
+	e.Pre(middleware.RemoveTrailingSlash())
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if config.CORS.Enabled {
