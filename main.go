@@ -26,6 +26,9 @@ func main() {
 	InitConfig()
 	InitDatabase()
 	api.DB = DB
+	api.WhitelistEnabled = config.Whitelist.Enabled
+	api.WhitelistFile = config.Whitelist.WhitelistFile
+	api.WhitelistBlockMsg = config.Whitelist.BlockMessage
 	auth.DB = DB
 
 	e := echo.New()

@@ -10,6 +10,10 @@ import (
 
 var DB *sql.DB
 
+var WhitelistEnabled bool
+var WhitelistFile string
+var WhitelistBlockMsg string
+
 type StatusResponse struct {
 	Status string `json:"status"`
 }

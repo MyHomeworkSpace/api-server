@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bufio"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
 
@@ -38,6 +40,29 @@ func InitAuthAPI(e *echo.Echo) {
 		if resp != "" || err != nil {
 			jsonResp := ErrorResponse{"error", resp}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		if WhitelistEnabled {
+			file, err := os.Open(WhitelistFile)
+			if err != nil {
+				log.Println("Error while getting whitelist: ")
+				log.Println(err)
+				jsonResp := ErrorResponse{"error", "Internal server error"}
+				return c.JSON(http.StatusInternalServerError, jsonResp)
+			}
+			scanner := bufio.NewScanner(file)
+			found := false
+		    for scanner.Scan() {
+		        if scanner.Text() == c.FormValue("username") {
+					found = true
+					break
+				}
+		    }
+			file.Close()
+			if !found {
+				log.Printf("Blocked signin attempt by %s because they aren't on the whitelist\n", c.FormValue("username"))
+				jsonResp := ErrorResponse{"error", WhitelistBlockMsg}
+				return c.JSON(http.StatusInternalServerError, jsonResp)
+			}
 		}
 		rows, err := DB.Query("SELECT id from users where username = ?", c.FormValue("username"))
 		if err != nil {

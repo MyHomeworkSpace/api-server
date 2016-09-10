@@ -14,6 +14,7 @@ type Config struct {
 	Database DatabaseConfig
 	Email EmailConfig
 	CORS CORSConfig
+	Whitelist WhitelistConfig
 }
 
 type ServerConfig struct {
@@ -42,6 +43,12 @@ type CORSConfig struct {
 	Origin string
 }
 
+type WhitelistConfig struct {
+	Enabled bool
+	WhitelistFile string
+	BlockMessage string
+}
+
 func CreateNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -64,7 +71,12 @@ SMTPPassword = "password123"
 
 [cors]
 Enabled = false
-Origin = "http://myhomework.space"`
+Origin = "http://myhomework.space"
+
+[whitelist]
+Enabled = false
+WhitelistFile = "whitelist.txt"
+BlockMessage = "You aren't allowed in"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
