@@ -11,7 +11,7 @@ import (
 type Homework struct {
 	ID int `json:"id"`
 	Name string `json:"name"`
-	Due string `json:"teacher"`
+	Due string `json:"due"`
 	Desc string `json:"desc"`
 	Complete int `json:"complete"`
 	ClassID int `json:"classId"`
@@ -42,7 +42,6 @@ func InitHomeworkAPI(e *echo.Echo) {
 		for rows.Next() {
 			resp := Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
-			log.Printf("%#v\n", resp)
 			homework = append(homework, resp)
 		}
 		jsonResp := HomeworkResponse{"ok", homework}
