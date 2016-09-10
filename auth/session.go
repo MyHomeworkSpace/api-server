@@ -41,7 +41,7 @@ func GenerateUID() (string, error) {
 // SetSession stores the given value under the given name in the database.
 // If the given name is already used, its value is overwritten.
 func SetSession(name string, value SessionInfo) {
-	stmt, err := DB.Prepare("INSERT INTO session_cookie(id, userId, username) VALUES(?, ?, ?)")
+	stmt, err := DB.Prepare("INSERT INTO sessions(id, userId, username) VALUES(?, ?, ?)")
 	if err != nil {
 		log.Println("Error while setting session: ")
 		log.Println(err)
@@ -51,7 +51,7 @@ func SetSession(name string, value SessionInfo) {
 	if err != nil {
 		// must be because it already exists
 		// so, try to UPDATE instead
-		stmt, err := DB.Prepare("UPDATE session_cookie SET userId=?, username=? WHERE id=?")
+		stmt, err := DB.Prepare("UPDATE sessions SET userId=?, username=? WHERE id=?")
 		if err != nil {
 			log.Println("Error while setting session: ")
 			log.Println(err)
@@ -68,7 +68,7 @@ func SetSession(name string, value SessionInfo) {
 
 // GetSession retrieves the session information for the given name
 func GetSession(name string) (SessionInfo) {
-	rows, err := DB.Query("SELECT userId, username from session_cookie where id = ?", name)
+	rows, err := DB.Query("SELECT userId, username from sessions where id = ?", name)
 	if err != nil {
 		log.Println("Error while getting session: ")
 		log.Println(err)
