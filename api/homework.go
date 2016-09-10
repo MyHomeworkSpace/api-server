@@ -29,7 +29,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ?", GetSessionUserID(&c))
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
