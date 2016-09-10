@@ -35,6 +35,8 @@ func Init(e *echo.Echo) {
 	})
 
 	InitAuthAPI(e)
+	InitClassesAPI(e)
+	InitHomeworkAPI(e)
 	InitPlannerAPI(e)
 
 	log.Println("API endpoints ready.")
