@@ -52,10 +52,8 @@ func main() {
 				cookie.SetValue(uid)
 				cookie.SetExpires(time.Now().Add(12 * 4 * 7 * 24 * time.Hour))
 				c.SetCookie(cookie)
-				return next(c)
 			}
 
-			// bypass csrf token for /auth/csrf
 			csrfCookie, err := c.Cookie("csrfToken")
 			if err != nil {
 				// user has no cookie, generate one
@@ -73,6 +71,7 @@ func main() {
 				return c.JSON(http.StatusBadRequest, jsonResp)
 			}
 
+			// bypass csrf token for /auth/csrf
 			if strings.HasPrefix(c.Request().URI(), "/auth/csrf") {
 				return next(c)
 			}
