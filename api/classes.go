@@ -21,7 +21,7 @@ type ClassResponse struct {
 }
 type SingleClassResponse struct {
 	Status string `json:"status"`
-	Class HomeworkClass `json:"classes"`
+	Class HomeworkClass `json:"class"`
 }
 
 func InitClassesAPI(e *echo.Echo) {
