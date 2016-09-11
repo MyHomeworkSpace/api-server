@@ -208,4 +208,46 @@ func InitHomeworkAPI(e *echo.Echo) {
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
+
+	e.POST("/homework/delete", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		if c.FormValue("id") == "" {
+			jsonResp := ErrorResponse{"error", "Missing ID parameter."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// check if you are allowed to edit the given id
+		idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while deleting homework: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer idRows.Close()
+		if !idRows.Next() {
+			jsonResp := ErrorResponse{"error", "Invalid ID."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		stmt, err := DB.Prepare("DELETE FROM homework WHERE id = ?")
+		if err != nil {
+			log.Println("Error while deleting homework: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = stmt.Exec(c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while deleting homework: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		jsonResp := StatusResponse{"ok"}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
 }
