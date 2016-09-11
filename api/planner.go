@@ -42,7 +42,7 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
-		rows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date <= ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		rows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
