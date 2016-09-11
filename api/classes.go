@@ -106,7 +106,7 @@ func InitClassesAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("teacher") == "" {
+		if c.FormValue("id") == "" || c.FormValue("name") == "" {
 			jsonResp := ErrorResponse{"error", "Missing required parameters."}
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
