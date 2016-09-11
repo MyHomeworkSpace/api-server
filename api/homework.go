@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo"
 )
@@ -75,6 +76,38 @@ func InitHomeworkAPI(e *echo.Echo) {
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
 		jsonResp := SingleHomeworkResponse{"ok", resp}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
+	e.GET("/homework/getWeek/:monday", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+
+		startDate, err := time.Parse("2006-01-02", c.Param("monday"))
+		if err != nil {
+			jsonResp := ErrorResponse{"error", "Invalid date."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+		endDate := startDate.Add(time.Hour * 24 * 7)
+
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (due >= ? and due < ?)", GetSessionUserID(&c), startDate, endDate)
+		if err != nil {
+			log.Println("Error while getting homework information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer rows.Close()
+
+		homework := []Homework{}
+		for rows.Next() {
+			resp := Homework{-1, "", "", "", -1, -1, -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+			homework = append(homework, resp)
+		}
+		jsonResp := HomeworkResponse{"ok", homework}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
 
