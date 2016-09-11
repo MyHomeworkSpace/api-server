@@ -34,7 +34,55 @@ type PlannerFridayResponse struct {
 	Friday PlannerFriday `json:"friday"`
 }
 
+type PlannerWeekInfoResponse struct {
+	Status string `json:"status"`
+	Announcements []PlannerAnnouncement `json:"announcements"`
+	Friday PlannerFriday `json:"friday"`
+}
+
 func InitPlannerAPI(e *echo.Echo) {
+	e.GET("/planner/getWeekInfo/:date", func(c echo.Context) error {
+		startDate, err := time.Parse("2006-01-02", c.Param("date"))
+		if err != nil {
+			jsonResp := ErrorResponse{"error", "Invalid date."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+		endDate := startDate.Add(time.Hour * 24 * 7)
+
+		announcementRows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		if err != nil {
+			log.Println("Error while getting announcement information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer announcementRows.Close()
+		announcements := []PlannerAnnouncement{}
+		for announcementRows.Next() {
+			resp := PlannerAnnouncement{-1, "", ""}
+			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text)
+			announcements = append(announcements, resp)
+		}
+
+		fridayDate := startDate.Add(time.Hour * 24 * 4)
+
+		fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
+		if err != nil {
+			log.Println("Error while getting friday information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer fridayRows.Close()
+		friday := PlannerFriday{-1, "", -1}
+		if fridayRows.Next() {
+			fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
+		}
+
+		jsonResp := PlannerWeekInfoResponse{"ok", announcements, friday}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
 	e.GET("/planner/announcements/getWeek/:date", func(c echo.Context) error {
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
