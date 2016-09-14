@@ -23,6 +23,10 @@ type SingleClassResponse struct {
 	Status string `json:"status"`
 	Class HomeworkClass `json:"class"`
 }
+type HWInfoResponse struct {
+	Status string `json:"status"`
+	HWItems int `json:"hwItems"`
+}
 
 func InitClassesAPI(e *echo.Echo) {
 	e.GET("/classes/get", func(c echo.Context) error {
@@ -70,6 +74,30 @@ func InitClassesAPI(e *echo.Echo) {
 		resp := HomeworkClass{-1, "", "", -1}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.UserID)
 		jsonResp := SingleClassResponse{"ok", resp}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
+	e.GET("/classes/hwInfo/:id", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting class information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer rows.Close()
+
+		if !rows.Next() {
+			jsonResp := ErrorResponse{"error", "Invalid ID."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+		resp := -1
+		rows.Scan(&resp)
+		jsonResp := HWInfoResponse{"ok", resp}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
 
@@ -139,6 +167,78 @@ func InitClassesAPI(e *echo.Echo) {
 			jsonResp := StatusResponse{"error"}
 			return c.JSON(http.StatusInternalServerError, jsonResp)
 		}
+		jsonResp := StatusResponse{"ok"}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
+	e.POST("/classes/delete", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		if c.FormValue("id") == "" {
+			jsonResp := ErrorResponse{"error", "Missing required parameters."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// check if you are allowed to delete the given id
+		idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while deleting classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer idRows.Close()
+		if !idRows.Next() {
+			jsonResp := ErrorResponse{"error", "Invalid ID."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
+		tx, err := DB.Begin()
+
+		// delete HW
+		hwStmt, err := DB.Prepare("DELETE FROM homework WHERE classId = ?")
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = hwStmt.Exec(c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// delete class
+		classStmt, err := DB.Prepare("DELETE FROM classes WHERE id = ?")
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = classStmt.Exec(c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// go!
+		err = tx.Commit()
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
