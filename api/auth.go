@@ -25,6 +25,30 @@ func GetSessionUserID(c *echo.Context) int {
 }
 
 func InitAuthAPI(e *echo.Echo) {
+	e.POST("/auth/clearMigrateFlag", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+
+		stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
+		if err != nil {
+			log.Println("Error while clearing migration flag: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = stmt.Exec(GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while clearing migration flag: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		jsonResp := StatusResponse{"ok"}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
 	e.GET("/auth/csrf", func(c echo.Context) error {
 		cookie, _ := c.Cookie("csrfToken")
 		jsonResp := CSRFResponse{"ok", cookie.Value()}
@@ -115,7 +139,7 @@ func InitAuthAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		rows, err := DB.Query("SELECT id, name, username, email, type, features FROM users WHERE id = ?", auth.GetSession(cookie.Value()).UserId)
+		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", auth.GetSession(cookie.Value()).UserId)
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
@@ -125,8 +149,8 @@ func InitAuthAPI(e *echo.Echo) {
 		defer rows.Close()
 		if rows.Next() {
 			// exists, use it
-			jsonResp := UserResponse{"ok", -1, "", "", "", "", ""}
-			rows.Scan(&jsonResp.ID, &jsonResp.Name, &jsonResp.Username, &jsonResp.Email, &jsonResp.Type, &jsonResp.Features)
+			jsonResp := UserResponse{"ok", -1, "", "", "", "", "", -1}
+			rows.Scan(&jsonResp.ID, &jsonResp.Name, &jsonResp.Username, &jsonResp.Email, &jsonResp.Type, &jsonResp.Features, &jsonResp.ShowMigrateMessage)
 			return c.JSON(http.StatusOK, jsonResp)
 		} else {
 			// doesn't exist

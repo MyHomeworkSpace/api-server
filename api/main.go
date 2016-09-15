@@ -31,6 +31,7 @@ type UserResponse struct {
 	Email string `json:"email"`
 	Type string `json:"type"`
 	Features string `json:"features"`
+	ShowMigrateMessage int `json:"showMigrateMessage"`
 }
 
 func Init(e *echo.Echo) {
