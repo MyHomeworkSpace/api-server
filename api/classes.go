@@ -199,7 +199,7 @@ func InitClassesAPI(e *echo.Echo) {
 		tx, err := DB.Begin()
 
 		// delete HW
-		hwStmt, err := DB.Prepare("DELETE FROM homework WHERE classId = ?")
+		hwStmt, err := tx.Prepare("DELETE FROM homework WHERE classId = ?")
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
@@ -215,7 +215,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 
 		// delete class
-		classStmt, err := DB.Prepare("DELETE FROM classes WHERE id = ?")
+		classStmt, err := tx.Prepare("DELETE FROM classes WHERE id = ?")
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
@@ -225,6 +225,172 @@ func InitClassesAPI(e *echo.Echo) {
 		_, err = classStmt.Exec(c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// go!
+		err = tx.Commit()
+		if err != nil {
+			log.Println("Error while deleting class: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		jsonResp := StatusResponse{"ok"}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
+
+	e.POST("/classes/swap", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		if c.FormValue("id1") == "" || c.FormValue("id2") == "" {
+			jsonResp := ErrorResponse{"error", "Missing required parameters."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// check if you are allowed to change id1
+		id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id1"))
+		if err != nil {
+			log.Println("Error while deleting classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer id1Rows.Close()
+		if !id1Rows.Next() {
+			jsonResp := ErrorResponse{"error", "Invalid ID."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// check if you are allowed to change id2
+		id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id2"))
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer id2Rows.Close()
+		if !id2Rows.Next() {
+			jsonResp := ErrorResponse{"error", "Invalid ID."}
+			return c.JSON(http.StatusBadRequest, jsonResp)
+		}
+
+		// find the swap id
+		// this is a dumb way of doing this and is kind of a race condition
+		// but mysql has no better way to swap primary keys
+		// hopefully no one adds 100 classes in the time this transaction takes to complete
+		swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		swapId := -1
+		defer swapIdStmt.Close()
+		swapIdStmt.Next()
+		swapIdStmt.Scan(&swapId)
+
+		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
+		tx, err := DB.Begin()
+
+		// update class id1 -> tmp
+		class1Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = class1Stmt.Exec(swapId, c.FormValue("id1"))
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// update class id2 -> id1
+		class2Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = class2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// update class tmp -> id2
+		classTmpStmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = classTmpStmt.Exec(c.FormValue("id2"), swapId)
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// update homework id1 -> swp
+		hw1Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = hw1Stmt.Exec(swapId, c.FormValue("id1"))
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// update homework id2 -> id1
+		hw2Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = hw2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+
+		// update homework swp -> id2
+		hwSwapStmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+		if err != nil {
+			log.Println("Error while swapping classes: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		_, err = hwSwapStmt.Exec(c.FormValue("id2"), swapId)
+		if err != nil {
+			log.Println("Error while swapping classes: ")
 			log.Println(err)
 			jsonResp := StatusResponse{"error"}
 			return c.JSON(http.StatusInternalServerError, jsonResp)
