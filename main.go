@@ -53,7 +53,7 @@ func main() {
 					return err
 				}
 				cookie.SetValue(uid)
-				cookie.SetExpires(time.Now().Add(12 * 4 * 7 * 24 * time.Hour))
+				cookie.SetExpires(time.Now().Add(7 * 24 * time.Hour))
 				c.SetCookie(cookie)
 			}
 
