@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
 
@@ -60,7 +61,7 @@ func InitAuthAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "Missing required parameters."}
 			return c.JSON(http.StatusUnprocessableEntity, jsonResp)
 		}
-		data, resp, err := auth.DaltonLogin(c.FormValue("username"), c.FormValue("password"))
+		data, resp, err := auth.DaltonLogin(strings.ToLower(c.FormValue("username")), c.FormValue("password"))
 		if resp != "" || err != nil {
 			jsonResp := ErrorResponse{"error", resp}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
@@ -76,7 +77,7 @@ func InitAuthAPI(e *echo.Echo) {
 			scanner := bufio.NewScanner(file)
 			found := false
 		    for scanner.Scan() {
-		        if scanner.Text() == c.FormValue("username") {
+		        if strings.ToLower(scanner.Text()) == strings.ToLower(c.FormValue("username")) {
 					found = true
 					break
 				}
