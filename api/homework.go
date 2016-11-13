@@ -52,6 +52,29 @@ func InitHomeworkAPI(e *echo.Echo) {
 		jsonResp := HomeworkResponse{"ok", homework}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
+	e.GET("/homework/getHWView", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting homework information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer rows.Close()
+
+		homework := []Homework{}
+		for rows.Next() {
+			resp := Homework{-1, "", "", "", -1, -1, -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+			homework = append(homework, resp)
+		}
+		jsonResp := HomeworkResponse{"ok", homework}
+		return c.JSON(http.StatusOK, jsonResp)
+	})
 
 	e.GET("/homework/get/:id", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
