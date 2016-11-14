@@ -105,7 +105,7 @@ func InitAuthAPI(e *echo.Echo) {
 			session = auth.SessionInfo{userId, c.FormValue("username")}
 		} else {
 			// doesn't exist
-			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type) VALUES(?, ?, ?, ?)")
+			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
@@ -122,6 +122,21 @@ func InitAuthAPI(e *echo.Echo) {
 			lastId, err := res.LastInsertId()
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
+				log.Println(err)
+				jsonResp := ErrorResponse{"error", "Internal server error"}
+				return c.JSON(http.StatusInternalServerError, jsonResp)
+			}
+			// add default classes
+			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('French', ?), ('Science', ?)")
+			if err != nil {
+				log.Println("Error while trying to add default classes: ")
+				log.Println(err)
+				jsonResp := ErrorResponse{"error", "Internal server error"}
+				return c.JSON(http.StatusInternalServerError, jsonResp)
+			}
+			_, err = addClassesStmt.Exec(int(lastId), int(lastId), int(lastId), int(lastId), int(lastId))
+			if err != nil {
+				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
 				jsonResp := ErrorResponse{"error", "Internal server error"}
 				return c.JSON(http.StatusInternalServerError, jsonResp)
