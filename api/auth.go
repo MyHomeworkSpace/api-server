@@ -127,7 +127,7 @@ func InitAuthAPI(e *echo.Echo) {
 				return c.JSON(http.StatusInternalServerError, jsonResp)
 			}
 			// add default classes
-			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('French', ?), ('Science', ?)")
+			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
