@@ -10,9 +10,9 @@ import (
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
-	"github.com/labstack/echo/engine/standard"
+	"gopkg.in/labstack/echo.v2"
+	"gopkg.in/labstack/echo.v2/middleware"
+	"gopkg.in/labstack/echo.v2/engine/standard"
 )
 
 type ErrorResponse struct {

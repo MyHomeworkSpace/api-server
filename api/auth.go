@@ -9,7 +9,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/auth"
 
-	"github.com/labstack/echo"
+	"gopkg.in/labstack/echo.v2"
 )
 
 type CSRFResponse struct {

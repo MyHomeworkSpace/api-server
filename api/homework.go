@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/labstack/echo"
+	"gopkg.in/labstack/echo.v2"
 )
 
 // structs for data
