@@ -10,9 +10,8 @@ import (
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
 
-	"gopkg.in/labstack/echo.v2"
-	"gopkg.in/labstack/echo.v2/middleware"
-	"gopkg.in/labstack/echo.v2/engine/standard"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type ErrorResponse struct {
@@ -39,47 +38,47 @@ func main() {
 				c.Response().Header().Set("Access-Control-Allow-Origin", config.CORS.Origin)
 				c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
 			}
-			if strings.HasPrefix(c.Request().URI(), "/api_tester") {
+			if strings.HasPrefix(c.Request().URL.Path, "/api_tester") {
 				return next(c)
 			}
 			_, err := c.Cookie("session")
 			if err != nil {
 				// user has no cookie, generate one
-				cookie := new(echo.Cookie)
-				cookie.SetName("session")
-				cookie.SetPath("/")
+				cookie := new(http.Cookie)
+				cookie.Name ="session"
+				cookie.Path = "/"
 				uid, err := auth.GenerateUID()
 				if err != nil {
 					return err
 				}
-				cookie.SetValue(uid)
-				cookie.SetExpires(time.Now().Add(7 * 24 * time.Hour))
+				cookie.Value = uid
+				cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
 				c.SetCookie(cookie)
 			}
 
 			csrfCookie, err := c.Cookie("csrfToken")
 			if err != nil {
 				// user has no cookie, generate one
-				cookie := new(echo.Cookie)
-				cookie.SetName("csrfToken")
-				cookie.SetPath("/")
+				cookie := new(http.Cookie)
+				cookie.Name = "csrfToken"
+				cookie.Path = "/"
 				uid, err := auth.GenerateRandomString(40)
 				if err != nil {
 					return err
 				}
-				cookie.SetValue(uid)
-				cookie.SetExpires(time.Now().Add(12 * 4 * 7 * 24 * time.Hour))
+				cookie.Value = uid
+				cookie.Expires = time.Now().Add(12 * 4 * 7 * 24 * time.Hour)
 				c.SetCookie(cookie)
 				jsonResp := ErrorResponse{"error", "csrfToken_created"}
 				return c.JSON(http.StatusBadRequest, jsonResp)
 			}
 
 			// bypass csrf token for /auth/csrf
-			if strings.HasPrefix(c.Request().URI(), "/auth/csrf") {
+			if strings.HasPrefix(c.Request().URL.Path, "/auth/csrf") {
 				return next(c)
 			}
 
-			if csrfCookie.Value() != c.QueryParam("csrfToken") {
+			if csrfCookie.Value != c.QueryParam("csrfToken") {
 				jsonResp := ErrorResponse{"error", "csrfToken_invalid"}
 				return c.JSON(http.StatusBadRequest, jsonResp)
 			}
@@ -95,5 +94,5 @@ func main() {
 	api.Init(e) // API init delayed because router must be started first
 
 	log.Printf("Listening on port %d", config.Server.Port)
-	e.Run(standard.New(fmt.Sprintf(":%d", config.Server.Port)))
+	e.Start(fmt.Sprintf(":%d", config.Server.Port))
 }

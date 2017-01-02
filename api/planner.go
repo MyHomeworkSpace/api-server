@@ -7,7 +7,7 @@ import (
 
 	//"github.com/MyHomeworkSpace/api-server/auth"
 
-	"gopkg.in/labstack/echo.v2"
+	"github.com/labstack/echo"
 )
 
 // structs for data

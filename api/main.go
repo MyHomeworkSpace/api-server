@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"gopkg.in/labstack/echo.v2"
+	"github.com/labstack/echo"
 )
 
 var DB *sql.DB

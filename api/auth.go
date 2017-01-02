@@ -9,7 +9,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/auth"
 
-	"gopkg.in/labstack/echo.v2"
+	"github.com/labstack/echo"
 )
 
 type CSRFResponse struct {
@@ -22,7 +22,7 @@ func GetSessionUserID(c *echo.Context) int {
 	if err != nil {
 		return -1
 	}
-	return auth.GetSession(cookie.Value()).UserId
+	return auth.GetSession(cookie.Value).UserId
 }
 
 func InitAuthAPI(e *echo.Echo) {
@@ -52,7 +52,7 @@ func InitAuthAPI(e *echo.Echo) {
 
 	e.GET("/auth/csrf", func(c echo.Context) error {
 		cookie, _ := c.Cookie("csrfToken")
-		jsonResp := CSRFResponse{"ok", cookie.Value()}
+		jsonResp := CSRFResponse{"ok", cookie.Value}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
 
@@ -144,18 +144,18 @@ func InitAuthAPI(e *echo.Echo) {
 			session = auth.SessionInfo{int(lastId), c.FormValue("username")}
 		}
 		cookie, _ := c.Cookie("session")
-		auth.SetSession(cookie.Value(), session)
+		auth.SetSession(cookie.Value, session)
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
 
 	e.GET("/auth/me", func(c echo.Context) error {
 		cookie, _ := c.Cookie("session")
-		if auth.GetSession(cookie.Value()).UserId == -1 {
+		if auth.GetSession(cookie.Value).UserId == -1 {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", auth.GetSession(cookie.Value()).UserId)
+		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", auth.GetSession(cookie.Value).UserId)
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
@@ -177,12 +177,12 @@ func InitAuthAPI(e *echo.Echo) {
 
 	e.GET("/auth/logout", func(c echo.Context) error {
 		cookie, _ := c.Cookie("session")
-		if auth.GetSession(cookie.Value()).UserId == -1 {
+		if auth.GetSession(cookie.Value).UserId == -1 {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
 		newSession := auth.SessionInfo{-1, ""}
-		auth.SetSession(cookie.Value(), newSession)
+		auth.SetSession(cookie.Value, newSession)
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
 	})
