@@ -83,5 +83,27 @@ func GetSession(name string) (SessionInfo) {
 	retval.UserId, err = strconv.Atoi(resultMap["userId"])
 	retval.Username = resultMap["username"]
 
+	if err != nil {
+		log.Println("Error while getting session: ")
+		log.Println(err)
+		return SessionInfo{-1, ""}
+	}
+
+	return retval
+}
+
+func GetSessionFromAuthToken(authToken string) (SessionInfo) {
+	rows, err := DB.Query("SELECT users.id, users.username FROM application_authorizations INNER JOIN users ON application_authorizations.userId = users.id WHERE application_authorizations.token = ?", authToken)
+	if err != nil {
+		log.Println("Error while getting session from auth token:")
+		log.Println(err)
+		return SessionInfo{-1, ""}
+	}
+	defer rows.Close()
+	rows.Next()
+
+	retval := SessionInfo{-1, ""}
+	rows.Scan(&retval.UserId, &retval.Username)
+
 	return retval
 }

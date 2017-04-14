@@ -18,11 +18,21 @@ type CSRFResponse struct {
 }
 
 func GetSessionUserID(c *echo.Context) int {
-	cookie, err := (*c).Cookie("session")
-	if err != nil {
-		return -1
+	if (*c).Request().Header.Get("Authorization") != "" {
+		// we have an authorization header, use that
+		headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
+		if len(headerParts) != 2 {
+			return -1
+		}
+		token := headerParts[1]
+		return auth.GetSessionFromAuthToken(token).UserId
+	} else {
+		cookie, err := (*c).Cookie("session")
+		if err != nil {
+			return -1
+		}
+		return auth.GetSession(cookie.Value).UserId
 	}
-	return auth.GetSession(cookie.Value).UserId
 }
 
 func InitAuthAPI(e *echo.Echo) {

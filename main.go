@@ -86,6 +86,11 @@ func main() {
 				return next(c)
 			}
 
+			// bypass csrf if they send an authorization header
+			if c.Request().Header.Get("Authorization") != "" {
+				return next(c)
+			}
+
 			if csrfCookie.Value != c.QueryParam("csrfToken") {
 				jsonResp := ErrorResponse{"error", "csrfToken_invalid"}
 				return c.JSON(http.StatusBadRequest, jsonResp)
