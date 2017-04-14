@@ -25,11 +25,15 @@ func main() {
 
 	InitConfig()
 	InitDatabase()
+	InitRedis()
+
 	api.DB = DB
+	api.RedisClient = RedisClient
 	api.WhitelistEnabled = config.Whitelist.Enabled
 	api.WhitelistFile = config.Whitelist.WhitelistFile
 	api.WhitelistBlockMsg = config.Whitelist.BlockMessage
 	auth.DB = DB
+	auth.RedisClient = RedisClient
 
 	e := echo.New()
 	e.Pre(middleware.RemoveTrailingSlash())

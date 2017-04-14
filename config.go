@@ -13,6 +13,7 @@ type Config struct {
     Server ServerConfig
 	Database DatabaseConfig
 	Email EmailConfig
+	Redis RedisConfig
 	CORS CORSConfig
 	Whitelist WhitelistConfig
 }
@@ -36,6 +37,11 @@ type EmailConfig struct {
     SMTPSecure bool
 	SMTPUsername string
 	SMTPPassword string
+}
+
+type RedisConfig struct {
+	Host string
+	Port int
 }
 
 type CORSConfig struct {
@@ -68,6 +74,10 @@ SMTPPort = 465
 SMTPSecure = true
 SMTPUsername = "accounts@myhomework.space"
 SMTPPassword = "password123"
+
+[redis]
+Host = "localhost"
+Port = 6379
 
 [cors]
 Enabled = false

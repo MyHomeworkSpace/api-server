@@ -6,9 +6,12 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
+	
+	"gopkg.in/redis.v5"
 )
 
 var DB *sql.DB
+var RedisClient *redis.Client
 
 var WhitelistEnabled bool
 var WhitelistFile string
