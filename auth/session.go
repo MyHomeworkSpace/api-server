@@ -5,6 +5,7 @@ import (
     "encoding/base64"
 	"log"
 	"strconv"
+	"time"
 )
 
 type SessionInfo struct {
@@ -46,9 +47,17 @@ func SetSession(name string, value SessionInfo) {
 		"userId": strconv.Itoa(value.UserId),
 		"username": value.Username,
 	})
+
 	if result.Err() != nil {
 		log.Println("Error while setting session: ")
 		log.Println(result.Err())
+		return
+	}
+
+	expireResult := RedisClient.Expire("session:" + name, 7*24*time.Hour)
+	if expireResult.Err() != nil {
+		log.Println("Error while setting session: ")
+		log.Println(expireResult.Err())
 		return
 	}
 }
