@@ -4,6 +4,7 @@ import (
     "crypto/rand"
     "encoding/base64"
 	"log"
+	"strconv"
 )
 
 type SessionInfo struct {
@@ -41,43 +42,37 @@ func GenerateUID() (string, error) {
 // SetSession stores the given value under the given name in the database.
 // If the given name is already used, its value is overwritten.
 func SetSession(name string, value SessionInfo) {
-	stmt, err := DB.Prepare("INSERT INTO sessions(id, userId, username) VALUES(?, ?, ?)")
-	if err != nil {
+	result := RedisClient.HMSet("session:" + name, map[string]string{
+		"userId": strconv.Itoa(value.UserId),
+		"username": value.Username,
+	})
+	if result.Err() != nil {
 		log.Println("Error while setting session: ")
-		log.Println(err)
+		log.Println(result.Err())
 		return
-	}
-	_, err = stmt.Exec(name, value.UserId, value.Username)
-	if err != nil {
-		// must be because it already exists
-		// so, try to UPDATE instead
-		stmt, err := DB.Prepare("UPDATE sessions SET userId=?, username=? WHERE id=?")
-		if err != nil {
-			log.Println("Error while setting session: ")
-			log.Println(err)
-			return
-		}
-		_, err = stmt.Exec(value.UserId, value.Username, name)
-		if err != nil {
-			log.Println("Error while setting session: ")
-			log.Println(err)
-			return
-		}
 	}
 }
 
 // GetSession retrieves the session information for the given name
 func GetSession(name string) (SessionInfo) {
-	rows, err := DB.Query("SELECT userId, username from sessions where id = ?", name)
+	result := RedisClient.HGetAll("session:" + name)
+	if result.Err() != nil {
+		log.Println("Error while getting session: ")
+		log.Println(result.Err())
+		return SessionInfo{-1, ""}
+	}
+
+	resultMap, err := result.Result()
 	if err != nil {
 		log.Println("Error while getting session: ")
 		log.Println(err)
 		return SessionInfo{-1, ""}
 	}
-	defer rows.Close()
-	rows.Next()
+
 	retval := SessionInfo{-1, ""}
-	err = rows.Scan(&retval.UserId, &retval.Username)
+
+	retval.UserId, err = strconv.Atoi(resultMap["userId"])
+	retval.Username = resultMap["username"]
 
 	return retval
 }
