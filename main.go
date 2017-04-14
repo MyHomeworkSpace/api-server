@@ -26,6 +26,7 @@ func main() {
 	InitDatabase()
 	InitRedis()
 
+	api.AuthURLBase = config.Server.AuthURLBase
 	api.DB = DB
 	api.RedisClient = RedisClient
 	api.WhitelistEnabled = config.Whitelist.Enabled
@@ -43,6 +44,9 @@ func main() {
 				c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if strings.HasPrefix(c.Request().URL.Path, "/api_tester") {
+				return next(c)
+			}
+			if strings.HasPrefix(c.Request().URL.Path, "/application/requestAuth") {
 				return next(c)
 			}
 			_, err := c.Cookie("session")

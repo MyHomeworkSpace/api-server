@@ -20,6 +20,7 @@ type Config struct {
 
 type ServerConfig struct {
 	Port int
+	AuthURLBase string
 }
 
 type DatabaseConfig struct {
@@ -59,6 +60,7 @@ func CreateNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
 Port = 3000
+AuthURLBase = "http://myhomework.space/applicationAuth.html"
 
 [database]
 Host = "localhost"

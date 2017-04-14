@@ -150,12 +150,11 @@ func InitAuthAPI(e *echo.Echo) {
 	})
 
 	e.GET("/auth/me", func(c echo.Context) error {
-		cookie, _ := c.Cookie("session")
-		if auth.GetSession(cookie.Value).UserId == -1 {
+		if GetSessionUserID(&c) == -1 {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", auth.GetSession(cookie.Value).UserId)
+		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
@@ -176,11 +175,11 @@ func InitAuthAPI(e *echo.Echo) {
 	})
 
 	e.GET("/auth/logout", func(c echo.Context) error {
-		cookie, _ := c.Cookie("session")
-		if auth.GetSession(cookie.Value).UserId == -1 {
+		if GetSessionUserID(&c) == -1 {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
+		cookie, _ := c.Cookie("session")
 		newSession := auth.SessionInfo{-1, ""}
 		auth.SetSession(cookie.Value, newSession)
 		jsonResp := StatusResponse{"ok"}

@@ -6,10 +6,11 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
-	
+
 	"gopkg.in/redis.v5"
 )
 
+var AuthURLBase string
 var DB *sql.DB
 var RedisClient *redis.Client
 
@@ -42,6 +43,7 @@ func Init(e *echo.Echo) {
 		return c.String(http.StatusOK, "Alive")
 	})
 
+	InitApplicationAPI(e)
 	InitAuthAPI(e)
 	InitClassesAPI(e)
 	InitFeedbackAPI(e)
