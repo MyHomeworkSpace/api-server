@@ -64,6 +64,11 @@ func main() {
 				c.SetCookie(cookie)
 			}
 
+			// bypass csrf if they send an authorization header
+			if c.Request().Header.Get("Authorization") != "" {
+				return next(c)
+			}
+
 			csrfCookie, err := c.Cookie("csrfToken")
 			if err != nil {
 				// user has no cookie, generate one
@@ -83,11 +88,6 @@ func main() {
 
 			// bypass csrf token for /auth/csrf
 			if strings.HasPrefix(c.Request().URL.Path, "/auth/csrf") {
-				return next(c)
-			}
-
-			// bypass csrf if they send an authorization header
-			if c.Request().Header.Get("Authorization") != "" {
 				return next(c)
 			}
 
