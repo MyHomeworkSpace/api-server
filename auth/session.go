@@ -84,8 +84,6 @@ func GetSession(name string) (SessionInfo) {
 	retval.Username = resultMap["username"]
 
 	if err != nil {
-		log.Println("Error while getting session: ")
-		log.Println(err)
 		return SessionInfo{-1, ""}
 	}
 
