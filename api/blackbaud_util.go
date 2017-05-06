@@ -27,7 +27,7 @@ func Blackbaud_GetAjaxToken() (string, error) {
 	return string(Blackbaud_AjaxRegex.FindAllSubmatch(strResponse, -1)[0][1]), nil
 }
 
-func Blackbaud_Request(requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (map[string]interface{}, error) {
+func Blackbaud_Request(requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (interface{}, error) {
 	client := http.Client{Jar: jar}
 
 	url := Blackbaud_Domain + path
@@ -69,7 +69,7 @@ func Blackbaud_Request(requestType string, path string, urlParams url.Values, po
 		return nil, err
 	}
 
-	decodedResponse := map[string]interface{}{}
+	var decodedResponse interface{}
 	err = json.Unmarshal(strResponse, &decodedResponse)
 	if err != nil {
 		return nil, err
