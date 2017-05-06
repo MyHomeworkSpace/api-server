@@ -45,6 +45,7 @@ func Init(e *echo.Echo) {
 
 	InitApplicationAPI(e)
 	InitAuthAPI(e)
+	InitCalendarAPI(e)
 	InitClassesAPI(e)
 	InitFeedbackAPI(e)
 	InitHomeworkAPI(e)

@@ -17,21 +17,25 @@ type CSRFResponse struct {
 	Token string `json:"token"`
 }
 
-func GetSessionUserID(c *echo.Context) int {
+func GetSessionUserID(c *echo.Context) (int) {
+	return GetSessionInfo(c).UserId
+}
+
+func GetSessionInfo(c *echo.Context) (auth.SessionInfo) {
 	if (*c).Request().Header.Get("Authorization") != "" {
 		// we have an authorization header, use that
 		headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
 		if len(headerParts) != 2 {
-			return -1
+			return auth.SessionInfo{-1, ""}
 		}
 		token := headerParts[1]
-		return auth.GetSessionFromAuthToken(token).UserId
+		return auth.GetSessionFromAuthToken(token)
 	} else {
 		cookie, err := (*c).Cookie("session")
 		if err != nil {
-			return -1
+			return auth.SessionInfo{-1, ""}
 		}
-		return auth.GetSession(cookie.Value).UserId
+		return auth.GetSession(cookie.Value)
 	}
 }
 
