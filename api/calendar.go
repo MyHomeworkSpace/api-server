@@ -40,8 +40,31 @@ type CalendarPeriod struct {
 }
 
 // responses
+type CalendarStatusResponse struct {
+	Status string `json:"status"`
+	StatusNum int `json:"statusNum"`
+}
 
 func InitCalendarAPI(e *echo.Echo) {
+	e.GET("/calendar/getStatus", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		rows, err := DB.Query("SELECT status FROM calendar_status WHERE userId = ?", GetSessionUserID(&c))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer rows.Close()
+		if !rows.Next() {
+			return c.JSON(http.StatusOK, CalendarStatusResponse{"ok", 0})
+		}
+
+		statusNum := -1
+		rows.Scan(&statusNum)
+
+		return c.JSON(http.StatusOK, CalendarStatusResponse{"ok", statusNum})
+	})
 	e.POST("/calendar/import", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
@@ -298,6 +321,27 @@ func InitCalendarAPI(e *echo.Echo) {
 		// in one giant transaction
 		tx, err := DB.Begin()
 
+		// clear away anything that is in the db
+		termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
+		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		defer termDeleteStmt.Close()
+		termDeleteStmt.Exec(userId)
+
+		classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
+		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		defer classDeleteStmt.Close()
+		classDeleteStmt.Exec(userId)
+
+		periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
+		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		defer periodsDeleteStmt.Close()
+		periodsDeleteStmt.Exec(userId)
+
+		statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
+		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		defer statusDeleteStmt.Close()
+		statusDeleteStmt.Exec(userId)
+
 		// first add the terms
 		termInsertStmt, err := tx.Prepare("INSERT INTO calendar_terms(termId, name, userId) VALUES(?, ?, ?)")
 		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
@@ -328,6 +372,11 @@ func InitCalendarAPI(e *echo.Echo) {
 				}
 			}
 		}
+
+		statusInsertStmt, err := tx.Prepare("INSERT INTO calendar_status(status, userId) VALUES(1, ?)")
+		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		defer statusInsertStmt.Close()
+		_, err = statusInsertStmt.Exec(userId)
 
 		// go!
 		err = tx.Commit()
