@@ -41,7 +41,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
-		rows, err := DB.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? OR `start` <= ?)", GetSessionUserID(&c), startDate.Unix(), endDate.Unix())
+		rows, err := DB.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? AND `start` <= ?)", GetSessionUserID(&c), startDate.Unix(), endDate.Unix())
 		if err != nil {
 			log.Println("Error while getting calendar events: ")
 			log.Println(err)
