@@ -86,4 +86,45 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
+
+	e.POST("/calendar/events/edit", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+		if c.FormValue("name") == "" || c.FormValue("start") == "" || c.FormValue("end") == "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+
+		start, err := strconv.Atoi(c.FormValue("start"))
+		end, err2 := strconv.Atoi(c.FormValue("end"))
+		if err != nil || err2 != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+
+		// check if you are allowed to edit the given id
+		idRows, err := DB.Query("SELECT id FROM calendar_events WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while editing calendar event: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer idRows.Close()
+		if !idRows.Next() {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "forbidden"})
+		}
+
+		stmt, err := DB.Prepare("UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?")
+		if err != nil {
+			log.Println("Error while editing calendar event: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		_, err = stmt.Exec(c.FormValue("name"), start, end, c.FormValue("desc"), c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while editing calendar event: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
+	})
 }
