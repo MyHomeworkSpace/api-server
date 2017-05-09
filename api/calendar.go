@@ -116,6 +116,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		return c.JSON(http.StatusOK, CalendarStatusResponse{"ok", statusNum})
 	})
+
 	e.POST("/calendar/import", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
