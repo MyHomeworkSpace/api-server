@@ -9,23 +9,24 @@ import (
 
 // structs for data
 type HomeworkClass struct {
-	ID int `json:"id"`
-	Name string `json:"name"`
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
 	Teacher string `json:"teacher"`
-	UserID int `json:"userId"`
+	UserID  int    `json:"userId"`
 }
+
 // responses
 type ClassResponse struct {
-	Status string `json:"status"`
+	Status  string          `json:"status"`
 	Classes []HomeworkClass `json:"classes"`
 }
 type SingleClassResponse struct {
-	Status string `json:"status"`
-	Class HomeworkClass `json:"class"`
+	Status string        `json:"status"`
+	Class  HomeworkClass `json:"class"`
 }
 type HWInfoResponse struct {
-	Status string `json:"status"`
-	HWItems int `json:"hwItems"`
+	Status  string `json:"status"`
+	HWItems int    `json:"hwItems"`
 }
 
 func InitClassesAPI(e *echo.Echo) {
@@ -198,15 +199,17 @@ func InitClassesAPI(e *echo.Echo) {
 		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
 		tx, err := DB.Begin()
 
-		// delete HW
-		hwStmt, err := tx.Prepare("DELETE FROM homework WHERE classId = ?")
+		// delete HW calendar events
+		_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
 			jsonResp := StatusResponse{"error"}
 			return c.JSON(http.StatusInternalServerError, jsonResp)
 		}
-		_, err = hwStmt.Exec(c.FormValue("id"))
+
+		// delete HW
+		_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
@@ -215,14 +218,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 
 		// delete class
-		classStmt, err := tx.Prepare("DELETE FROM classes WHERE id = ?")
-		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
-		}
-		_, err = classStmt.Exec(c.FormValue("id"))
+		_, err = tx.Exec("DELETE FROM classes WHERE id = ?", c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
