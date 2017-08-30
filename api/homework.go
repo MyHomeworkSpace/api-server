@@ -292,21 +292,31 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
 
-		stmt, err := DB.Prepare("DELETE FROM homework WHERE id = ?")
+		deleteTx, err := DB.Begin()
+
+		// delete the homework records
+		_, err = deleteTx.Exec("DELETE FROM homework WHERE id = ?", c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		_, err = stmt.Exec(c.FormValue("id"))
+
+		// delete any associated calendar events
+		_, err = deleteTx.Exec("DELETE FROM calendar_hwevents WHERE homeworkId = ?", c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+
+		err = deleteTx.Commit()
+		if err != nil {
+			log.Println("Error while deleting homework: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 }
