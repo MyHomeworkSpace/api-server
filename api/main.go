@@ -24,18 +24,7 @@ type StatusResponse struct {
 
 type ErrorResponse struct {
 	Status string `json:"status"`
-	Error string `json:"error"`
-}
-
-type UserResponse struct {
-	Status string `json:"status"`
-	ID int `json:"id"`
-	Name string `json:"name"`
-	Username string `json:"username"`
-	Email string `json:"email"`
-	Type string `json:"type"`
-	Features string `json:"features"`
-	ShowMigrateMessage int `json:"showMigrateMessage"`
+	Error  string `json:"error"`
 }
 
 func Init(e *echo.Echo) {

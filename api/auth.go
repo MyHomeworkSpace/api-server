@@ -14,14 +14,26 @@ import (
 
 type CSRFResponse struct {
 	Status string `json:"status"`
-	Token string `json:"token"`
+	Token  string `json:"token"`
 }
 
-func GetSessionUserID(c *echo.Context) (int) {
+type UserResponse struct {
+	Status             string `json:"status"`
+	ID                 int    `json:"id"`
+	Name               string `json:"name"`
+	Username           string `json:"username"`
+	Email              string `json:"email"`
+	Type               string `json:"type"`
+	Features           string `json:"features"`
+	Level              int    `json:"level"`
+	ShowMigrateMessage int    `json:"showMigrateMessage"`
+}
+
+func GetSessionUserID(c *echo.Context) int {
 	return GetSessionInfo(c).UserId
 }
 
-func GetSessionInfo(c *echo.Context) (auth.SessionInfo) {
+func GetSessionInfo(c *echo.Context) auth.SessionInfo {
 	if (*c).Request().Header.Get("Authorization") != "" {
 		// we have an authorization header, use that
 		headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
@@ -90,12 +102,12 @@ func InitAuthAPI(e *echo.Echo) {
 			}
 			scanner := bufio.NewScanner(file)
 			found := false
-		    for scanner.Scan() {
-		        if strings.ToLower(scanner.Text()) == strings.ToLower(c.FormValue("username")) {
+			for scanner.Scan() {
+				if strings.ToLower(scanner.Text()) == strings.ToLower(c.FormValue("username")) {
 					found = true
 					break
 				}
-		    }
+			}
 			file.Close()
 			if !found {
 				log.Printf("Blocked signin attempt by %s because they aren't on the whitelist\n", c.FormValue("username"))
@@ -126,7 +138,7 @@ func InitAuthAPI(e *echo.Echo) {
 				jsonResp := ErrorResponse{"error", "Internal server error"}
 				return c.JSON(http.StatusInternalServerError, jsonResp)
 			}
-			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username") + "@dalton.org", data["roles"].([]interface{})[0])
+			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]interface{})[0])
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
@@ -168,7 +180,7 @@ func InitAuthAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		rows, err := DB.Query("SELECT id, name, username, email, type, features, showMigrateMessage FROM users WHERE id = ?", GetSessionUserID(&c))
+		rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
@@ -178,8 +190,10 @@ func InitAuthAPI(e *echo.Echo) {
 		defer rows.Close()
 		if rows.Next() {
 			// exists, use it
-			jsonResp := UserResponse{"ok", -1, "", "", "", "", "", -1}
-			rows.Scan(&jsonResp.ID, &jsonResp.Name, &jsonResp.Username, &jsonResp.Email, &jsonResp.Type, &jsonResp.Features, &jsonResp.ShowMigrateMessage)
+			jsonResp := UserResponse{
+				Status: "ok",
+			}
+			rows.Scan(&jsonResp.ID, &jsonResp.Name, &jsonResp.Username, &jsonResp.Email, &jsonResp.Type, &jsonResp.Features, &jsonResp.Level, &jsonResp.ShowMigrateMessage)
 			return c.JSON(http.StatusOK, jsonResp)
 		} else {
 			// doesn't exist
