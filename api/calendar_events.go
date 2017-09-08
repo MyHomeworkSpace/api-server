@@ -25,12 +25,22 @@ type CalendarHWEvent struct {
 	End      int      `json:"end"`
 	UserID   int      `json:"userId"`
 }
+type CalendarScheduleEvent struct {
+	PeriodID  int `json:"periodId"`
+	ClassID   int `json:"classId"`
+	DayNumber int `json:"dayNumber"`
+	Start     int `json:"start"`
+	End       int `json:"end"`
+	UserID    int `json:"userId"`
+}
 
 // responses
 type CalendarWeekResponse struct {
-	Status   string            `json:"status"`
-	Events   []CalendarEvent   `json:"events"`
-	HWEvents []CalendarHWEvent `json:"hwEvents"`
+	Status        string                `json:"status"`
+	Announcements []PlannerAnnouncement `json:"announcements"`
+	Friday        PlannerFriday         `json:"friday"`
+	Events        []CalendarEvent       `json:"events"`
+	HWEvents      []CalendarHWEvent     `json:"hwEvents"`
 }
 type CalendarEventResponse struct {
 	Status string          `json:"status"`
@@ -52,6 +62,38 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
+
+		// get announcements
+		announcementRows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		if err != nil {
+			log.Println("Error while getting announcement information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer announcementRows.Close()
+		announcements := []PlannerAnnouncement{}
+		for announcementRows.Next() {
+			resp := PlannerAnnouncement{-1, "", ""}
+			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text)
+			announcements = append(announcements, resp)
+		}
+
+		// get friday info
+		fridayDate := startDate.Add(time.Hour * 24 * 4)
+
+		fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
+		if err != nil {
+			log.Println("Error while getting friday information: ")
+			log.Println(err)
+			jsonResp := StatusResponse{"error"}
+			return c.JSON(http.StatusInternalServerError, jsonResp)
+		}
+		defer fridayRows.Close()
+		friday := PlannerFriday{-1, "", -1}
+		if fridayRows.Next() {
+			fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
+		}
 
 		// get normal events
 		eventRows, err := DB.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? AND `start` <= ?)", GetSessionUserID(&c), startDate.Unix(), endDate.Unix())
@@ -85,7 +127,13 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			hwEvents = append(hwEvents, hwEvent)
 		}
 
-		return c.JSON(http.StatusOK, CalendarWeekResponse{"ok", events, hwEvents})
+		return c.JSON(http.StatusOK, CalendarWeekResponse{
+			Status:        "ok",
+			Announcements: announcements,
+			Friday:        friday,
+			Events:        events,
+			HWEvents:      hwEvents,
+		})
 	})
 
 	// normal events
