@@ -16,50 +16,50 @@ import (
 
 // structs for data
 type CalendarTerm struct {
-	ID int `json:"id"`
-	TermID int `json:"termId"`
-	Name string `json:"name"`
-	UserID int `json:"userId"`
+	ID     int    `json:"id"`
+	TermID int    `json:"termId"`
+	Name   string `json:"name"`
+	UserID int    `json:"userId"`
 }
 type CalendarClass struct {
-	ID int `json:"id"`
-	TermID int `json:"termId"`
-	OwnerID int `json:"ownerId"`
-	SectionID int `json:"sectionId"`
-	Name string `json:"name"`
+	ID        int    `json:"id"`
+	TermID    int    `json:"termId"`
+	OwnerID   int    `json:"ownerId"`
+	SectionID int    `json:"sectionId"`
+	Name      string `json:"name"`
 	OwnerName string `json:"ownerName"`
-	UserID int `json:"userId"`
+	UserID    int    `json:"userId"`
 }
 type CalendarPeriod struct {
-	ID int `json:"id"`
-	ClassID int `json:"classId"`
+	ID        int `json:"id"`
+	ClassID   int `json:"classId"`
 	DayNumber int `json:"dayNumber"`
-	Start int `json:"start"`
-	End int `json:"end"`
-	UserID int `json:"userId"`
+	Start     int `json:"start"`
+	End       int `json:"end"`
+	UserID    int `json:"userId"`
 }
 type CalendarScheduleItem struct {
-	ID int `json:"id"`
-	TermID int `json:"termId"`
-	ClassID int `json:"classId"`
-	Name string `json:"name"`
-	OwnerID int `json:"ownerId"`
+	ID        int    `json:"id"`
+	TermID    int    `json:"termId"`
+	ClassID   int    `json:"classId"`
+	Name      string `json:"name"`
+	OwnerID   int    `json:"ownerId"`
 	OwnerName string `json:"ownerName"`
-	DayNumber int `json:"dayNumber"`
-	Start int `json:"start"`
-	End int `json:"end"`
-	UserID int `json:"userId"`
+	DayNumber int    `json:"dayNumber"`
+	Start     int    `json:"start"`
+	End       int    `json:"end"`
+	UserID    int    `json:"userId"`
 }
 
 // responses
 type CalendarScheduleResponse struct {
-	Status string `json:"status"`
-	Terms []CalendarTerm `json:"terms"`
-	Items []CalendarScheduleItem `json:"items"`
+	Status string                 `json:"status"`
+	Terms  []CalendarTerm         `json:"terms"`
+	Items  []CalendarScheduleItem `json:"items"`
 }
 type CalendarStatusResponse struct {
-	Status string `json:"status"`
-	StatusNum int `json:"statusNum"`
+	Status    string `json:"status"`
+	StatusNum int    `json:"statusNum"`
 }
 
 func InitCalendarAPI(e *echo.Echo) {
@@ -140,17 +140,17 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		jar, err := cookiejar.New(nil)
-	    if err != nil {
+		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// sign in to blackbaud
 		response, err := Blackbaud_Request("POST", "SignIn", url.Values{}, map[string]interface{}{
-			"From": "",
+			"From":            "",
 			"InterfaceSource": "WebApp",
-			"Password": c.FormValue("password"),
-			"Username": GetSessionInfo(&c).Username,
-			"remember": "false",
+			"Password":        c.FormValue("password"),
+			"Username":        GetSessionInfo(&c).Username,
+			"remember":        "false",
 		}, jar, ajaxToken)
 
 		if err != nil {
@@ -198,9 +198,9 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		// get list of terms
 		response, err = Blackbaud_Request("GET", "DataDirect/StudentGroupTermList", url.Values{
-			"studentUserId": { strconv.Itoa(bbUserId) },
-			"schoolYearLabel": { schoolYearLabel },
-			"personaId": { "2" },
+			"studentUserId":   {strconv.Itoa(bbUserId)},
+			"schoolYearLabel": {schoolYearLabel},
+			"personaId":       {"2"},
 		}, map[string]interface{}{}, jar, ajaxToken)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -228,12 +228,12 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		// get list of classes
 		response, err = Blackbaud_Request("GET", "datadirect/ParentStudentUserAcademicGroupsGet", url.Values{
-			"userId": { strconv.Itoa(bbUserId) },
-			"schoolYearLabel": { schoolYearLabel },
-			"memberLevel": { "3" },
-			"persona": { "2" },
-			"durationList": { termRequestString },
-			"markingPeriodId": { "" },
+			"userId":          {strconv.Itoa(bbUserId)},
+			"schoolYearLabel": {schoolYearLabel},
+			"memberLevel":     {"3"},
+			"persona":         {"2"},
+			"durationList":    {termRequestString},
+			"markingPeriodId": {""},
 		}, map[string]interface{}{}, jar, ajaxToken)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -258,7 +258,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		// find all periods of classes
 		dayMap := map[int]map[int][]CalendarPeriod{}
-		for _, term := range []int{ 1, 2 } {
+		for _, term := range []int{1, 2} {
 			dayMap[term] = map[int][]CalendarPeriod{
 				0: []CalendarPeriod{},
 				1: []CalendarPeriod{},
@@ -284,19 +284,19 @@ func InitCalendarAPI(e *echo.Echo) {
 			endDate := startDate.AddDate(0, 1, -1)
 
 			response, err = Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
-				"format": {"json" },
-				"viewerId": { strconv.Itoa(bbUserId) },
-				"personaId": { "2" },
-				"viewerPersonaId": { "2" },
-				"start": { strconv.FormatInt(startDate.Unix(), 10) },
-				"end": { strconv.FormatInt(endDate.Unix(), 10) },
+				"format":          {"json"},
+				"viewerId":        {strconv.Itoa(bbUserId)},
+				"personaId":       {"2"},
+				"viewerPersonaId": {"2"},
+				"start":           {strconv.FormatInt(startDate.Unix(), 10)},
+				"end":             {strconv.FormatInt(endDate.Unix(), 10)},
 			}, map[string]interface{}{}, jar, ajaxToken)
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
 			totalPeriodList := response.([]interface{})
-			daysFound := map[int]string {
+			daysFound := map[int]string{
 				0: "",
 				1: "",
 				2: "",
@@ -375,58 +375,80 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		// clear away anything that is in the db
 		termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer termDeleteStmt.Close()
 		termDeleteStmt.Exec(userId)
 
 		classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer classDeleteStmt.Close()
 		classDeleteStmt.Exec(userId)
 
 		periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer periodsDeleteStmt.Close()
 		periodsDeleteStmt.Exec(userId)
 
 		statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer statusDeleteStmt.Close()
 		statusDeleteStmt.Exec(userId)
 
 		// first add the terms
 		termInsertStmt, err := tx.Prepare("INSERT INTO calendar_terms(termId, name, userId) VALUES(?, ?, ?)")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer termInsertStmt.Close()
 		for _, term := range termMap {
 			_, err = termInsertStmt.Exec(term.TermID, term.Name, userId)
-			if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
 		}
 
 		// then the classes
 		classInsertStmt, err := tx.Prepare("INSERT INTO calendar_classes(termId, ownerId, sectionId, name, ownerName, userId) VALUES(?, ?, ?, ?, ?, ?)")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer classInsertStmt.Close()
 		for _, class := range classMap {
 			_, err = classInsertStmt.Exec(class.TermID, class.OwnerID, class.SectionID, class.Name, class.OwnerName, userId)
-			if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
 		}
 
 		// and finally the periods
 		periodsInsertStmt, err := tx.Prepare("INSERT INTO calendar_periods(classId, dayNumber, start, end, userId) VALUES(?, ?, ?, ?, ?)")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer periodsInsertStmt.Close()
 		for _, term := range dayMap {
 			for _, periods := range term {
 				for _, period := range periods {
 					_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Start, period.End, userId)
-					if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+					if err != nil {
+						return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+					}
 				}
 			}
 		}
 
 		statusInsertStmt, err := tx.Prepare("INSERT INTO calendar_status(status, userId) VALUES(1, ?)")
-		if err != nil { return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"}) }
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
 		defer statusInsertStmt.Close()
 		_, err = statusInsertStmt.Exec(userId)
 
