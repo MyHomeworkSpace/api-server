@@ -186,8 +186,8 @@ func InitCalendarAPI(e *echo.Echo) {
 		schoolYearLabel := ""
 		for _, grade := range gradeList {
 			gradeInfo := grade.(map[string]interface{})
-			current := gradeInfo["CurrentInd"].(bool)
-			if current {
+			advisor := gradeInfo["AllAdvisors"]
+			if advisor != nil {
 				schoolYearLabel = gradeInfo["SchoolYearLabel"].(string)
 			}
 		}
