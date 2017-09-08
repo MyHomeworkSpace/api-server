@@ -11,34 +11,34 @@ import (
 
 // structs for data
 type CalendarEvent struct {
-	ID int `json:"id"`
-	Name string `json:"name"`
-	Start int `json:"start"`
-	End int `json:"end"`
-	Desc string `json:"desc"`
-	UserID int `json:"userId"`
+	ID     int    `json:"id"`
+	Name   string `json:"name"`
+	Start  int    `json:"start"`
+	End    int    `json:"end"`
+	Desc   string `json:"desc"`
+	UserID int    `json:"userId"`
 }
 type CalendarHWEvent struct {
-	ID int `json:"id"`
+	ID       int      `json:"id"`
 	Homework Homework `json:"homework"`
-	Start int `json:"start"`
-	End int `json:"end"`
-	UserID int `json:"userId"`
+	Start    int      `json:"start"`
+	End      int      `json:"end"`
+	UserID   int      `json:"userId"`
 }
 
 // responses
 type CalendarWeekResponse struct {
-	Status string `json:"status"`
-	Events []CalendarEvent `json:"events"`
+	Status   string            `json:"status"`
+	Events   []CalendarEvent   `json:"events"`
 	HWEvents []CalendarHWEvent `json:"hwEvents"`
 }
 type CalendarEventResponse struct {
-	Status string `json:"status"`
+	Status string          `json:"status"`
 	Events []CalendarEvent `json:"events"`
 }
 type SingleCalendarEventResponse struct {
-	Status string `json:"status"`
-	Event CalendarEvent `json:"event"`
+	Status string        `json:"status"`
+	Event  CalendarEvent `json:"event"`
 }
 
 func InitCalendarEventsAPI(e *echo.Echo) {
