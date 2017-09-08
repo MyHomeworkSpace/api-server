@@ -462,4 +462,65 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
+
+	e.POST("/calendar/resetSchedule", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		userId := GetSessionUserID(&c)
+
+		tx, err := DB.Begin()
+		if err != nil {
+			log.Println("Error while clearing schedule from DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		// clear away anything that is in the db
+		termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
+		if err != nil {
+			log.Println("Error while clearing schedule from DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer termDeleteStmt.Close()
+		termDeleteStmt.Exec(userId)
+
+		classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
+		if err != nil {
+			log.Println("Error while clearing schedule from DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer classDeleteStmt.Close()
+		classDeleteStmt.Exec(userId)
+
+		periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
+		if err != nil {
+			log.Println("Error while clearing schedule from DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer periodsDeleteStmt.Close()
+		periodsDeleteStmt.Exec(userId)
+
+		statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
+		if err != nil {
+			log.Println("Error while clearing schedule from DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer statusDeleteStmt.Close()
+		statusDeleteStmt.Exec(userId)
+
+		err = tx.Commit()
+		if err != nil {
+			log.Println("Error while adding schedule to DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
+	})
 }
