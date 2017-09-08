@@ -9,6 +9,12 @@ import (
 	"github.com/labstack/echo"
 )
 
+var (
+	Day_SchoolStart, _ = time.Parse("2006-01-02", "2017-09-11")
+	Day_ExamRelief, _  = time.Parse("2006-01-02", "2018-01-24")
+	Day_SchoolEnd, _   = time.Parse("2006-01-02", "2018-06-07")
+)
+
 // structs for data
 type CalendarEvent struct {
 	ID     int    `json:"id"`
@@ -28,6 +34,7 @@ type CalendarHWEvent struct {
 type CalendarScheduleEvent struct {
 	PeriodID  int `json:"periodId"`
 	ClassID   int `json:"classId"`
+	DayIndex  int `json:"dayIndex"`
 	DayNumber int `json:"dayNumber"`
 	Start     int `json:"start"`
 	End       int `json:"end"`
@@ -36,11 +43,13 @@ type CalendarScheduleEvent struct {
 
 // responses
 type CalendarWeekResponse struct {
-	Status        string                `json:"status"`
-	Announcements []PlannerAnnouncement `json:"announcements"`
-	Friday        PlannerFriday         `json:"friday"`
-	Events        []CalendarEvent       `json:"events"`
-	HWEvents      []CalendarHWEvent     `json:"hwEvents"`
+	Status         string                  `json:"status"`
+	Announcements  []PlannerAnnouncement   `json:"announcements"`
+	CurrentTerm    *CalendarTerm           `json:"currentTerm"`
+	Friday         PlannerFriday           `json:"friday"`
+	Events         []CalendarEvent         `json:"events"`
+	HWEvents       []CalendarHWEvent       `json:"hwEvents"`
+	ScheduleEvents []CalendarScheduleEvent `json:"scheduleEvents"`
 }
 type CalendarEventResponse struct {
 	Status string          `json:"status"`
@@ -57,6 +66,8 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
+		userId := GetSessionUserID(&c)
+
 		startDate, err := time.Parse("2006-01-02", c.Param("monday"))
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
@@ -68,8 +79,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer announcementRows.Close()
 		announcements := []PlannerAnnouncement{}
@@ -79,6 +89,34 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			announcements = append(announcements, resp)
 		}
 
+		// get all terms for this user
+		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ?", userId)
+		if err != nil {
+			log.Println("Error while getting term information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer termRows.Close()
+		availableTerms := []CalendarTerm{}
+		for termRows.Next() {
+			term := CalendarTerm{}
+			termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
+			availableTerms = append(availableTerms, term)
+		}
+
+		// find the current term
+		// TODO: be better at this and handle mid-week term switches (is that a thing?)
+		var currentTerm *CalendarTerm
+		if startDate.Add(time.Second).After(Day_SchoolStart) && startDate.Before(Day_SchoolEnd) {
+			if startDate.After(Day_ExamRelief) {
+				// it's the second term
+				currentTerm = &availableTerms[1]
+			} else {
+				// it's the first term
+				currentTerm = &availableTerms[0]
+			}
+		}
+
 		// get friday info
 		fridayDate := startDate.Add(time.Hour * 24 * 4)
 
@@ -86,8 +124,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting friday information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer fridayRows.Close()
 		friday := PlannerFriday{-1, "", -1}
@@ -96,7 +133,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 
 		// get normal events
-		eventRows, err := DB.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? AND `start` <= ?)", GetSessionUserID(&c), startDate.Unix(), endDate.Unix())
+		eventRows, err := DB.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? AND `start` <= ?)", userId, startDate.Unix(), endDate.Unix())
 		if err != nil {
 			log.Println("Error while getting calendar events: ")
 			log.Println(err)
@@ -112,7 +149,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 
 		// get homework events
-		hwEventRows, err := DB.Query("SELECT calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)", GetSessionUserID(&c), startDate.Unix(), endDate.Unix())
+		hwEventRows, err := DB.Query("SELECT calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)", userId, startDate.Unix(), endDate.Unix())
 		if err != nil {
 			log.Println("Error while getting calendar events: ")
 			log.Println(err)
@@ -130,6 +167,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, CalendarWeekResponse{
 			Status:        "ok",
 			Announcements: announcements,
+			CurrentTerm:   currentTerm,
 			Friday:        friday,
 			Events:        events,
 			HWEvents:      hwEvents,
