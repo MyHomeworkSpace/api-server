@@ -11,8 +11,11 @@ import (
 )
 
 var Blackbaud_AjaxRegex = regexp.MustCompile("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"(.*)\" \\/>")
-const Blackbaud_AjaxPage = "https://dalton.myschoolapp.com/app/"
-const Blackbaud_Domain = "https://dalton.myschoolapp.com/api/"
+
+const (
+	Blackbaud_AjaxPage = "https://dalton.myschoolapp.com/app/"
+	Blackbaud_Domain   = "https://dalton.myschoolapp.com/api/"
+)
 
 func Blackbaud_GetAjaxToken() (string, error) {
 	resp, err := http.Get(Blackbaud_AjaxPage)
@@ -34,7 +37,7 @@ func Blackbaud_Request(requestType string, path string, urlParams url.Values, po
 	url = url + "?" + urlParams.Encode()
 
 	var requestBody io.Reader
-	if (requestType == "POST") {
+	if requestType == "POST" {
 		data, err := json.Marshal(postData)
 		if err != nil {
 			return nil, err
@@ -55,7 +58,7 @@ func Blackbaud_Request(requestType string, path string, urlParams url.Values, po
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36")
 	req.Header.Set("Referer", "https://dalton.myschoolapp.com/app/")
-	req.Header["RequestVerificationToken"] = []string{ ajaxToken }
+	req.Header["RequestVerificationToken"] = []string{ajaxToken}
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := client.Do(req)
