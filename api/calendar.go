@@ -280,6 +280,7 @@ func InitCalendarAPI(e *echo.Echo) {
 			startDate := time.Date(year, time.September, 11, 0, 0, 0, 0, time.UTC)
 			endDate := time.Date(year, time.October, 7, 0, 0, 0, 0, time.UTC)
 			if term == 2 {
+				year += 1
 				startDate = time.Date(year, time.January, 29, 0, 0, 0, 0, time.UTC)
 				endDate = time.Date(year, time.February, 24, 0, 0, 0, 0, time.UTC)
 			}

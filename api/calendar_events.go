@@ -81,7 +81,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 
 		// get all terms for this user
-		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ?", userId)
+		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", userId)
 		if err != nil {
 			log.Println("Error while getting term information: ")
 			log.Println(err)
