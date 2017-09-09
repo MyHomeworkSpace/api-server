@@ -270,18 +270,19 @@ func InitCalendarAPI(e *echo.Echo) {
 				7: []CalendarPeriod{},
 			}
 
-			month := time.October
 			year, err := strconv.Atoi(strings.Trim(strings.Split(schoolYearLabel, "-")[0], " "))
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			if term == 2 {
-				month = time.February
-				year += 1
-			}
 
-			startDate := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-			endDate := startDate.AddDate(0, 1, -1)
+			// find an import range
+			// this should be a range with 4 fridays in a row and the first week having no off days
+			startDate := time.Date(year, time.September, 11, 0, 0, 0, 0, time.UTC)
+			endDate := time.Date(year, time.October, 7, 0, 0, 0, 0, time.UTC)
+			if term == 2 {
+				startDate = time.Date(year, time.January, 29, 0, 0, 0, 0, time.UTC)
+				endDate = time.Date(year, time.February, 24, 0, 0, 0, 0, time.UTC)
+			}
 
 			response, err = Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
 				"format":          {"json"},
