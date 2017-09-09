@@ -31,25 +31,16 @@ type CalendarHWEvent struct {
 	End      int      `json:"end"`
 	UserID   int      `json:"userId"`
 }
-type CalendarScheduleEvent struct {
-	PeriodID  int `json:"periodId"`
-	ClassID   int `json:"classId"`
-	DayIndex  int `json:"dayIndex"`
-	DayNumber int `json:"dayNumber"`
-	Start     int `json:"start"`
-	End       int `json:"end"`
-	UserID    int `json:"userId"`
-}
 
 // responses
 type CalendarWeekResponse struct {
-	Status         string                  `json:"status"`
-	Announcements  []PlannerAnnouncement   `json:"announcements"`
-	CurrentTerm    *CalendarTerm           `json:"currentTerm"`
-	Friday         PlannerFriday           `json:"friday"`
-	Events         []CalendarEvent         `json:"events"`
-	HWEvents       []CalendarHWEvent       `json:"hwEvents"`
-	ScheduleEvents []CalendarScheduleEvent `json:"scheduleEvents"`
+	Status         string                   `json:"status"`
+	Announcements  []PlannerAnnouncement    `json:"announcements"`
+	CurrentTerm    *CalendarTerm            `json:"currentTerm"`
+	Friday         PlannerFriday            `json:"friday"`
+	Events         []CalendarEvent          `json:"events"`
+	HWEvents       []CalendarHWEvent        `json:"hwEvents"`
+	ScheduleEvents [][]CalendarScheduleItem `json:"scheduleEvents"`
 }
 type CalendarEventResponse struct {
 	Status string          `json:"status"`
@@ -164,13 +155,51 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			hwEvents = append(hwEvents, hwEvent)
 		}
 
+		// get schedule events
+		var scheduleEvents [][]CalendarScheduleItem
+		if currentTerm != nil {
+			// there actually is school this week
+			scheduleEvents = make([][]CalendarScheduleItem, 5)
+			for dayIndex := 0; dayIndex < 5; dayIndex++ {
+				dayNumber := dayIndex
+				if dayNumber == 4 { // friday
+					// use the current friday index
+					if friday.Index == -1 {
+						// there's no friday info for this week, so display a blank schedule
+						continue
+					}
+					dayNumber = 4 + friday.Index - 1
+				}
+
+				// blackbaud day numbers are off by one because they treat sunday as 0
+				dayNumber = dayNumber + 1
+
+				dayEvents := make([]CalendarScheduleItem, 0)
+
+				// fetch items for this day
+				rows, err := DB.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND calendar_classes.termId = ? AND calendar_periods.dayNumber = ?", userId, currentTerm.TermID, dayNumber)
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				defer rows.Close()
+				for rows.Next() {
+					item := CalendarScheduleItem{}
+					rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Start, &item.End, &item.UserID)
+					dayEvents = append(dayEvents, item)
+				}
+
+				scheduleEvents[dayIndex] = dayEvents
+			}
+		}
+
 		return c.JSON(http.StatusOK, CalendarWeekResponse{
-			Status:        "ok",
-			Announcements: announcements,
-			CurrentTerm:   currentTerm,
-			Friday:        friday,
-			Events:        events,
-			HWEvents:      hwEvents,
+			Status:         "ok",
+			Announcements:  announcements,
+			CurrentTerm:    currentTerm,
+			Friday:         friday,
+			Events:         events,
+			HWEvents:       hwEvents,
+			ScheduleEvents: scheduleEvents,
 		})
 	})
 
