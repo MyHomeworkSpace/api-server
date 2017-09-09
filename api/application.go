@@ -8,33 +8,33 @@ import (
 )
 
 type Application struct {
-	ID int `json:"id"`
-	Name string `json:"name"`
-	AuthorName string `json:"authorName"`
-	ClientID string `json:"clientId"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	AuthorName  string `json:"authorName"`
+	ClientID    string `json:"clientId"`
 	CallbackURL string `json:"callbackUrl"`
 }
 type ApplicationAuthorization struct {
-	ID int `json:"id"`
-	ApplicationID int `json:"applicationId"`
-	Name string `json:"name"`
-	AuthorName string `json:"authorName"`
+	ID            int    `json:"id"`
+	ApplicationID int    `json:"applicationId"`
+	Name          string `json:"name"`
+	AuthorName    string `json:"authorName"`
 }
 
 type ApplicationTokenResponse struct {
 	Status string `json:"status"`
-	Token string `json:"token"`
+	Token  string `json:"token"`
 }
 type ApplicationAuthorizationsResponse struct {
-	Status string `json:"status"`
+	Status         string                     `json:"status"`
 	Authorizations []ApplicationAuthorization `json:"authorizations"`
 }
 type SingleApplicationResponse struct {
-	Status string `json:"status"`
+	Status      string      `json:"status"`
 	Application Application `json:"application"`
 }
 type MultipleApplicationsResponse struct {
-	Status string `json:"status"`
+	Status       string        `json:"status"`
 	Applications []Application `json:"applications"`
 }
 
@@ -96,7 +96,7 @@ func InitApplicationAPI(e *echo.Echo) {
 			log.Println(err)
 			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		
+
 		return c.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
 	})
 	e.GET("/application/get/:id", func(c echo.Context) error {
@@ -146,7 +146,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, ApplicationAuthorizationsResponse{"ok", authorizations})
 	})
 	e.GET("/application/requestAuth/:id", func(c echo.Context) error {
-		return c.Redirect(http.StatusFound, AuthURLBase + "?id=" + c.Param("id"))
+		return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id"))
 	})
 	e.POST("/application/revokeAuth", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
