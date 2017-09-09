@@ -29,18 +29,30 @@ type UserResponse struct {
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
 }
 
+func HasAuthToken(c *echo.Context) bool {
+	return (*c).Request().Header.Get("Authorization") != ""
+}
+
+func GetAuthToken(c *echo.Context) string {
+	headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
+	if len(headerParts) != 2 {
+		return ""
+	} else {
+		return headerParts[1]
+	}
+}
+
 func GetSessionUserID(c *echo.Context) int {
 	return GetSessionInfo(c).UserId
 }
 
 func GetSessionInfo(c *echo.Context) auth.SessionInfo {
-	if (*c).Request().Header.Get("Authorization") != "" {
+	if HasAuthToken(c) {
 		// we have an authorization header, use that
-		headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
-		if len(headerParts) != 2 {
+		token := GetAuthToken(c)
+		if token == "" {
 			return auth.SessionInfo{-1, ""}
 		}
-		token := headerParts[1]
 		return auth.GetSessionFromAuthToken(token)
 	} else {
 		cookie, err := (*c).Cookie("session")

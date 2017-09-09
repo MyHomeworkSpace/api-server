@@ -180,7 +180,34 @@ func InitApplicationAPI(e *echo.Echo) {
 			log.Println(err)
 			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
+		defer deleteStmt.Close()
 		_, err = deleteStmt.Exec(c.FormValue("id"))
+		if err != nil {
+			log.Println("Error while revoking authorization:")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
+	})
+	e.POST("/application/revokeSelf", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		if !HasAuthToken(&c) {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "bad_request"})
+		}
+
+		// delete the authorization
+		deleteStmt, err := DB.Prepare("DELETE FROM application_authorizations WHERE token = ?")
+		if err != nil {
+			log.Println("Error while revoking authorization:")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+		defer deleteStmt.Close()
+		_, err = deleteStmt.Exec(GetAuthToken(&c))
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
