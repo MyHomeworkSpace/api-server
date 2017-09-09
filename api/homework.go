@@ -319,4 +319,19 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
+
+	e.POST("/homework/markOverdueDone", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		_, err := DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ?", GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while marking overdue homework as done: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
+	})
 }
