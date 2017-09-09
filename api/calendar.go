@@ -52,6 +52,10 @@ type CalendarScheduleItem struct {
 }
 
 // responses
+type CalendarClassesResponse struct {
+	Status  string          `json:"status"`
+	Classes []CalendarClass `json:"classes"`
+}
 type CalendarScheduleResponse struct {
 	Status string                 `json:"status"`
 	Terms  []CalendarTerm         `json:"terms"`
@@ -95,6 +99,26 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		return c.JSON(http.StatusOK, CalendarScheduleResponse{"ok", terms, items})
+	})
+
+	e.GET("/calendar/getClasses", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		classes := []CalendarClass{}
+		classRows, err := DB.Query("SELECT id, termId, ownerId, sectionId, name, ownerName, userId FROM calendar_classes WHERE userId = ? GROUP BY `name`", GetSessionUserID(&c))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer classRows.Close()
+		for classRows.Next() {
+			class := CalendarClass{}
+			classRows.Scan(&class.ID, &class.TermID, &class.OwnerID, &class.SectionID, &class.Name, &class.OwnerName, &class.UserID)
+			classes = append(classes, class)
+		}
+
+		return c.JSON(http.StatusOK, CalendarClassesResponse{"ok", classes})
 	})
 
 	e.GET("/calendar/getStatus", func(c echo.Context) error {
