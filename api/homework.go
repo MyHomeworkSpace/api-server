@@ -136,6 +136,28 @@ func InitHomeworkAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, jsonResp)
 	})
 
+	e.GET("/homework/getPickerSuggestions", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` DESC", GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting homework picker suggestions:")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+		defer rows.Close()
+
+		homework := []Homework{}
+		for rows.Next() {
+			resp := Homework{-1, "", "", "", -1, -1, -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+			homework = append(homework, resp)
+		}
+		return c.JSON(http.StatusOK, HomeworkResponse{"ok", homework})
+	})
+
 	e.GET("/homework/search", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
@@ -153,7 +175,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		query = strings.Replace(query, "_", "\\_", -1)
 		query = "%" + query + "%"
 
-		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`name` LIKE ? OR `desc` LIKE ?)", GetSessionUserID(&c), query, query)
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`name` LIKE ? OR `desc` LIKE ?) ORDER BY `due` DESC", GetSessionUserID(&c), query, query)
 		if err != nil {
 			log.Println("Error while getting homework search results:")
 			log.Println(err)
