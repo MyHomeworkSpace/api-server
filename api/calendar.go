@@ -199,6 +199,32 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		bbUserId := int(((response.(map[string]interface{}))["UserInfo"].(map[string]interface{}))["UserId"].(float64))
 
+		foundHouseGroup := false
+		houseSectionId := 0
+		houseInfo := CalendarClass{}
+		allGroups := response.(map[string]interface{})["Groups"].([]interface{})
+		for _, group := range allGroups {
+			// look for the house group
+			groupInfo := group.(map[string]interface{})
+			groupName := groupInfo["GroupName"].(string)
+
+			if strings.Contains(strings.ToLower(groupName), "house") {
+				// found it!
+				foundHouseGroup = true
+				houseSectionId = int(groupInfo["SectionId"].(float64))
+				houseInfo = CalendarClass{
+					-1,
+					-1,
+					-1,
+					houseSectionId,
+					groupInfo["GroupName"].(string),
+					groupInfo["OwnerName"].(string),
+					-1,
+				}
+				break
+			}
+		}
+
 		// get list of grades
 		response, err = Blackbaud_Request("GET", "datadirect/StudentGradeLevelList", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
 		if err != nil {
@@ -278,6 +304,9 @@ func InitCalendarAPI(e *echo.Echo) {
 				-1,
 			}
 			classMap[classId] = classItem
+		}
+		if foundHouseGroup {
+			classMap[houseSectionId] = houseInfo
 		}
 
 		// find all periods of classes
@@ -460,9 +489,13 @@ func InitCalendarAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer periodsInsertStmt.Close()
-		for _, term := range dayMap {
+		for termNum, term := range dayMap {
 			for _, periods := range term {
 				for _, period := range periods {
+					if period.ClassID == houseSectionId && termNum != 1 {
+						// skip inserting it again because house doesn't change ID
+						continue
+					}
 					_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Start, period.End, userId)
 					if err != nil {
 						return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
