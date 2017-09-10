@@ -31,24 +31,30 @@ type CalendarClass struct {
 	UserID    int    `json:"userId"`
 }
 type CalendarPeriod struct {
-	ID        int `json:"id"`
-	ClassID   int `json:"classId"`
-	DayNumber int `json:"dayNumber"`
-	Start     int `json:"start"`
-	End       int `json:"end"`
-	UserID    int `json:"userId"`
+	ID           int    `json:"id"`
+	ClassID      int    `json:"classId"`
+	DayNumber    int    `json:"dayNumber"`
+	Block        string `json:"block"`
+	BuildingName string `json:"buildingName"`
+	RoomNumber   string `json:"roomNumber"`
+	Start        int    `json:"start"`
+	End          int    `json:"end"`
+	UserID       int    `json:"userId"`
 }
 type CalendarScheduleItem struct {
-	ID        int    `json:"id"`
-	TermID    int    `json:"termId"`
-	ClassID   int    `json:"classId"`
-	Name      string `json:"name"`
-	OwnerID   int    `json:"ownerId"`
-	OwnerName string `json:"ownerName"`
-	DayNumber int    `json:"dayNumber"`
-	Start     int    `json:"start"`
-	End       int    `json:"end"`
-	UserID    int    `json:"userId"`
+	ID           int    `json:"id"`
+	TermID       int    `json:"termId"`
+	ClassID      int    `json:"classId"`
+	Name         string `json:"name"`
+	OwnerID      int    `json:"ownerId"`
+	OwnerName    string `json:"ownerName"`
+	DayNumber    int    `json:"dayNumber"`
+	Block        string `json:"block"`
+	BuildingName string `json:"buildingName"`
+	RoomNumber   string `json:"roomNumber"`
+	Start        int    `json:"start"`
+	End          int    `json:"end"`
+	UserID       int    `json:"userId"`
 }
 
 // responses
@@ -93,7 +99,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			item := CalendarScheduleItem{-1, -1, -1, "", -1, "", -1, -1, -1, -1}
+			item := CalendarScheduleItem{}
 			rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Start, &item.End, &item.UserID)
 			items = append(items, item)
 		}
@@ -323,19 +329,18 @@ func InitCalendarAPI(e *echo.Echo) {
 				7: []CalendarPeriod{},
 			}
 
-			year, err := strconv.Atoi(strings.Trim(strings.Split(schoolYearLabel, "-")[0], " "))
+			/*year, err := strconv.Atoi(strings.Trim(strings.Split(schoolYearLabel, "-")[0], " "))
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
+			}*/
 
 			// find an import range
 			// this should be a range with 4 fridays in a row and the first week having no off days
-			startDate := time.Date(year, time.September, 11, 0, 0, 0, 0, time.UTC)
-			endDate := time.Date(year, time.October, 7, 0, 0, 0, 0, time.UTC)
+			startDate := Term1_Import_Start
+			endDate := Term1_Import_End
 			if term == 2 {
-				year += 1
-				startDate = time.Date(year, time.January, 29, 0, 0, 0, 0, time.UTC)
-				endDate = time.Date(year, time.February, 24, 0, 0, 0, 0, time.UTC)
+				startDate = Term2_Import_Start
+				endDate = Term2_Import_End
 			}
 
 			response, err = Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
@@ -415,12 +420,71 @@ func InitCalendarAPI(e *echo.Echo) {
 					-1,
 					int(periodInfo["SectionId"].(float64)),
 					dayNumber,
+					"",
+					"",
+					"",
 					int(startTime.Unix()),
 					int(endTime.Unix()),
 					-1,
 				}
 
 				dayMap[term][dayNumber] = append(dayMap[term][dayNumber], periodItem)
+			}
+		}
+
+		// find locations of classes
+		datesToSearch := map[int][]time.Time{
+			1: {
+				Term1_Import_Start,
+				Term1_Import_Start.Add(1 * 24 * time.Hour),
+				Term1_Import_Start.Add(2 * 24 * time.Hour),
+				Term1_Import_Start.Add(3 * 24 * time.Hour),
+				Term1_Import_Start.Add(4 * 24 * time.Hour),
+				Term1_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
+				Term1_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
+				Term1_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
+			},
+			2: {
+				Term2_Import_Start,
+				Term2_Import_Start.Add(1 * 24 * time.Hour),
+				Term2_Import_Start.Add(2 * 24 * time.Hour),
+				Term2_Import_Start.Add(3 * 24 * time.Hour),
+				Term2_Import_Start.Add(4 * 24 * time.Hour),
+				Term2_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
+				Term2_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
+				Term2_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
+			},
+		}
+
+		for termNum, termDates := range datesToSearch {
+			for dayNumber, date := range termDates {
+				periods := dayMap[termNum][dayNumber+1]
+
+				scheduleInfo, err := Blackbaud_Request("GET", "schedule/MyDayCalendarStudentList", url.Values{
+					"scheduleDate": {date.Format("1/2/2006")},
+					"personaId":    {"2"},
+				}, map[string]interface{}{}, jar, ajaxToken)
+				if err != nil {
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+
+				scheduleList := scheduleInfo.([]interface{})
+
+				for periodIndex, period := range periods {
+					for _, scheduleInterface := range scheduleList {
+						scheduleItem := scheduleInterface.(map[string]interface{})
+						sectionId := int(scheduleItem["SectionId"].(float64))
+						if sectionId == period.ClassID {
+							block := scheduleItem["Block"].(string)
+							buildingName := scheduleItem["BuildingName"].(string)
+							roomNumber := scheduleItem["RoomNumber"].(string)
+
+							dayMap[termNum][dayNumber+1][periodIndex].Block = block
+							dayMap[termNum][dayNumber+1][periodIndex].BuildingName = buildingName
+							dayMap[termNum][dayNumber+1][periodIndex].RoomNumber = roomNumber
+						}
+					}
+				}
 			}
 		}
 
@@ -484,7 +548,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// and finally the periods
-		periodsInsertStmt, err := tx.Prepare("INSERT INTO calendar_periods(classId, dayNumber, start, end, userId) VALUES(?, ?, ?, ?, ?)")
+		periodsInsertStmt, err := tx.Prepare("INSERT INTO calendar_periods(classId, dayNumber, block, buildingName, roomNumber, start, end, userId) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
@@ -496,7 +560,7 @@ func InitCalendarAPI(e *echo.Echo) {
 						// skip inserting it again because house doesn't change ID
 						continue
 					}
-					_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Start, period.End, userId)
+					_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Block, period.BuildingName, period.RoomNumber, period.Start, period.End, userId)
 					if err != nil {
 						return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 					}

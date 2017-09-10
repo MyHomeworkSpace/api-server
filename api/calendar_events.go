@@ -9,12 +9,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-var (
-	Day_SchoolStart, _ = time.Parse("2006-01-02", "2017-09-11")
-	Day_ExamRelief, _  = time.Parse("2006-01-02", "2018-01-24")
-	Day_SchoolEnd, _   = time.Parse("2006-01-02", "2018-06-07")
-)
-
 // structs for data
 type CalendarEvent struct {
 	ID     int    `json:"id"`
@@ -177,14 +171,14 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 				dayEvents := make([]CalendarScheduleItem, 0)
 
 				// fetch items for this day
-				rows, err := DB.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.dayNumber = ?", userId, currentTerm.TermID, dayNumber)
+				rows, err := DB.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.dayNumber = ?", userId, currentTerm.TermID, dayNumber)
 				if err != nil {
 					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				}
 				defer rows.Close()
 				for rows.Next() {
 					item := CalendarScheduleItem{}
-					rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Start, &item.End, &item.UserID)
+					rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Block, &item.BuildingName, &item.RoomNumber, &item.Start, &item.End, &item.UserID)
 					dayEvents = append(dayEvents, item)
 				}
 
