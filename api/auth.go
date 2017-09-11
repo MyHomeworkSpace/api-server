@@ -19,6 +19,7 @@ type CSRFResponse struct {
 
 type UserResponse struct {
 	Status             string `json:"status"`
+	User               User   `json:"user"`
 	ID                 int    `json:"id"`
 	Name               string `json:"name"`
 	Username           string `json:"username"`
@@ -189,29 +190,30 @@ func InitAuthAPI(e *echo.Echo) {
 
 	e.GET("/auth/me", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
-		rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", GetSessionUserID(&c))
-		if err != nil {
+		user, err := Data_GetUserByID(GetSessionUserID(&c))
+		if err == ErrDataNotFound {
+			return c.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
+		} else if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
-			jsonResp := ErrorResponse{"error", "Internal server error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
-		defer rows.Close()
-		if rows.Next() {
-			// exists, use it
-			jsonResp := UserResponse{
-				Status: "ok",
-			}
-			rows.Scan(&jsonResp.ID, &jsonResp.Name, &jsonResp.Username, &jsonResp.Email, &jsonResp.Type, &jsonResp.Features, &jsonResp.Level, &jsonResp.ShowMigrateMessage)
-			return c.JSON(http.StatusOK, jsonResp)
-		} else {
-			// doesn't exist
-			jsonResp := ErrorResponse{"error", "Your user ID record is missing from the database. Please contact hello@myhomework.space for assistance."}
-			return c.JSON(http.StatusOK, jsonResp)
-		}
+		return c.JSON(http.StatusOK, UserResponse{
+			Status: "ok",
+			User:   user,
+
+			// these are set for backwards compatibility
+			ID:                 user.ID,
+			Name:               user.Name,
+			Username:           user.Username,
+			Email:              user.Email,
+			Type:               user.Type,
+			Features:           user.Features,
+			Level:              user.Level,
+			ShowMigrateMessage: user.ShowMigrateMessage,
+		})
 	})
 
 	e.GET("/auth/logout", func(c echo.Context) error {

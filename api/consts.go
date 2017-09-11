@@ -13,6 +13,10 @@ var (
 
 	Term2_Import_Start = time.Date(2018, time.January, 29, 0, 0, 0, 0, time.UTC)
 	Term2_Import_End   = time.Date(2018, time.February, 24, 0, 0, 0, 0, time.UTC)
+
+	// the grade that someone in the class of 2019 is in for this year
+	// used to calculate other people's grade
+	Grade_ClassOf2019 = 11
 )
 
 // these are constants used to keep track of things
