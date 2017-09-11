@@ -74,12 +74,16 @@ func Data_GetUserByID(id int) (User, error) {
 
 func Data_GetUserGrade(user User) (int, error) {
 	if len(user.Username) < 4 {
-		return -1, ErrDataBadUsername
+		// the username is not in the cXXyy format
+		// this is probably a faculty member
+		return AnnouncementGrade_Faculty, nil
 	}
 	yearInfoString := user.Username[1:3]
 	yearInfo, err := strconv.Atoi(yearInfoString)
 	if err != nil {
-		return -1, ErrDataBadUsername
+		// the username is not in the cXXyy format
+		// this is probably a faculty member
+		return AnnouncementGrade_Faculty, nil
 	}
 
 	differenceFromBase := (yearInfo - 19) * -1

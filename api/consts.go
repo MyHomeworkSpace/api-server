@@ -26,6 +26,7 @@ const (
 	AnnouncementGrade_HighSchool       = 15 // 9th grade through 12th grade
 	AnnouncementGrade_MiddleSchool_456 = 16 // 4th, 5th, and 6th grade
 	AnnouncementGrade_MiddleSchool_78  = 17 // 7th, and 8th grade
+	AnnouncementGrade_Faculty          = 18 // 7th, and 8th grade
 )
 
 const (
