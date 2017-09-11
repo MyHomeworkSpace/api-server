@@ -44,6 +44,10 @@ type PlannerWeekInfoResponse struct {
 
 func InitPlannerAPI(e *echo.Echo) {
 	e.GET("/planner/getWeekInfo/:date", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
 			jsonResp := ErrorResponse{"error", "Invalid date."}
@@ -51,7 +55,24 @@ func InitPlannerAPI(e *echo.Echo) {
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
-		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		user, err := Data_GetUserByID(GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting planner week information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		grade, err := Data_GetUserGrade(user)
+		if err != nil {
+			log.Println("Error while getting planner week information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
+		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
+
+		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+")", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
@@ -81,8 +102,7 @@ func InitPlannerAPI(e *echo.Echo) {
 			fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
 		}
 
-		jsonResp := PlannerWeekInfoResponse{"ok", announcements, friday}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements, friday})
 	})
 
 	e.GET("/planner/announcements/getWeek/:date", func(c echo.Context) error {

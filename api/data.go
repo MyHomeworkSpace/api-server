@@ -21,6 +21,39 @@ type User struct {
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
 }
 
+func Data_GetAnnouncementGroupSQL(groups []int) string {
+	sql := ""
+	first := true
+	for _, group := range groups {
+		if !first {
+			sql += " OR "
+		} else {
+			first = false
+		}
+		// this is trusted input, and limited to integers, and so it is not vulnerable to SQL injection
+		sql += "announcements.grade = "
+		sql += strconv.Itoa(group)
+	}
+	return sql
+}
+
+func Data_GetGradeAnnouncementGroups(grade int) []int {
+	groups := []int{AnnouncementGrade_All, grade}
+	if grade < 9 {
+		groups = append(groups, AnnouncementGrade_MiddleSchool)
+	}
+	if grade >= 4 && grade <= 6 {
+		groups = append(groups, AnnouncementGrade_MiddleSchool_456)
+	}
+	if grade >= 7 && grade <= 8 {
+		groups = append(groups, AnnouncementGrade_MiddleSchool_78)
+	}
+	if grade >= 9 {
+		groups = append(groups, AnnouncementGrade_HighSchool)
+	}
+	return groups
+}
+
 func Data_GetUserByID(id int) (User, error) {
 	rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
 	if err != nil {
