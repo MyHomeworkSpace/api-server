@@ -12,9 +12,11 @@ import (
 
 // structs for data
 type PlannerAnnouncement struct {
-	ID   int    `json:"id"`
-	Date string `json:"date"`
-	Text string `json:"text"`
+	ID    int    `json:"id"`
+	Date  string `json:"date"`
+	Text  string `json:"text"`
+	Grade int    `json:"grade"`
+	Type  int    `json:"type"`
 }
 
 type PlannerFriday struct {
@@ -49,7 +51,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
-		announcementRows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
@@ -59,8 +61,8 @@ func InitPlannerAPI(e *echo.Echo) {
 		defer announcementRows.Close()
 		announcements := []PlannerAnnouncement{}
 		for announcementRows.Next() {
-			resp := PlannerAnnouncement{-1, "", ""}
-			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text)
+			resp := PlannerAnnouncement{-1, "", "", -1, -1}
+			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 			announcements = append(announcements, resp)
 		}
 
@@ -90,7 +92,7 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
-		rows, err := DB.Query("SELECT id, date, text FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		rows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
@@ -100,8 +102,8 @@ func InitPlannerAPI(e *echo.Echo) {
 		defer rows.Close()
 		announcements := []PlannerAnnouncement{}
 		for rows.Next() {
-			resp := PlannerAnnouncement{-1, "", ""}
-			rows.Scan(&resp.ID, &resp.Date, &resp.Text)
+			resp := PlannerAnnouncement{-1, "", "", -1, -1}
+			rows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 			announcements = append(announcements, resp)
 		}
 		jsonResp := MultiPlannerAnnouncementResponse{"ok", announcements}
