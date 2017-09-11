@@ -60,7 +60,24 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
 		// get announcements
-		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		user, err := Data_GetUserByID(userId)
+		if err != nil {
+			log.Println("Error while getting planner week information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		grade, err := Data_GetUserGrade(user)
+		if err != nil {
+			log.Println("Error while getting planner week information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
+		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
+
+		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+")", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
