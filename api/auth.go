@@ -20,6 +20,7 @@ type CSRFResponse struct {
 type UserResponse struct {
 	Status             string `json:"status"`
 	User               User   `json:"user"`
+	Grade              int    `json:"grade"`
 	ID                 int    `json:"id"`
 	Name               string `json:"name"`
 	Username           string `json:"username"`
@@ -192,6 +193,7 @@ func InitAuthAPI(e *echo.Echo) {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
+
 		user, err := Data_GetUserByID(GetSessionUserID(&c))
 		if err == ErrDataNotFound {
 			return c.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
@@ -200,9 +202,18 @@ func InitAuthAPI(e *echo.Echo) {
 			log.Println(err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
+		grade, err := Data_GetUserGrade(user)
+		if err != nil {
+			log.Println("Error while getting user information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		return c.JSON(http.StatusOK, UserResponse{
 			Status: "ok",
 			User:   user,
+			Grade:  grade,
 
 			// these are set for backwards compatibility
 			ID:                 user.ID,

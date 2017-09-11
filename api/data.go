@@ -2,10 +2,12 @@ package api
 
 import (
 	"errors"
+	"strconv"
 )
 
 var (
-	ErrDataNotFound = errors.New("data: not found")
+	ErrDataBadUsername = errors.New("data: bad username")
+	ErrDataNotFound    = errors.New("data: not found")
 )
 
 type User struct {
@@ -38,5 +40,17 @@ func Data_GetUserByID(id int) (User, error) {
 }
 
 func Data_GetUserGrade(user User) (int, error) {
-	return 0, nil
+	if len(user.Username) < 4 {
+		return -1, ErrDataBadUsername
+	}
+	yearInfoString := user.Username[1:3]
+	yearInfo, err := strconv.Atoi(yearInfoString)
+	if err != nil {
+		return -1, ErrDataBadUsername
+	}
+
+	differenceFromBase := (yearInfo - 19) * -1
+	grade := Grade_ClassOf2019 + differenceFromBase
+
+	return grade, nil
 }
