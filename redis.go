@@ -11,9 +11,9 @@ var RedisClient *redis.Client
 func InitRedis() {
 	// TODO: make password and db configurable
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
+		Addr:     fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
 		Password: "",
-		DB: 0,
+		DB:       0,
 	})
 
 	_, err := RedisClient.Ping().Result()

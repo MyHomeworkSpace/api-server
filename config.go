@@ -1,7 +1,7 @@
 package main
 
 import (
-    "io/ioutil"
+	"io/ioutil"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -10,32 +10,32 @@ import (
 var config Config
 
 type Config struct {
-    Server ServerConfig
-	Database DatabaseConfig
-	Email EmailConfig
-	Redis RedisConfig
-	CORS CORSConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Email     EmailConfig
+	Redis     RedisConfig
+	CORS      CORSConfig
 	Whitelist WhitelistConfig
 }
 
 type ServerConfig struct {
-	Port int
+	Port        int
 	AuthURLBase string
 }
 
 type DatabaseConfig struct {
-    Host string
+	Host     string
 	Username string
 	Password string
 	Database string
 }
 
 type EmailConfig struct {
-	Enabled bool
-	From string
-    SMTPHost string
-    SMTPPort int
-    SMTPSecure bool
+	Enabled      bool
+	From         string
+	SMTPHost     string
+	SMTPPort     int
+	SMTPSecure   bool
 	SMTPUsername string
 	SMTPPassword string
 }
@@ -47,13 +47,13 @@ type RedisConfig struct {
 
 type CORSConfig struct {
 	Enabled bool
-	Origin string
+	Origin  string
 }
 
 type WhitelistConfig struct {
-	Enabled bool
+	Enabled       bool
 	WhitelistFile string
-	BlockMessage string
+	BlockMessage  string
 }
 
 func CreateNewConfig() {

@@ -16,7 +16,7 @@ import (
 
 type ErrorResponse struct {
 	Status string `json:"status"`
-	Error string `json:"error"`
+	Error  string `json:"error"`
 }
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 			if err != nil {
 				// user has no cookie, generate one
 				cookie := new(http.Cookie)
-				cookie.Name ="session"
+				cookie.Name = "session"
 				cookie.Path = "/"
 				uid, err := auth.GenerateUID()
 				if err != nil {
