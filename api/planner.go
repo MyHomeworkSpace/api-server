@@ -12,32 +12,32 @@ import (
 
 // structs for data
 type PlannerAnnouncement struct {
-	ID int `json:"id"`
+	ID   int    `json:"id"`
 	Date string `json:"date"`
 	Text string `json:"text"`
 }
 
 type PlannerFriday struct {
-	ID int `json:"id"`
-	Date string `json:"date"`
-	Index int `json:"index"`
+	ID    int    `json:"id"`
+	Date  string `json:"date"`
+	Index int    `json:"index"`
 }
 
 // responses
 type MultiPlannerAnnouncementResponse struct {
-	Status string `json:"status"`
+	Status        string                `json:"status"`
 	Announcements []PlannerAnnouncement `json:"announcements"`
 }
 
 type PlannerFridayResponse struct {
-	Status string `json:"status"`
+	Status string        `json:"status"`
 	Friday PlannerFriday `json:"friday"`
 }
 
 type PlannerWeekInfoResponse struct {
-	Status string `json:"status"`
+	Status        string                `json:"status"`
 	Announcements []PlannerAnnouncement `json:"announcements"`
-	Friday PlannerFriday `json:"friday"`
+	Friday        PlannerFriday         `json:"friday"`
 }
 
 func InitPlannerAPI(e *echo.Echo) {
