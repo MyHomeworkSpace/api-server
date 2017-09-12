@@ -77,7 +77,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
 		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
 
-		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+")", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+") AND type < 2", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
@@ -104,6 +104,14 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			day := ""
 			offDayRows.Scan(&day)
 			offDays = append(offDays, day)
+		}
+
+		// get off blocks that might apply
+		offBlocks, err := Data_GetOffBlocksStartingBefore(endDate.Format("2006-01-02"), announcementsGroups)
+		if err != nil {
+			log.Println("Error while getting off block information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// get all terms for this user
@@ -229,6 +237,64 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 					scheduleEvents[dayIndex] = []CalendarScheduleItem{}
 				}
 				currentDay = currentDay.Add(24 * time.Hour)
+			}
+
+			// block out off blocks
+			// TODO: can this be offloaded to mysql somehow, which would probably be faster?
+			for _, block := range offBlocks {
+				if !block.Start.After(endDate) || !endDate.After(block.End) {
+					// there is overlap
+					// find what day the overlap starts
+					dayOverlapStarts := 0
+					dayOverlapEnds := 7
+					if !block.Start.Before(startDate) {
+						dayOverlapStarts = int(block.Start.Sub(startDate) / (24 * time.Hour))
+					}
+					if block.End.Before(endDate) {
+						dayOverlapEnds = (7 - int(endDate.Sub(block.End)/(24*time.Hour)))
+					}
+					if dayOverlapEnds > 7 {
+						dayOverlapEnds = 7
+					}
+
+					// add the start announcement on that day
+					announcements = append(announcements, PlannerAnnouncement{
+						block.StartID,
+						block.StartText,
+						"Start of " + block.Name,
+						block.Grade,
+						AnnouncementType_BreakStart,
+					})
+
+					// add the end announcement on that day
+					announcements = append(announcements, PlannerAnnouncement{
+						block.EndID,
+						block.EndText,
+						"End of " + block.Name,
+						block.Grade,
+						AnnouncementType_BreakEnd,
+					})
+
+					// block out days
+					currentDay = startDate.Add(time.Duration(dayOverlapStarts*24) * time.Hour)
+					for dayIndex := dayOverlapStarts; dayIndex < (dayOverlapEnds + 1); dayIndex++ {
+						if dayIndex < 5 {
+							scheduleEvents[dayIndex] = []CalendarScheduleItem{}
+						}
+
+						if !currentDay.Equal(block.Start) && !currentDay.Equal(block.End) {
+							announcements = append(announcements, PlannerAnnouncement{
+								block.StartID,
+								currentDay.Format("2006-01-02"),
+								block.Name,
+								block.Grade,
+								AnnouncementType_BreakStart,
+							})
+						}
+
+						currentDay = currentDay.Add(24 * time.Hour)
+					}
+				}
 			}
 		}
 

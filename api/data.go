@@ -3,12 +3,24 @@ package api
 import (
 	"errors"
 	"strconv"
+	"time"
 )
 
 var (
 	ErrDataBadUsername = errors.New("data: bad username")
 	ErrDataNotFound    = errors.New("data: not found")
 )
+
+type OffBlock struct {
+	StartID   int       `json:"startId"`
+	EndID     int       `json:"endId"`
+	Start     time.Time `json:"-"`
+	End       time.Time `json:"-"`
+	StartText string    `json:"start"`
+	EndText   string    `json:"end"`
+	Name      string    `json:"name"`
+	Grade     int       `json:"grade"`
+}
 
 type User struct {
 	ID                 int    `json:"id"`
@@ -19,6 +31,47 @@ type User struct {
 	Features           string `json:"features"`
 	Level              int    `json:"level"`
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
+}
+
+func Data_GetOffBlocksStartingBefore(before string, groups []int) ([]OffBlock, error) {
+	// find the starts
+	offBlockRows, err := DB.Query("SELECT id, date, text, grade FROM announcements WHERE ("+Data_GetAnnouncementGroupSQL(groups)+") AND `type` = 2 AND `date` < ?", before)
+	if err != nil {
+		return nil, err
+	}
+	defer offBlockRows.Close()
+	blocks := []OffBlock{}
+	for offBlockRows.Next() {
+		block := OffBlock{}
+		offBlockRows.Scan(&block.StartID, &block.StartText, &block.Name, &block.Grade)
+		blocks = append(blocks, block)
+	}
+
+	// find the matching ends
+	for i, block := range blocks {
+		offBlockEndRows, err := DB.Query("SELECT date FROM announcements WHERE ("+Data_GetAnnouncementGroupSQL(groups)+") AND `type` = 3 AND `text` = ?", block.Name)
+		if err != nil {
+			return nil, err
+		}
+		defer offBlockEndRows.Close()
+		if offBlockEndRows.Next() {
+			offBlockEndRows.Scan(&blocks[i].EndText)
+		}
+	}
+
+	// parse dates
+	for i, block := range blocks {
+		blocks[i].Start, err = time.Parse("2006-01-02", block.StartText)
+		if err != nil {
+			return nil, err
+		}
+		blocks[i].End, err = time.Parse("2006-01-02", block.EndText)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return blocks, err
 }
 
 func Data_GetAnnouncementGroupSQL(groups []int) string {
