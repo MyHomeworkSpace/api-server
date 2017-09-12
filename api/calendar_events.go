@@ -278,7 +278,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 					// block out days
 					currentDay = startDate.Add(time.Duration(dayOverlapStarts*24) * time.Hour)
 					for dayIndex := dayOverlapStarts; dayIndex < (dayOverlapEnds + 1); dayIndex++ {
-						if dayIndex < 5 {
+						if dayIndex < 5 && !currentDay.Equal(block.End) {
 							scheduleEvents[dayIndex] = []CalendarScheduleItem{}
 						}
 
