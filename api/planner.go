@@ -84,6 +84,11 @@ func InitPlannerAPI(e *echo.Echo) {
 		for announcementRows.Next() {
 			resp := PlannerAnnouncement{-1, "", "", -1, -1}
 			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
+			if resp.Type == AnnouncementType_BreakStart {
+				resp.Text = "Start of " + resp.Text
+			} else if resp.Type == AnnouncementType_BreakEnd {
+				resp.Text = "End of " + resp.Text
+			}
 			announcements = append(announcements, resp)
 		}
 
