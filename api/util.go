@@ -20,3 +20,12 @@ func Util_GenerateRandomString(s int) (string, error) {
 	b, err := Util_GenerateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
 }
+
+func Util_StringSliceContains(slice []string, text string) bool {
+	for _, v := range slice {
+		if v == text {
+			return true
+		}
+	}
+	return false
+}

@@ -91,6 +91,21 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			announcements = append(announcements, resp)
 		}
 
+		// get off days in this week
+		offDayRows, err := DB.Query("SELECT date FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+") AND `type` = "+strconv.Itoa(AnnouncementType_FullOff), startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
+		if err != nil {
+			log.Println("Error while getting off day information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer offDayRows.Close()
+		offDays := []string{}
+		for offDayRows.Next() {
+			day := ""
+			offDayRows.Scan(&day)
+			offDays = append(offDays, day)
+		}
+
 		// get all terms for this user
 		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", userId)
 		if err != nil {
@@ -202,6 +217,18 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 				}
 
 				scheduleEvents[dayIndex] = dayEvents
+			}
+
+			// block out off days
+			// TODO: can this be made more efficient?
+			currentDay := startDate
+			for dayIndex := 0; dayIndex < 5; dayIndex++ {
+				dayStr := currentDay.Format("2006-01-02")
+				if Util_StringSliceContains(offDays, dayStr) {
+					// it's in the list of off days for this week, empty it
+					scheduleEvents[dayIndex] = []CalendarScheduleItem{}
+				}
+				currentDay = currentDay.Add(24 * time.Hour)
 			}
 		}
 
