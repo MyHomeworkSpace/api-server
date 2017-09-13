@@ -22,6 +22,7 @@ type FacultyPeriod struct {
 	Name      string `json:"name"`
 	SectionID int    `json:"sectionId"`
 	Room      string `json:"room"`
+	Block     string `json:"block"`
 	DayNumber int    `json:"dayNumber"`
 	Grade     int    `json:"grade"`
 	Term      int    `json:"term"`
@@ -51,6 +52,8 @@ func InitScheduleAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, FacultyListResponse{"ok", users})
 	})
 
+	// internal things
+	// used for fetching things from blackbaud
 	e.POST("/schedule/internal/importFaculty", func(c echo.Context) error {
 		if !strings.HasPrefix(c.Request().RemoteAddr, "127.0.0.1") {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
@@ -185,6 +188,7 @@ func InitScheduleAPI(e *echo.Echo) {
 					Name:      periodInfo["title"].(string),
 					SectionID: int(periodInfo["SectionId"].(float64)),
 					Room:      "",
+					Block:     "",
 					DayNumber: dayNumber,
 					Grade:     -1,
 					Term:      term,
@@ -208,7 +212,7 @@ func InitScheduleAPI(e *echo.Echo) {
 		periodDeleteStmt.Exec(targetId)
 
 		// add imported data
-		periodInsertStmt, err := tx.Prepare("INSERT INTO faculty_periods(name, sectionId, room, dayNumber, grade, term, start, end, facultyId) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		periodInsertStmt, err := tx.Prepare("INSERT INTO faculty_periods(name, sectionId, room, block, dayNumber, grade, term, start, end, facultyId) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
@@ -216,7 +220,7 @@ func InitScheduleAPI(e *echo.Echo) {
 		for _, term := range dayMap {
 			for _, periods := range term {
 				for _, period := range periods {
-					_, err = periodInsertStmt.Exec(period.Name, period.SectionID, period.Room, period.DayNumber, period.Grade, period.Term, period.Start, period.End, targetId)
+					_, err = periodInsertStmt.Exec(period.Name, period.SectionID, period.Room, period.Block, period.DayNumber, period.Grade, period.Term, period.Start, period.End, targetId)
 					if err != nil {
 						return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 					}
@@ -227,6 +231,75 @@ func InitScheduleAPI(e *echo.Echo) {
 		err = tx.Commit()
 		if err != nil {
 			log.Println("Error while adding faculty schedule to DB")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
+	})
+
+	e.POST("/schedule/internal/importMetadata", func(c echo.Context) error {
+		if !strings.HasPrefix(c.Request().RemoteAddr, "127.0.0.1") {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
+		}
+
+		if c.FormValue("t") == "" || c.FormValue("sectionId") == "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+
+		sectionId, err := strconv.Atoi(c.FormValue("sectionId"))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "invalid_params"})
+		}
+
+		jar, err := cookiejar.New(nil)
+		if err != nil {
+			log.Println("Error while importing class metadata")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		mySchoolAppURL, err := url.Parse("https://dalton.myschoolapp.com")
+		if err != nil {
+			log.Println("Error while importing class metadata")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		jar.SetCookies(mySchoolAppURL, []*http.Cookie{
+			&http.Cookie{
+				Name:  "t",
+				Value: c.FormValue("t"),
+			},
+		})
+
+		response, err := Blackbaud_Request("GET", "datadirect/SectionInfoView", url.Values{
+			"format":        {"json"},
+			"sectionId":     {strconv.Itoa(sectionId)},
+			"associationId": {"1"},
+		}, map[string]interface{}{}, jar, "")
+		if err != nil {
+			log.Println("Error while importing class metadata")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		options, ok := response.([]interface{})
+		if !ok || len(options) == 0 {
+			// there's no information on the section page...
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "no_metadata_page"})
+		}
+		classData := options[0].(map[string]interface{})
+
+		roomParts := strings.Split(classData["Room"].(string), " ")
+
+		room := roomParts[len(roomParts)-1]
+		block := classData["Block"].(string)
+		grade := int(classData["LevelNum"].(float64))
+
+		_, err = DB.Exec("UPDATE faculty_periods SET room = ?, block = ?, grade = ? WHERE sectionId = ?", room, block, grade, sectionId)
+		if err != nil {
+			log.Println("Error while importing class metadata")
 			log.Println(err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
