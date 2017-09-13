@@ -35,3 +35,8 @@ const (
 	AnnouncementType_BreakStart = 2 // start of a break (inclusive of that day!)
 	AnnouncementType_BreakEnd   = 3 // end of a break (exclusive of that day!)
 )
+
+const (
+	BlackbaudPersona_Student = 2
+	BlackbaudPersona_Faculty = 3
+)
