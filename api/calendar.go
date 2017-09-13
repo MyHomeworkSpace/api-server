@@ -329,13 +329,6 @@ func InitCalendarAPI(e *echo.Echo) {
 				7: []CalendarPeriod{},
 			}
 
-			/*year, err := strconv.Atoi(strings.Trim(strings.Split(schoolYearLabel, "-")[0], " "))
-			if err != nil {
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}*/
-
-			// find an import range
-			// this should be a range with 4 fridays in a row and the first week having no off days
 			startDate := Term1_Import_Start
 			endDate := Term1_Import_End
 			if term == 2 {
@@ -402,8 +395,6 @@ func InitCalendarAPI(e *echo.Echo) {
 				}
 
 				daysFound[dayNumber] = dayStr
-
-				//map[start:2/24/2017 2:30 PM endTicks:6.36235461e+17 AssociationId:1 LinkableCoursePage:false startTicks:6.36235434e+17 end:2/24/2017 3:15 PM SectionId:3.464249e+06 title:Introduction to Drama - 3211-05 (E) allDay:false]
 
 				startTime, err := time.Parse("3:04 PM", strings.SplitN(periodInfo["start"].(string), " ", 2)[1])
 				endTime, err2 := time.Parse("3:04 PM", strings.SplitN(periodInfo["end"].(string), " ", 2)[1])

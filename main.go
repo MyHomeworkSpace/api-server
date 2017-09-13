@@ -69,6 +69,11 @@ func main() {
 				return next(c)
 			}
 
+			// bypass csrf for special internal api (this requires the ip to be localhost so it's still secure)
+			if strings.HasPrefix(c.Request().URL.Path, "/schedule/internal") {
+				return next(c)
+			}
+
 			csrfCookie, err := c.Cookie("csrfToken")
 			if err != nil {
 				// user has no cookie, generate one
