@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -293,6 +294,18 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 						}
 
 						currentDay = currentDay.Add(24 * time.Hour)
+					}
+				}
+			}
+
+			// check for assembly on thursday
+			if scheduleEvents[3] != nil {
+				for i, event := range scheduleEvents[3] {
+					// check for an "HS House" event
+					// starting 11:50, ending 12:50
+					if strings.HasPrefix(event.Name, "HS House") && event.Start == 42600 && event.End == 46200 {
+						// found it
+						scheduleEvents[3][i].Name = "Assembly"
 					}
 				}
 			}
