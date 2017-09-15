@@ -105,8 +105,10 @@ var DefaultPrefixes = []Prefix{
 }
 
 type PrefixesResponse struct {
-	Status   string   `json:"status"`
-	Prefixes []Prefix `json:"prefixes"`
+	Status             string   `json:"status"`
+	Prefixes           []Prefix `json:"prefixes"`
+	FallbackBackground string   `json:"fallbackBackground"`
+	FallbackColor      string   `json:"fallbackColor"`
 }
 
 func InitPrefixesAPI(e *echo.Echo) {
@@ -115,6 +117,6 @@ func InitPrefixesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
-		return c.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes})
+		return c.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes, "FFD3BD", "000000"})
 	})
 }
