@@ -71,12 +71,6 @@ var DefaultPrefixes = []Prefix{
 		Default:    true,
 	},
 	Prefix{
-		Background: "FCF8E3",
-		Color:      "000000",
-		Words:      []string{"Trojun", "Hex"},
-		Default:    true,
-	},
-	Prefix{
 		Background: "5000BC",
 		Color:      "FFFFFF",
 		Words:      []string{"OptionalHW", "Challenge"},
