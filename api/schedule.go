@@ -17,6 +17,11 @@ type FacultyListResponse struct {
 	FacultyList []FacultyInfo `json:"faculty"`
 }
 
+type FacultyPeriodResponse struct {
+	Status  string          `json:"status"`
+	Periods []FacultyPeriod `json:"periods"`
+}
+
 type FacultyPeriod struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
@@ -50,6 +55,28 @@ func InitScheduleAPI(e *echo.Echo) {
 		}
 
 		return c.JSON(http.StatusOK, FacultyListResponse{"ok", users})
+	})
+
+	e.GET("/schedule/:sectionId/periods", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		sectionId := c.Param("sectionId")
+
+		rows, err := DB.Query("SELECT id, name, sectionId, room, block, dayNumber, grade, term, start, end, facultyId FROM faculty_periods WHERE sectionId = ?", sectionId)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		defer rows.Close()
+		periods := []FacultyPeriod{}
+		for rows.Next() {
+			period := FacultyPeriod{}
+			rows.Scan(&period.ID, &period.Name, &period.SectionID, &period.Room, &period.Block, &period.DayNumber, &period.Grade, &period.Term, &period.Start, &period.End, &period.FacultyID)
+			periods = append(periods, period)
+		}
+
+		return c.JSON(http.StatusOK, FacultyPeriodResponse{"ok", periods})
 	})
 
 	// internal things
