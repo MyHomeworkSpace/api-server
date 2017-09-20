@@ -19,6 +19,11 @@ type ErrorResponse struct {
 	Error  string `json:"error"`
 }
 
+type CSRFResponse struct {
+	Status string `json:"status"`
+	Token  string `json:"token"`
+}
+
 func main() {
 	log.Println("MyHomeworkSpace API Server")
 
@@ -76,6 +81,8 @@ func main() {
 			}
 
 			csrfCookie, err := c.Cookie("csrfToken")
+			csrfToken := ""
+			hasNoToken := false
 			if err != nil {
 				// user has no cookie, generate one
 				cookie := new(http.Cookie)
@@ -88,18 +95,29 @@ func main() {
 				cookie.Value = uid
 				cookie.Expires = time.Now().Add(12 * 4 * 7 * 24 * time.Hour)
 				c.SetCookie(cookie)
-				jsonResp := ErrorResponse{"error", "csrfToken_created"}
-				return c.JSON(http.StatusBadRequest, jsonResp)
+
+				hasNoToken = true
+				csrfToken = cookie.Value
+
+				// let the next if block handle this
+			} else {
+				csrfToken = csrfCookie.Value
 			}
 
 			// bypass csrf token for /auth/csrf
 			if strings.HasPrefix(c.Request().URL.Path, "/auth/csrf") {
-				return next(c)
+				// did we just make up a token?
+				if hasNoToken {
+					// if so, return it
+					// auth.go won't know the new token yet
+					return c.JSON(http.StatusOK, CSRFResponse{"ok", csrfToken})
+				} else {
+					return next(c)
+				}
 			}
 
-			if csrfCookie.Value != c.QueryParam("csrfToken") {
-				jsonResp := ErrorResponse{"error", "csrfToken_invalid"}
-				return c.JSON(http.StatusBadRequest, jsonResp)
+			if csrfToken != c.QueryParam("csrfToken") || hasNoToken {
+				return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "csrfToken_invalid"})
 			}
 
 			return next(c)
