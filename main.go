@@ -29,6 +29,7 @@ func main() {
 	api.AuthURLBase = config.Server.AuthURLBase
 	api.DB = DB
 	api.RedisClient = RedisClient
+	api.ReverseProxyHeader = config.Server.ReverseProxyHeader
 	api.WhitelistEnabled = config.Whitelist.Enabled
 	api.WhitelistFile = config.Whitelist.WhitelistFile
 	api.WhitelistBlockMsg = config.Whitelist.BlockMessage

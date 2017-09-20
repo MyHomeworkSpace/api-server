@@ -19,8 +19,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port        int
-	AuthURLBase string
+	Port               int
+	AuthURLBase        string
+	ReverseProxyHeader string
 }
 
 type DatabaseConfig struct {
@@ -61,6 +62,7 @@ func CreateNewConfig() {
 [server]
 Port = 3000
 AuthURLBase = "http://myhomework.space/applicationAuth.html"
+ReverseProxyHeader = ""
 
 [database]
 Host = "localhost"

@@ -82,7 +82,7 @@ func InitScheduleAPI(e *echo.Echo) {
 	// internal things
 	// used for fetching things from blackbaud
 	e.POST("/schedule/internal/importFaculty", func(c echo.Context) error {
-		if !strings.HasPrefix(c.Request().RemoteAddr, "127.0.0.1") {
+		if !IsInternalRequest(&c) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
 
@@ -266,7 +266,7 @@ func InitScheduleAPI(e *echo.Echo) {
 	})
 
 	e.POST("/schedule/internal/importMetadata", func(c echo.Context) error {
-		if !strings.HasPrefix(c.Request().RemoteAddr, "127.0.0.1") {
+		if !IsInternalRequest(&c) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
 

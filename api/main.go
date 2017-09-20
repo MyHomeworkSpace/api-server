@@ -13,6 +13,7 @@ import (
 var AuthURLBase string
 var DB *sql.DB
 var RedisClient *redis.Client
+var ReverseProxyHeader string
 
 var WhitelistEnabled bool
 var WhitelistFile string

@@ -65,6 +65,22 @@ func GetSessionInfo(c *echo.Context) auth.SessionInfo {
 	}
 }
 
+func IsInternalRequest(c *echo.Context) bool {
+	remoteAddr := (*c).Request().RemoteAddr
+	if ReverseProxyHeader != "" {
+		if (*c).Request().Header.Get(ReverseProxyHeader) != "" {
+			header := strings.Split((*c).Request().Header.Get(ReverseProxyHeader), ",")
+			remoteAddr = strings.TrimSpace(header[len(header)-1])
+		}
+	}
+
+	if strings.Split(remoteAddr, ":")[0] == "127.0.0.1" || strings.HasPrefix(remoteAddr, "[::1]") {
+		return true
+	} else {
+		return false
+	}
+}
+
 func InitAuthAPI(e *echo.Echo) {
 	e.POST("/auth/clearMigrateFlag", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
