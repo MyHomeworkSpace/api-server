@@ -7,11 +7,27 @@ import (
 	"github.com/labstack/echo"
 )
 
+// don't change these!
+var DefaultColors = []string{
+	"ff4d40",
+	"ffa540",
+	"40ff73",
+	"4071ff",
+	"ff4086",
+	"40ccff",
+	"5940ff",
+	"ff40f5",
+	"a940ff",
+	"e6ab68",
+	"4d4d4d",
+}
+
 // structs for data
 type HomeworkClass struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
 	Teacher string `json:"teacher"`
+	Color   string `json:"color"`
 	UserID  int    `json:"userId"`
 }
 
@@ -32,50 +48,49 @@ type HWInfoResponse struct {
 func InitClassesAPI(e *echo.Echo) {
 	e.GET("/classes/get", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
-		rows, err := DB.Query("SELECT id, name, teacher, userId FROM classes WHERE userId = ?", GetSessionUserID(&c))
+		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting class information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
 		classes := []HomeworkClass{}
 		for rows.Next() {
-			resp := HomeworkClass{-1, "", "", -1}
-			rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.UserID)
+			resp := HomeworkClass{-1, "", "", "", -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
+			if resp.Color == "" {
+				resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
+			}
 			classes = append(classes, resp)
 		}
-		jsonResp := ClassResponse{"ok", classes}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, ClassResponse{"ok", classes})
 	})
 
 	e.GET("/classes/get/:id", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
-		rows, err := DB.Query("SELECT id, name, teacher, userId FROM classes WHERE id = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
+		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting class information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
 		if !rows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
-		resp := HomeworkClass{-1, "", "", -1}
-		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.UserID)
-		jsonResp := SingleClassResponse{"ok", resp}
-		return c.JSON(http.StatusOK, jsonResp)
+		resp := HomeworkClass{-1, "", "", "", -1}
+		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
+		if resp.Color == "" {
+			resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
+		}
+		return c.JSON(http.StatusOK, SingleClassResponse{"ok", resp})
 	})
 
 	e.GET("/classes/hwInfo/:id", func(c echo.Context) error {
@@ -104,27 +119,23 @@ func InitClassesAPI(e *echo.Echo) {
 
 	e.POST("/classes/add", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
-		if c.FormValue("name") == "" {
-			jsonResp := ErrorResponse{"error", "Name is required."}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+		if c.FormValue("name") == "" || c.FormValue("color") == "" {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "Name is required."})
 		}
 
-		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, userId) VALUES(?, ?, ?)")
+		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?)")
 		if err != nil {
 			log.Println("Error while adding class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), GetSessionUserID(&c))
+		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while adding class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
@@ -135,7 +146,7 @@ func InitClassesAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
-		if c.FormValue("id") == "" || c.FormValue("name") == "" {
+		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("color") == "" {
 			jsonResp := ErrorResponse{"error", "Missing required parameters."}
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
@@ -154,14 +165,14 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, jsonResp)
 		}
 
-		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ? WHERE id = ?")
+		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
 		if err != nil {
 			log.Println("Error while editing class: ")
 			log.Println(err)
 			jsonResp := StatusResponse{"error"}
 			return c.JSON(http.StatusInternalServerError, jsonResp)
 		}
-		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("id"))
+		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while editing class: ")
 			log.Println(err)
