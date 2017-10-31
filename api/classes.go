@@ -124,6 +124,9 @@ func InitClassesAPI(e *echo.Echo) {
 		if c.FormValue("name") == "" || c.FormValue("color") == "" {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "Name is required."})
 		}
+		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
 
 		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?)")
 		if err != nil {
@@ -143,12 +146,13 @@ func InitClassesAPI(e *echo.Echo) {
 
 	e.POST("/classes/edit", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("color") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+		}
+		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
 		// check if you are allowed to edit the given id
