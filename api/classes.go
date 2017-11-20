@@ -128,7 +128,7 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
-		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?)")
+		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)")
 		if err != nil {
 			log.Println("Error while adding class: ")
 			log.Println(err)
