@@ -45,8 +45,19 @@ func main() {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if config.CORS.Enabled {
-				c.Response().Header().Set("Access-Control-Allow-Origin", config.CORS.Origin)
+			if config.CORS.Enabled && len(config.CORS.Origins) > 0 {
+				foundOrigin := ""
+				for _, origin := range config.CORS.Origins {
+					if origin == c.Request().Header.Get("Origin") {
+						foundOrigin = origin
+					}
+				}
+
+				if foundOrigin == "" {
+					foundOrigin = config.CORS.Origins[0]
+				}
+
+				c.Response().Header().Set("Access-Control-Allow-Origin", foundOrigin)
 				c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if strings.HasPrefix(c.Request().URL.Path, "/api_tester") {

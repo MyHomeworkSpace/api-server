@@ -48,7 +48,7 @@ type RedisConfig struct {
 
 type CORSConfig struct {
 	Enabled bool
-	Origin  string
+	Origins []string
 }
 
 type WhitelistConfig struct {
@@ -85,7 +85,7 @@ Port = 6379
 
 [cors]
 Enabled = false
-Origin = "http://myhomework.space"
+Origins = [ "http://myhomework.space" ]
 
 [whitelist]
 Enabled = false
