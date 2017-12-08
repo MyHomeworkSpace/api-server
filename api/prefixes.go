@@ -28,9 +28,9 @@ var DefaultPrefixes = []Prefix{
 		Default:    true,
 	},
 	Prefix{
-		Background: "FFD700",
+		Background: "C3A528",
 		Color:      "FFFFFF",
-		Words:      []string{"Report", "Essay", "Paper"},
+		Words:      []string{"Report", "Essay", "Paper", "Write"},
 		Default:    true,
 	},
 	Prefix{
