@@ -4,9 +4,19 @@ import "time"
 
 // these change every year
 var (
-	Day_SchoolStart, _ = time.Parse("2006-01-02", "2017-09-11")
-	Day_ExamRelief, _  = time.Parse("2006-01-02", "2018-01-24")
-	Day_SchoolEnd, _   = time.Parse("2006-01-02", "2018-06-07")
+	Day_SchoolStart, _    = time.Parse("2006-01-02", "2017-09-11")
+	Day_Candlelighting, _ = time.Parse("2006-01-02", "2017-12-22")
+	Day_ExamRelief, _     = time.Parse("2006-01-02", "2018-01-24")
+	Day_SchoolEnd, _      = time.Parse("2006-01-02", "2018-06-07")
+
+	SpecialSchedule_HS_Candlelighting = []CalendarSpecialScheduleItem{
+		CalendarSpecialScheduleItem{"C", "", 29400, 31500},
+		CalendarSpecialScheduleItem{"D", "", 31800, 33900},
+		CalendarSpecialScheduleItem{"H", "", 34200, 36300},
+		CalendarSpecialScheduleItem{"G", "", 36600, 38700},
+		CalendarSpecialScheduleItem{"", "Long House", 39000, 41100},
+		CalendarSpecialScheduleItem{"", "Candlelighting ceremony", 41400, 43200},
+	}
 
 	// import ranges
 	// these should be ranges with 4 fridays in a row and the first week having no off days

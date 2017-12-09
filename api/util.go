@@ -21,6 +21,15 @@ func Util_GenerateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
+func Util_IntSliceContains(slice []int, n int) bool {
+	for _, v := range slice {
+		if v == n {
+			return true
+		}
+	}
+	return false
+}
+
 func Util_StringSliceContains(slice []string, text string) bool {
 	for _, v := range slice {
 		if v == text {

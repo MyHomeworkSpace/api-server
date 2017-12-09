@@ -56,6 +56,12 @@ type CalendarScheduleItem struct {
 	End          int    `json:"end"`
 	UserID       int    `json:"userId"`
 }
+type CalendarSpecialScheduleItem struct {
+	Block string
+	Name  string
+	Start int
+	End   int
+}
 
 // responses
 type CalendarClassesResponse struct {

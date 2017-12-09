@@ -309,6 +309,76 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 					}
 				}
 			}
+
+			// special exception: candlelighting
+			if startDate.Before(Day_Candlelighting) && endDate.After(Day_Candlelighting) {
+				dayNumber := (int(Day_Candlelighting.Weekday()) - 1)
+
+				scheduleEvents[dayNumber] = []CalendarScheduleItem{}
+
+				itemsForPeriod := map[string][]CalendarScheduleItem{}
+				seenClassIds := []int{}
+
+				rows, err := DB.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.block IN ('C', 'D', 'H', 'G') GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", userId, currentTerm.TermID)
+				if err != nil {
+					log.Println("Error while getting calendar events: ")
+					log.Println(err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				defer rows.Close()
+				for rows.Next() {
+					item := CalendarScheduleItem{}
+					rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Block, &item.BuildingName, &item.RoomNumber, &item.Start, &item.End, &item.UserID)
+					if !Util_IntSliceContains(seenClassIds, item.ClassID) {
+						_, sliceExists := itemsForPeriod[item.Block]
+						if !sliceExists {
+							itemsForPeriod[item.Block] = []CalendarScheduleItem{}
+						}
+						itemsForPeriod[item.Block] = append(itemsForPeriod[item.Block], item)
+						seenClassIds = append(seenClassIds, item.ClassID)
+					}
+				}
+
+				for _, specialScheduleItem := range SpecialSchedule_HS_Candlelighting {
+					if specialScheduleItem.Block != "" {
+						// it references a specific class, look it up
+						items, haveItems := itemsForPeriod[specialScheduleItem.Block]
+						if haveItems {
+							for _, scheduleItem := range items {
+								newItem := scheduleItem
+								newItem.Start = specialScheduleItem.Start
+								newItem.End = specialScheduleItem.End
+								// remove building + room number because we can't tell which one to use
+								// (in the case of classes where the room changes, like most science classes)
+								newItem.BuildingName = ""
+								newItem.RoomNumber = ""
+								scheduleEvents[dayNumber] = append(scheduleEvents[dayNumber], newItem)
+							}
+						} else {
+							// the person doesn't have a class for that period
+							// just skip it
+						}
+					} else {
+						// it's a fixed thing, just add it directly
+						newItem := CalendarScheduleItem{
+							ID:           -1,
+							TermID:       currentTerm.TermID,
+							ClassID:      -1,
+							Name:         specialScheduleItem.Name,
+							OwnerID:      -1,
+							OwnerName:    "",
+							DayNumber:    dayNumber,
+							Block:        "",
+							BuildingName: "",
+							RoomNumber:   "",
+							Start:        specialScheduleItem.Start,
+							End:          specialScheduleItem.End,
+							UserID:       -1,
+						}
+						scheduleEvents[dayNumber] = append(scheduleEvents[dayNumber], newItem)
+					}
+				}
+			}
 		}
 
 		return c.JSON(http.StatusOK, CalendarWeekResponse{
