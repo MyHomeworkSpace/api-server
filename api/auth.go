@@ -21,6 +21,7 @@ type UserResponse struct {
 	Status             string `json:"status"`
 	User               User   `json:"user"`
 	Grade              int    `json:"grade"`
+	Tabs               []Tab  `json:"tabs"`
 	ID                 int    `json:"id"`
 	Name               string `json:"name"`
 	Username           string `json:"username"`
@@ -226,10 +227,18 @@ func InitAuthAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
+		tabs, err := Data_GetTabsByUserID(user.ID)
+		if err != nil {
+			log.Println("Error while getting user information: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		return c.JSON(http.StatusOK, UserResponse{
 			Status: "ok",
 			User:   user,
 			Grade:  grade,
+			Tabs:   tabs,
 
 			// these are set for backwards compatibility
 			ID:                 user.ID,

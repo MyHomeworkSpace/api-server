@@ -31,6 +31,14 @@ type OffBlock struct {
 	Grade     int       `json:"grade"`
 }
 
+type Tab struct {
+	ID     int    `json:"id"`
+	Slug   string `json:"slug"`
+	Icon   string `json:"icon"`
+	Label  string `json:"label"`
+	Target string `json:"target"`
+}
+
 type User struct {
 	ID                 int    `json:"id"`
 	Name               string `json:"name"`
@@ -114,6 +122,24 @@ func Data_GetGradeAnnouncementGroups(grade int) []int {
 		groups = append(groups, AnnouncementGrade_HighSchool)
 	}
 	return groups
+}
+
+func Data_GetTabsByUserID(userId int) ([]Tab, error) {
+	rows, err := DB.Query("SELECT tabs.id, tabs.slug, tabs.icon, tabs.label, tabs.target FROM tabs INNER JOIN tab_permissions ON tab_permissions.tabId = tabs.id WHERE tab_permissions.userId = ?", userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tabs := []Tab{}
+	for rows.Next() {
+		tab := Tab{}
+		err := rows.Scan(&tab.ID, &tab.Slug, &tab.Icon, &tab.Label, &tab.Target)
+		if err != nil {
+			return nil, err
+		}
+		tabs = append(tabs, tab)
+	}
+	return tabs, nil
 }
 
 func Data_GetUserByID(id int) (User, error) {
