@@ -25,6 +25,14 @@ type HomeworkResponse struct {
 	Status   string     `json:"status"`
 	Homework []Homework `json:"homework"`
 }
+type HWViewResponse struct {
+	Status       string     `json:"status"`
+	TomorrowName string     `json:"tomorrowName"`
+	Overdue      []Homework `json:"overdue"`
+	Tomorrow     []Homework `json:"tomorrow"`
+	Soon         []Homework `json:"soon"`
+	Longterm     []Homework `json:"longterm"`
+}
 type SingleHomeworkResponse struct {
 	Status   string   `json:"status"`
 	Homework Homework `json:"homework"`
@@ -76,6 +84,74 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		jsonResp := HomeworkResponse{"ok", homework}
 		return c.JSON(http.StatusOK, jsonResp)
+	})
+	e.GET("/homework/getHWViewSorted", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			jsonResp := ErrorResponse{"error", "logged_out"}
+			return c.JSON(http.StatusUnauthorized, jsonResp)
+		}
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting homework view: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+		defer rows.Close()
+
+		overdue := []Homework{}
+		tomorrowName := "Tomorrow"
+		tomorrow := []Homework{}
+		soon := []Homework{}
+		longterm := []Homework{}
+
+		tomorrowTimeToThreshold := 24 * time.Hour
+
+		location := time.FixedZone("America/New_York", -5*60*60)
+		now := time.Now().In(location)
+
+		if now.Weekday() == time.Friday || now.Weekday() == time.Saturday {
+			tomorrowName = "Monday"
+			if now.Weekday() == time.Friday {
+				tomorrowTimeToThreshold = 3 * 24 * time.Hour
+			} else {
+				tomorrowTimeToThreshold = 2 * 24 * time.Hour
+			}
+		}
+
+		for rows.Next() {
+			resp := Homework{-1, "", "", "", -1, -1, -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+			dueDate, err := time.ParseInLocation("2006-01-02", resp.Due, location)
+			if err != nil {
+				log.Println("Error while getting homework view: ")
+				log.Println(err)
+				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			}
+
+			timeUntilDue := dueDate.Sub(now)
+			if timeUntilDue < 0 {
+				// it's overdue
+				overdue = append(overdue, resp)
+			} else if timeUntilDue <= tomorrowTimeToThreshold {
+				// it's in the tomorrow column
+				tomorrow = append(tomorrow, resp)
+			} else if timeUntilDue <= 5*24*time.Hour {
+				// it's in the soon column
+				soon = append(soon, resp)
+			} else {
+				// it's in the longterm column
+				longterm = append(longterm, resp)
+			}
+		}
+
+		return c.JSON(http.StatusOK, HWViewResponse{
+			"ok",
+			tomorrowName,
+			overdue,
+			tomorrow,
+			soon,
+			longterm,
+		})
 	})
 
 	e.GET("/homework/get/:id", func(c echo.Context) error {
