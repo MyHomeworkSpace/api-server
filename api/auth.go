@@ -17,6 +17,11 @@ type CSRFResponse struct {
 	Token  string `json:"token"`
 }
 
+type SessionResponse struct {
+	Status  string `json:"status"`
+	Session string `json:"session"`
+}
+
 type UserResponse struct {
 	Status             string `json:"status"`
 	User               User   `json:"user"`
@@ -262,5 +267,13 @@ func InitAuthAPI(e *echo.Echo) {
 		auth.SetSession(cookie.Value, newSession)
 		jsonResp := StatusResponse{"ok"}
 		return c.JSON(http.StatusOK, jsonResp)
+	})
+
+	e.GET("/auth/session", func(c echo.Context) error {
+		cookie, err := c.Cookie("session")
+		if err != nil {
+			return c.JSON(http.StatusOK, SessionResponse{"ok", ""})
+		}
+		return c.JSON(http.StatusOK, SessionResponse{"ok", cookie.Value})
 	})
 }
