@@ -97,12 +97,12 @@ var DefaultPrefixes = []Prefix{
 		Default:    true,
 	},
 	Prefix{
-		Background:	"01b501".
-		Color:		"FFFFFF",
-		Words:		[]string["Begin", "Start"],
+		Background: "01b501",
+		Color:      "FFFFFF",
+		Words:      []string{"Begin", "Start"},
 		TimedEvent: true,
-		Defualt:	true,
-	}
+		Default:    true,
+	},
 }
 
 type PrefixesResponse struct {
