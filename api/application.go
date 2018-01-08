@@ -146,7 +146,12 @@ func InitApplicationAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, ApplicationAuthorizationsResponse{"ok", authorizations})
 	})
 	e.GET("/application/requestAuth/:id", func(c echo.Context) error {
-		return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id"))
+		state := c.FormValue("state")
+		if state == "" {
+			return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id"))
+		} else {
+			return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id")+"&state="+c.FormValue("state"))
+		}
 	})
 	e.POST("/application/revokeAuth", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
