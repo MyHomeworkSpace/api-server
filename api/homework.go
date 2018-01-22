@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -67,6 +68,20 @@ func InitHomeworkAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
+
+		// look for hidden class pref
+		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
+		hiddenClasses := []int{}
+		if err != nil && err != ErrDataNotFound {
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		} else if err == nil {
+			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
+			if err != nil {
+				// just ignore the error
+				hiddenClasses = []int{}
+			}
+		}
+
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting homework information: ")
@@ -80,6 +95,11 @@ func InitHomeworkAPI(e *echo.Echo) {
 		for rows.Next() {
 			resp := Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+
+			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
+				continue
+			}
+
 			homework = append(homework, resp)
 		}
 		jsonResp := HomeworkResponse{"ok", homework}
@@ -90,6 +110,20 @@ func InitHomeworkAPI(e *echo.Echo) {
 			jsonResp := ErrorResponse{"error", "logged_out"}
 			return c.JSON(http.StatusUnauthorized, jsonResp)
 		}
+
+		// look for hidden class pref
+		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
+		hiddenClasses := []int{}
+		if err != nil && err != ErrDataNotFound {
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		} else if err == nil {
+			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
+			if err != nil {
+				// just ignore the error
+				hiddenClasses = []int{}
+			}
+		}
+
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting homework view: ")
@@ -126,6 +160,10 @@ func InitHomeworkAPI(e *echo.Echo) {
 				log.Println("Error while getting homework view: ")
 				log.Println(err)
 				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			}
+
+			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
+				continue
 			}
 
 			timeUntilDue := dueDate.Sub(now)

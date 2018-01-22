@@ -124,6 +124,26 @@ func Data_GetGradeAnnouncementGroups(grade int) []int {
 	return groups
 }
 
+func Data_GetPrefForUser(key string, userId int) (Pref, error) {
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", userId, key)
+	if err != nil {
+		return Pref{}, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return Pref{}, ErrDataNotFound
+	}
+
+	pref := Pref{}
+	err = rows.Scan(&pref.ID, &pref.Key, &pref.Value)
+	if err != nil {
+		return Pref{}, err
+	}
+
+	return pref, nil
+}
+
 func Data_GetTabsByUserID(userId int) ([]Tab, error) {
 	rows, err := DB.Query("SELECT tabs.id, tabs.slug, tabs.icon, tabs.label, tabs.target FROM tabs INNER JOIN tab_permissions ON tab_permissions.tabId = tabs.id WHERE tab_permissions.userId = ?", userId)
 	if err != nil {
