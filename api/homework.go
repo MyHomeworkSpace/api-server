@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +63,51 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		jsonResp := HomeworkResponse{"ok", homework}
 		return c.JSON(http.StatusOK, jsonResp)
+	})
+	e.GET("/homework/getForClass/:classId", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		// verify the class exists and the user owns it
+		classIdStr := c.Param("classId")
+		if classIdStr == "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+
+		classId, err := strconv.Atoi(classIdStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+
+		classRows, err := DB.Query("SELECT id FROM classes WHERE id = ? AND userId = ?", classId, GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting homework for class:")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+		defer classRows.Close()
+
+		if !classRows.Next() {
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		}
+
+		// actually get the homework
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classId, GetSessionUserID(&c))
+		if err != nil {
+			log.Println("Error while getting homework for class:")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		}
+		defer rows.Close()
+
+		homework := []Homework{}
+		for rows.Next() {
+			resp := Homework{-1, "", "", "", -1, -1, -1}
+			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
+			homework = append(homework, resp)
+		}
+		return c.JSON(http.StatusOK, HomeworkResponse{"ok", homework})
 	})
 	e.GET("/homework/getHWView", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
