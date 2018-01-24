@@ -81,8 +81,35 @@ func main() {
 				c.SetCookie(cookie)
 			}
 
-			// bypass csrf if they send an authorization header
+			// check if they have an authorization header
 			if c.Request().Header.Get("Authorization") != "" {
+				// get the token
+				headerParts := strings.Split(c.Request().Header.Get("Authorization"), " ")
+				if len(headerParts) == 2 {
+					authToken := headerParts[1]
+					
+					// look up token
+					rows, err := DB.Query("SELECT applications.cors FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.token = ?", authToken)
+					if err == nil {
+						// IMPORTANT: if there's an error with the token, we just continue with the request
+						// this is for backwards compatibility with old versions, where the token would always bypass csrf and only be checked when authentication was needed
+						// this is ok because if someone is able to add a new header, it should not be in a scenario where csrf would be a useful defense
+						// TODO: it would be much cleaner to just fail here if the token is bad. do any applications actually rely on this behavior?
+
+						defer rows.Close()
+						if rows.Next() {
+							cors := ""
+							err = rows.Scan(&cors)
+
+							if err == nil && cors != "" {
+								c.Response().Header().Set("Access-Control-Allow-Origin", cors)
+								c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+							}
+						}
+					}
+				}
+
+				// also bypass csrf
 				return next(c)
 			}
 
