@@ -45,6 +45,14 @@ func main() {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if c.Request().Method == "OPTIONS" {
+				c.Response().Header().Set("Access-Control-Allow-Credentials", "false")
+				c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+				c.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
+				c.Response().Writer.WriteHeader(http.StatusOK)
+				return nil
+			}
+
 			if config.CORS.Enabled && len(config.CORS.Origins) > 0 {
 				foundOrigin := ""
 				for _, origin := range config.CORS.Origins {
@@ -103,7 +111,7 @@ func main() {
 
 							if err == nil && cors != "" {
 								c.Response().Header().Set("Access-Control-Allow-Origin", cors)
-								c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+								c.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
 							}
 						}
 					}
