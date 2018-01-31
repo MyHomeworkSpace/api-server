@@ -31,6 +31,7 @@ type HWViewResponse struct {
 	Status       string     `json:"status"`
 	TomorrowName string     `json:"tomorrowName"`
 	Overdue      []Homework `json:"overdue"`
+	Today        []Homework `json:"today"`
 	Tomorrow     []Homework `json:"tomorrow"`
 	Soon         []Homework `json:"soon"`
 	Longterm     []Homework `json:"longterm"`
@@ -170,7 +171,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			}
 		}
 
-		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
+		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 3 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting homework view: ")
 			log.Println(err)
@@ -179,6 +180,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		defer rows.Close()
 
 		overdue := []Homework{}
+		today := []Homework{}
 		tomorrowName := "Tomorrow"
 		tomorrow := []Homework{}
 		soon := []Homework{}
@@ -214,8 +216,13 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 			timeUntilDue := dueDate.Sub(now)
 			if timeUntilDue < 0 {
-				// it's overdue
-				overdue = append(overdue, resp)
+				if timeUntilDue > 0 - (24 * time.Hour) {
+					// it's in the today column
+					today = append(today, resp)
+				} else {
+					// it's overdue
+					overdue = append(overdue, resp)
+				}
 			} else if timeUntilDue <= tomorrowTimeToThreshold {
 				// it's in the tomorrow column
 				tomorrow = append(tomorrow, resp)
@@ -232,6 +239,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			"ok",
 			tomorrowName,
 			overdue,
+			today,
 			tomorrow,
 			soon,
 			longterm,
