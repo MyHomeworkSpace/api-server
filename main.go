@@ -95,7 +95,7 @@ func main() {
 				headerParts := strings.Split(c.Request().Header.Get("Authorization"), " ")
 				if len(headerParts) == 2 {
 					authToken := headerParts[1]
-					
+
 					// look up token
 					rows, err := DB.Query("SELECT applications.cors FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.token = ?", authToken)
 					if err == nil {
