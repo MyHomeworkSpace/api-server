@@ -154,8 +154,14 @@ func InitHomeworkAPI(e *echo.Echo) {
 	})
 	e.GET("/homework/getHWViewSorted", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		showTodayStr := c.FormValue("showToday")
+		showToday := false
+
+		if showTodayStr == "true" {
+			showToday = true
 		}
 
 		// look for hidden class pref
@@ -232,6 +238,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 			} else {
 				// it's in the longterm column
 				longterm = append(longterm, resp)
+			}
+		}
+
+		if !showToday {
+			for _, item := range today {
+				overdue = append(overdue, item)
 			}
 		}
 
