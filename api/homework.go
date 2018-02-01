@@ -225,7 +225,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 				if timeUntilDue > 0 - (24 * time.Hour) {
 					// it's in the today column
 					today = append(today, resp)
-				} else {
+				} else if resp.Complete == 0 {
 					// it's overdue
 					overdue = append(overdue, resp)
 				}
@@ -243,7 +243,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		if !showToday {
 			for _, item := range today {
-				overdue = append(overdue, item)
+				if item.Complete == 0 {
+					overdue = append(overdue, item)
+				}
 			}
 		}
 
