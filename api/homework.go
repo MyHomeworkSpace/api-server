@@ -30,6 +30,7 @@ type HomeworkResponse struct {
 type HWViewResponse struct {
 	Status       string     `json:"status"`
 	TomorrowName string     `json:"tomorrowName"`
+	ShowToday    bool       `json:"showToday"`
 	Overdue      []Homework `json:"overdue"`
 	Today        []Homework `json:"today"`
 	Tomorrow     []Homework `json:"tomorrow"`
@@ -206,6 +207,10 @@ func InitHomeworkAPI(e *echo.Echo) {
 			}
 		}
 
+		if now.Weekday() == time.Saturday || now.Weekday() == time.Sunday {
+			showToday = false
+		}
+
 		for rows.Next() {
 			resp := Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
@@ -247,11 +252,13 @@ func InitHomeworkAPI(e *echo.Echo) {
 					overdue = append(overdue, item)
 				}
 			}
+			today = []Homework{}
 		}
 
 		return c.JSON(http.StatusOK, HWViewResponse{
 			"ok",
 			tomorrowName,
+			showToday,
 			overdue,
 			today,
 			tomorrow,
