@@ -536,7 +536,28 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
-		_, err := DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ?", GetSessionUserID(&c))
+		// look for hidden class pref
+		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
+		hiddenClasses := []int{}
+		if err != nil && err != ErrDataNotFound {
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+		} else if err == nil {
+			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
+			if err != nil {
+				// just ignore the error
+				hiddenClasses = []int{}
+			}
+		}
+
+		hiddenClassesSet := ""
+		for i, hiddenClassID := range hiddenClasses {
+			if i > 0 {
+				hiddenClassesSet = hiddenClassesSet + ","
+			}
+			hiddenClassesSet = hiddenClassesSet + strconv.Itoa(hiddenClassID)
+		}
+
+		_, err = DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ? AND FIND_IN_SET(classId, ?) = 0", GetSessionUserID(&c), hiddenClassesSet)
 		if err != nil {
 			log.Println("Error while marking overdue homework as done: ")
 			log.Println(err)
