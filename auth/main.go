@@ -2,7 +2,7 @@ package auth
 
 import (
 	"database/sql"
-	
+
 	"gopkg.in/redis.v5"
 )
 

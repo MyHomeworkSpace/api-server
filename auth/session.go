@@ -9,8 +9,8 @@ import (
 )
 
 type SessionInfo struct {
-	UserId int
-    Username string
+	UserId   int
+	Username string
 }
 
 // GenerateRandomBytes returns securely generated random bytes.
@@ -43,8 +43,8 @@ func GenerateUID() (string, error) {
 // SetSession stores the given value under the given name in the database.
 // If the given name is already used, its value is overwritten.
 func SetSession(name string, value SessionInfo) {
-	result := RedisClient.HMSet("session:" + name, map[string]string{
-		"userId": strconv.Itoa(value.UserId),
+	result := RedisClient.HMSet("session:"+name, map[string]string{
+		"userId":   strconv.Itoa(value.UserId),
 		"username": value.Username,
 	})
 
@@ -54,7 +54,7 @@ func SetSession(name string, value SessionInfo) {
 		return
 	}
 
-	expireResult := RedisClient.Expire("session:" + name, 7*24*time.Hour)
+	expireResult := RedisClient.Expire("session:"+name, 7*24*time.Hour)
 	if expireResult.Err() != nil {
 		log.Println("Error while setting session: ")
 		log.Println(expireResult.Err())
@@ -63,7 +63,7 @@ func SetSession(name string, value SessionInfo) {
 }
 
 // GetSession retrieves the session information for the given name
-func GetSession(name string) (SessionInfo) {
+func GetSession(name string) SessionInfo {
 	result := RedisClient.HGetAll("session:" + name)
 	if result.Err() != nil {
 		log.Println("Error while getting session: ")
@@ -90,7 +90,7 @@ func GetSession(name string) (SessionInfo) {
 	return retval
 }
 
-func GetSessionFromAuthToken(authToken string) (SessionInfo) {
+func GetSessionFromAuthToken(authToken string) SessionInfo {
 	rows, err := DB.Query("SELECT users.id, users.username FROM application_authorizations INNER JOIN users ON application_authorizations.userId = users.id WHERE application_authorizations.token = ?", authToken)
 	if err != nil {
 		log.Println("Error while getting session from auth token:")

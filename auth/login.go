@@ -12,18 +12,18 @@ func DaltonLogin(username string, password string) (map[string]interface{}, stri
 	hc := http.Client{}
 
 	form := url.Values{}
-    form.Add("username", username)
-    form.Add("password", password)
+	form.Add("username", username)
+	form.Add("password", password)
 
 	req, err := http.NewRequest("POST", "https://hsregistration.dalton.org/src/server/index.phplogin", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, "internal_server_error", err
 	}
-    req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-    req.Header.Add("Referer", "https://hsregistration.dalton.org/")
-    req.Header.Add("Origin", "https://hsregistration.dalton.org")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Referer", "https://hsregistration.dalton.org/")
+	req.Header.Add("Origin", "https://hsregistration.dalton.org")
 
-    resp, err := hc.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		return nil, "internal_server_error", err
 	}
@@ -34,7 +34,7 @@ func DaltonLogin(username string, password string) (map[string]interface{}, stri
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(body), &data); err != nil {
 		return nil, "dalton_login_malformed_response", err
-    }
+	}
 	if data["logged_in"] == false {
 		return nil, "dalton_creds_incorrect", nil
 	}
