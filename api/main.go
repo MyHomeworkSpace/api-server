@@ -15,6 +15,10 @@ var DB *sql.DB
 var RedisClient *redis.Client
 var ReverseProxyHeader string
 
+var FeedbackSlackEnabled bool
+var FeedbackSlackURL string
+var FeedbackSlackHostName string
+
 var WhitelistEnabled bool
 var WhitelistFile string
 var WhitelistBlockMsg string

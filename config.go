@@ -15,6 +15,7 @@ type Config struct {
 	Email     EmailConfig
 	Redis     RedisConfig
 	CORS      CORSConfig
+	Feedback  FeedbackConfig
 	Whitelist WhitelistConfig
 }
 
@@ -49,6 +50,12 @@ type RedisConfig struct {
 type CORSConfig struct {
 	Enabled bool
 	Origins []string
+}
+
+type FeedbackConfig struct {
+	SlackEnabled  bool
+	SlackURL      string
+	SlackHostName string
 }
 
 type WhitelistConfig struct {
@@ -86,6 +93,11 @@ Port = 6379
 [cors]
 Enabled = false
 Origins = [ "http://myhomework.space" ]
+
+[feedback]
+SlackEnabled = false
+SlackURL = ""
+SlackHostName = ""
 
 [whitelist]
 Enabled = false

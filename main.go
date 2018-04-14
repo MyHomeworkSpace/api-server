@@ -38,6 +38,11 @@ func main() {
 	api.WhitelistEnabled = config.Whitelist.Enabled
 	api.WhitelistFile = config.Whitelist.WhitelistFile
 	api.WhitelistBlockMsg = config.Whitelist.BlockMessage
+
+	api.FeedbackSlackEnabled = config.Feedback.SlackEnabled
+	api.FeedbackSlackURL = config.Feedback.SlackURL
+	api.FeedbackSlackHostName = config.Feedback.SlackHostName
+
 	auth.DB = DB
 	auth.RedisClient = RedisClient
 
