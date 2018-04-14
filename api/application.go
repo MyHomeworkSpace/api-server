@@ -101,29 +101,25 @@ func InitApplicationAPI(e *echo.Echo) {
 	})
 	e.GET("/application/get/:id", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
 		rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", c.Param("id"))
 		if err != nil {
 			log.Println("Error while getting application information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
 		if !rows.Next() {
-			jsonResp := ErrorResponse{"error", "not_found"}
-			return c.JSON(http.StatusNotFound, jsonResp)
+			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
 		}
 
 		resp := Application{-1, "", "", "", ""}
 		rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.CallbackURL)
 
-		jsonResp := SingleApplicationResponse{"ok", resp}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, SingleApplicationResponse{"ok", resp})
 	})
 	e.GET("/application/getAuthorizations", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {

@@ -45,15 +45,13 @@ type SingleHomeworkResponse struct {
 func InitHomeworkAPI(e *echo.Echo) {
 	e.GET("/homework/get", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
@@ -63,8 +61,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
-		jsonResp := HomeworkResponse{"ok", homework}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, HomeworkResponse{"ok", homework})
 	})
 	e.GET("/homework/getForClass/:classId", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
@@ -113,8 +110,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 	})
 	e.GET("/homework/getHWView", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
 		// look for hidden class pref
@@ -134,8 +130,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
@@ -150,8 +145,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 			homework = append(homework, resp)
 		}
-		jsonResp := HomeworkResponse{"ok", homework}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, HomeworkResponse{"ok", homework})
 	})
 	e.GET("/homework/getHWViewSorted", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
@@ -269,40 +263,34 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 	e.GET("/homework/get/:id", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.Param("id"))
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
 		if !rows.Next() {
-			jsonResp := ErrorResponse{"error", "not_found"}
-			return c.JSON(http.StatusNotFound, jsonResp)
+			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
 		}
 
 		resp := Homework{-1, "", "", "", -1, -1, -1}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
-		jsonResp := SingleHomeworkResponse{"ok", resp}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, SingleHomeworkResponse{"ok", resp})
 	})
 
 	e.GET("/homework/getWeek/:monday", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
 		startDate, err := time.Parse("2006-01-02", c.Param("monday"))
 		if err != nil {
-			jsonResp := ErrorResponse{"error", "Invalid date."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
@@ -310,8 +298,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
@@ -321,8 +308,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
-		jsonResp := HomeworkResponse{"ok", homework}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, HomeworkResponse{"ok", homework})
 	})
 
 	e.GET("/homework/getPickerSuggestions", func(c echo.Context) error {
@@ -383,12 +369,10 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 	e.POST("/homework/add", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
 		}
 
 		// check if you are allowed to add to the given classId
@@ -396,41 +380,34 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 		if !rows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid class."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid class."})
 		}
 
 		stmt, err := DB.Prepare("INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)")
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.POST("/homework/edit", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
 		}
 
 		// check if you are allowed to edit the given id
@@ -438,13 +415,11 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		// check if you are allowed to add to the given classId
@@ -452,41 +427,34 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer classRows.Close()
 		if !classRows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid class."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid class."})
 		}
 
 		stmt, err := DB.Prepare("UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?")
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.POST("/homework/delete", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" {
-			jsonResp := ErrorResponse{"error", "Missing ID parameter."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing ID parameter."})
 		}
 
 		// check if you are allowed to edit the given id
@@ -494,13 +462,11 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		deleteTx, err := DB.Begin()

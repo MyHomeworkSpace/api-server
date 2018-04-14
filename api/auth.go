@@ -90,51 +90,43 @@ func IsInternalRequest(c *echo.Context) bool {
 func InitAuthAPI(e *echo.Echo) {
 	e.POST("/auth/clearMigrateFlag", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 
 		stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
 		if err != nil {
 			log.Println("Error while clearing migration flag: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while clearing migration flag: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.GET("/auth/csrf", func(c echo.Context) error {
 		cookie, _ := c.Cookie("csrfToken")
-		jsonResp := CSRFResponse{"ok", cookie.Value}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
 	})
 
 	e.POST("/auth/login", func(c echo.Context) error {
 		if c.FormValue("username") == "" || c.FormValue("password") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusUnprocessableEntity, jsonResp)
+			return c.JSON(http.StatusUnprocessableEntity, ErrorResponse{"error", "Missing required parameters."})
 		}
 		data, resp, err := auth.DaltonLogin(strings.ToLower(c.FormValue("username")), c.FormValue("password"))
 		if resp != "" || err != nil {
-			jsonResp := ErrorResponse{"error", resp}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 		}
 		if WhitelistEnabled {
 			file, err := os.Open(WhitelistFile)
 			if err != nil {
 				log.Println("Error while getting whitelist: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			scanner := bufio.NewScanner(file)
 			found := false
@@ -147,16 +139,14 @@ func InitAuthAPI(e *echo.Echo) {
 			file.Close()
 			if !found {
 				log.Printf("Blocked signin attempt by %s because they aren't on the whitelist\n", c.FormValue("username"))
-				jsonResp := ErrorResponse{"error", WhitelistBlockMsg}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", WhitelistBlockMsg})
 			}
 		}
 		rows, err := DB.Query("SELECT id from users where username = ?", c.FormValue("username"))
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
-			jsonResp := ErrorResponse{"error", "Internal server error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 		}
 		defer rows.Close()
 		session := auth.SessionInfo{-1, ""}
@@ -171,44 +161,38 @@ func InitAuthAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]interface{})[0])
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			lastId, err := res.LastInsertId()
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			// add default classes
 			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			_, err = addClassesStmt.Exec(int(lastId), int(lastId), int(lastId), int(lastId), int(lastId))
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
-				jsonResp := ErrorResponse{"error", "Internal server error"}
-				return c.JSON(http.StatusInternalServerError, jsonResp)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
 			}
 			session = auth.SessionInfo{int(lastId), c.FormValue("username")}
 		}
 		cookie, _ := c.Cookie("session")
 		auth.SetSession(cookie.Value, session)
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.GET("/auth/me", func(c echo.Context) error {
@@ -259,14 +243,12 @@ func InitAuthAPI(e *echo.Echo) {
 
 	e.GET("/auth/logout", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		cookie, _ := c.Cookie("session")
 		newSession := auth.SessionInfo{-1, ""}
 		auth.SetSession(cookie.Value, newSession)
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.GET("/auth/session", func(c echo.Context) error {

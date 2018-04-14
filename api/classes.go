@@ -95,26 +95,22 @@ func InitClassesAPI(e *echo.Echo) {
 
 	e.GET("/classes/hwInfo/:id", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting class information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 
 		if !rows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 		resp := -1
 		rows.Scan(&resp)
-		jsonResp := HWInfoResponse{"ok", resp}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, HWInfoResponse{"ok", resp})
 	})
 
 	e.POST("/classes/add", func(c echo.Context) error {
@@ -140,8 +136,7 @@ func InitClassesAPI(e *echo.Echo) {
 			log.Println(err)
 			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.POST("/classes/edit", func(c echo.Context) error {
@@ -160,41 +155,34 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
 		if err != nil {
 			log.Println("Error while editing class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while editing class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.POST("/classes/delete", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
 		}
 
 		// check if you are allowed to delete the given id
@@ -202,13 +190,11 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
@@ -219,8 +205,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// delete HW
@@ -228,8 +213,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// delete class
@@ -237,8 +221,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// go!
@@ -246,22 +229,18 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
 	e.POST("/classes/swap", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
-			jsonResp := ErrorResponse{"error", "logged_out"}
-			return c.JSON(http.StatusUnauthorized, jsonResp)
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id1") == "" || c.FormValue("id2") == "" {
-			jsonResp := ErrorResponse{"error", "Missing required parameters."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
 		}
 
 		// check if you are allowed to change id1
@@ -269,13 +248,11 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer id1Rows.Close()
 		if !id1Rows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		// check if you are allowed to change id2
@@ -283,13 +260,11 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer id2Rows.Close()
 		if !id2Rows.Next() {
-			jsonResp := ErrorResponse{"error", "Invalid ID."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
 		}
 
 		// find the swap id
@@ -300,8 +275,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		swapId := -1
 		defer swapIdStmt.Close()
@@ -316,15 +290,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = class1Stmt.Exec(swapId, c.FormValue("id1"))
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// update class id2 -> id1
@@ -332,15 +304,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = class2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// update class tmp -> id2
@@ -348,15 +318,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = classTmpStmt.Exec(c.FormValue("id2"), swapId)
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// update homework id1 -> swp
@@ -364,15 +332,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = hw1Stmt.Exec(swapId, c.FormValue("id1"))
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// update homework id2 -> id1
@@ -380,15 +346,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = hw2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// update homework swp -> id2
@@ -396,15 +360,13 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		_, err = hwSwapStmt.Exec(c.FormValue("id2"), swapId)
 		if err != nil {
 			log.Println("Error while swapping classes: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
 		// go!
@@ -412,11 +374,9 @@ func InitClassesAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting class: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 
-		jsonResp := StatusResponse{"ok"}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 }

@@ -50,8 +50,7 @@ func InitPlannerAPI(e *echo.Echo) {
 
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
-			jsonResp := ErrorResponse{"error", "Invalid date."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
@@ -76,8 +75,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer announcementRows.Close()
 		announcements := []PlannerAnnouncement{}
@@ -98,8 +96,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting friday information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer fridayRows.Close()
 		friday := PlannerFriday{-1, "", -1}
@@ -113,16 +110,14 @@ func InitPlannerAPI(e *echo.Echo) {
 	e.GET("/planner/announcements/getWeek/:date", func(c echo.Context) error {
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
-			jsonResp := ErrorResponse{"error", "Invalid date."}
-			return c.JSON(http.StatusBadRequest, jsonResp)
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 		rows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 		announcements := []PlannerAnnouncement{}
@@ -131,8 +126,7 @@ func InitPlannerAPI(e *echo.Echo) {
 			rows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 			announcements = append(announcements, resp)
 		}
-		jsonResp := MultiPlannerAnnouncementResponse{"ok", announcements}
-		return c.JSON(http.StatusOK, jsonResp)
+		return c.JSON(http.StatusOK, MultiPlannerAnnouncementResponse{"ok", announcements})
 	})
 
 	e.GET("/planner/fridays/get/:date", func(c echo.Context) error {
@@ -140,18 +134,15 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting friday information: ")
 			log.Println(err)
-			jsonResp := StatusResponse{"error"}
-			return c.JSON(http.StatusInternalServerError, jsonResp)
+			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
 		}
 		defer rows.Close()
 		if rows.Next() {
 			resp := PlannerFriday{-1, "", -1}
 			rows.Scan(&resp.ID, &resp.Date, &resp.Index)
-			jsonResp := PlannerFridayResponse{"ok", resp}
-			return c.JSON(http.StatusOK, jsonResp)
+			return c.JSON(http.StatusOK, PlannerFridayResponse{"ok", resp})
 		} else {
-			jsonResp := StatusResponse{"ok"}
-			return c.JSON(http.StatusOK, jsonResp)
+			return c.JSON(http.StatusOK, StatusResponse{"ok"})
 		}
 	})
 }
