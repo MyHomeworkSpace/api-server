@@ -221,7 +221,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 			timeUntilDue := dueDate.Sub(now)
 			if timeUntilDue < 0 {
-				if timeUntilDue > 0 - (24 * time.Hour) {
+				if timeUntilDue > 0-(24*time.Hour) {
 					// it's in the today column
 					today = append(today, resp)
 				} else if resp.Complete == 0 {
@@ -290,7 +290,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		startDate, err := time.Parse("2006-01-02", c.Param("monday"))
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
@@ -372,7 +372,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		// check if you are allowed to add to the given classId
@@ -384,7 +384,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 		if !rows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid class."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		stmt, err := DB.Prepare("INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)")
@@ -407,7 +407,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		// check if you are allowed to edit the given id
@@ -419,7 +419,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		// check if you are allowed to add to the given classId
@@ -431,7 +431,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer classRows.Close()
 		if !classRows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid class."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		stmt, err := DB.Prepare("UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?")
@@ -454,7 +454,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing ID parameter."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		// check if you are allowed to edit the given id
@@ -466,7 +466,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		deleteTx, err := DB.Begin()

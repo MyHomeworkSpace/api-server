@@ -83,7 +83,7 @@ func InitClassesAPI(e *echo.Echo) {
 		defer rows.Close()
 
 		if !rows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 		resp := HomeworkClass{-1, "", "", "", -1}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
@@ -106,7 +106,7 @@ func InitClassesAPI(e *echo.Echo) {
 		defer rows.Close()
 
 		if !rows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 		resp := -1
 		rows.Scan(&resp)
@@ -118,7 +118,7 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("name") == "" || c.FormValue("color") == "" {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "Name is required."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
@@ -144,7 +144,7 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("color") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
@@ -159,7 +159,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
@@ -182,7 +182,7 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		// check if you are allowed to delete the given id
@@ -194,7 +194,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
@@ -240,7 +240,7 @@ func InitClassesAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("id1") == "" || c.FormValue("id2") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		// check if you are allowed to change id1
@@ -252,7 +252,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		defer id1Rows.Close()
 		if !id1Rows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		// check if you are allowed to change id2
@@ -264,7 +264,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		defer id2Rows.Close()
 		if !id2Rows.Next() {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid ID."})
+			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
 		// find the swap id

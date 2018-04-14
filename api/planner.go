@@ -50,7 +50,7 @@ func InitPlannerAPI(e *echo.Echo) {
 
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
@@ -110,7 +110,7 @@ func InitPlannerAPI(e *echo.Echo) {
 	e.GET("/planner/announcements/getWeek/:date", func(c echo.Context) error {
 		startDate, err := time.Parse("2006-01-02", c.Param("date"))
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Invalid date."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 		rows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))

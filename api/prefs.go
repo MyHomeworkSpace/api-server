@@ -9,15 +9,15 @@ import (
 
 // structs for data
 type Pref struct {
-	ID int `json:"id"`
-	Key string `json:"key"`
+	ID    int    `json:"id"`
+	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
 // responses
 type PrefResponse struct {
-	Status string `json:"status"`
-	ReturnedPref Pref `json:"pref"`
+	Status       string `json:"status"`
+	ReturnedPref Pref   `json:"pref"`
 }
 
 func InitPrefsAPI(e *echo.Echo) {
@@ -49,7 +49,7 @@ func InitPrefsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("key") == "" || c.FormValue("value") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&c), c.FormValue("key"))

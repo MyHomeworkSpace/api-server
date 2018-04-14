@@ -28,7 +28,7 @@ func InitFeedbackAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		if c.FormValue("type") == "" || c.FormValue("text") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
 		stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text) VALUES(?, ?, ?)")

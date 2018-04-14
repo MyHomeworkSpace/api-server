@@ -115,7 +115,7 @@ func InitAuthAPI(e *echo.Echo) {
 
 	e.POST("/auth/login", func(c echo.Context) error {
 		if c.FormValue("username") == "" || c.FormValue("password") == "" {
-			return c.JSON(http.StatusUnprocessableEntity, ErrorResponse{"error", "Missing required parameters."})
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 		data, resp, err := auth.DaltonLogin(strings.ToLower(c.FormValue("username")), c.FormValue("password"))
 		if resp != "" || err != nil {
@@ -126,7 +126,7 @@ func InitAuthAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while getting whitelist: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			scanner := bufio.NewScanner(file)
 			found := false
@@ -146,7 +146,7 @@ func InitAuthAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting user information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 		session := auth.SessionInfo{-1, ""}
@@ -161,32 +161,32 @@ func InitAuthAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]interface{})[0])
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			lastId, err := res.LastInsertId()
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			// add default classes
 			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = addClassesStmt.Exec(int(lastId), int(lastId), int(lastId), int(lastId), int(lastId))
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "Internal server error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			session = auth.SessionInfo{int(lastId), c.FormValue("username")}
 		}
