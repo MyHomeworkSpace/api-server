@@ -30,7 +30,7 @@ func InitPrefsAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting pref: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -56,7 +56,7 @@ func InitPrefsAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while setting pref: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -66,13 +66,13 @@ func InitPrefsAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while inserting pref: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("key"), c.FormValue("value"))
 			if err != nil {
 				log.Println("Error while inserting pref: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			return c.JSON(http.StatusOK, StatusResponse{"ok"})
 		} else {
@@ -81,13 +81,13 @@ func InitPrefsAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while updating pref: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = stmt.Exec(c.FormValue("key"), c.FormValue("value"), GetSessionUserID(&c), c.FormValue("key"))
 			if err != nil {
 				log.Println("Error while updating pref: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			return c.JSON(http.StatusOK, StatusResponse{"ok"})
 		}

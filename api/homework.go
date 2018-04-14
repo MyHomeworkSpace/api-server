@@ -51,7 +51,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -83,7 +83,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework for class:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer classRows.Close()
 
@@ -96,7 +96,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework for class:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -117,7 +117,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
 		if err != nil && err != ErrDataNotFound {
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
 			if err != nil {
@@ -130,7 +130,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -163,7 +163,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
 		if err != nil && err != ErrDataNotFound {
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
 			if err != nil {
@@ -176,7 +176,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework view: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -212,7 +212,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			if err != nil {
 				log.Println("Error while getting homework view: ")
 				log.Println(err)
-				return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
 			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
@@ -269,7 +269,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -298,7 +298,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -320,7 +320,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework picker suggestions:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -354,7 +354,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting homework search results:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -380,7 +380,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 		if !rows.Next() {
@@ -391,13 +391,13 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while adding homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
@@ -415,7 +415,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
@@ -427,7 +427,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer classRows.Close()
 		if !classRows.Next() {
@@ -438,13 +438,13 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while editing homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
@@ -462,7 +462,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
 		if !idRows.Next() {
@@ -476,7 +476,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// delete any associated calendar events
@@ -484,14 +484,14 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		err = deleteTx.Commit()
 		if err != nil {
 			log.Println("Error while deleting homework: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -506,7 +506,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
 		if err != nil && err != ErrDataNotFound {
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
 			if err != nil {

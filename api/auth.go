@@ -97,13 +97,13 @@ func InitAuthAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while clearing migration flag: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while clearing migration flag: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})

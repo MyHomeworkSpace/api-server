@@ -75,7 +75,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer announcementRows.Close()
 		announcements := []PlannerAnnouncement{}
@@ -96,7 +96,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting friday information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer fridayRows.Close()
 		friday := PlannerFriday{-1, "", -1}
@@ -117,7 +117,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting announcement information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 		announcements := []PlannerAnnouncement{}
@@ -134,7 +134,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting friday information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 		if rows.Next() {

@@ -49,7 +49,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while completing application auth: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer applicationRows.Close()
 
@@ -65,7 +65,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while completing application auth: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer tokenCheckRows.Close()
 
@@ -81,20 +81,20 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while generating application token:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		stmt, err := DB.Prepare("INSERT INTO application_authorizations(applicationId, userId, token) VALUES(?, ?, ?)")
 		if err != nil {
 			log.Println("Error while authorizing application:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(application.ID, GetSessionUserID(&c), token)
 		if err != nil {
 			log.Println("Error while authorizing application:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		return c.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
@@ -108,7 +108,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting application information: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -129,7 +129,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while getting authorizations: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -159,7 +159,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 
@@ -179,14 +179,14 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer deleteStmt.Close()
 		_, err = deleteStmt.Exec(c.FormValue("id"))
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -205,14 +205,14 @@ func InitApplicationAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer deleteStmt.Close()
 		_, err = deleteStmt.Exec(GetAuthToken(&c))
 		if err != nil {
 			log.Println("Error while revoking authorization:")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -227,19 +227,19 @@ func InitApplicationAPI(e *echo.Echo) {
 		clientId, err := Util_GenerateRandomString(42)
 		if err != nil {
 			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// get author name
 		rows, err := DB.Query("SELECT name FROM users WHERE id = ?", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 		if !rows.Next() {
 			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		authorName := ""
 		rows.Scan(&authorName)
@@ -248,12 +248,12 @@ func InitApplicationAPI(e *echo.Echo) {
 		stmt, err := DB.Prepare("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')")
 		if err != nil {
 			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c), authorName, clientId)
 		if err != nil {
 			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -266,7 +266,7 @@ func InitApplicationAPI(e *echo.Echo) {
 		rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", GetSessionUserID(&c))
 		if err != nil {
 			log.Println("Error while getting user applications: ", err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
 

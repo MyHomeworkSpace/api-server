@@ -35,13 +35,13 @@ func InitFeedbackAPI(e *echo.Echo) {
 		if err != nil {
 			log.Println("Error while adding feedback: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("type"), c.FormValue("text"))
 		if err != nil {
 			log.Println("Error while adding feedback: ")
 			log.Println(err)
-			return c.JSON(http.StatusInternalServerError, StatusResponse{"error"})
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		if FeedbackSlackEnabled {
