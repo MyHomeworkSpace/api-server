@@ -9,8 +9,7 @@ import (
 )
 
 type SessionInfo struct {
-	UserId   int
-	Username string
+	UserID int
 }
 
 // GenerateRandomBytes returns securely generated random bytes.
@@ -44,8 +43,7 @@ func GenerateUID() (string, error) {
 // If the given name is already used, its value is overwritten.
 func SetSession(name string, value SessionInfo) {
 	result := RedisClient.HMSet("session:"+name, map[string]string{
-		"userId":   strconv.Itoa(value.UserId),
-		"username": value.Username,
+		"userId": strconv.Itoa(value.UserID),
 	})
 
 	if result.Err() != nil {
@@ -68,23 +66,22 @@ func GetSession(name string) SessionInfo {
 	if result.Err() != nil {
 		log.Println("Error while getting session: ")
 		log.Println(result.Err())
-		return SessionInfo{-1, ""}
+		return SessionInfo{-1}
 	}
 
 	resultMap, err := result.Result()
 	if err != nil {
 		log.Println("Error while getting session: ")
 		log.Println(err)
-		return SessionInfo{-1, ""}
+		return SessionInfo{-1}
 	}
 
-	retval := SessionInfo{-1, ""}
+	retval := SessionInfo{-1}
 
-	retval.UserId, err = strconv.Atoi(resultMap["userId"])
-	retval.Username = resultMap["username"]
+	retval.UserID, err = strconv.Atoi(resultMap["userId"])
 
 	if err != nil {
-		return SessionInfo{-1, ""}
+		return SessionInfo{-1}
 	}
 
 	return retval
@@ -95,13 +92,13 @@ func GetSessionFromAuthToken(authToken string) SessionInfo {
 	if err != nil {
 		log.Println("Error while getting session from auth token:")
 		log.Println(err)
-		return SessionInfo{-1, ""}
+		return SessionInfo{-1}
 	}
 	defer rows.Close()
 	rows.Next()
 
-	retval := SessionInfo{-1, ""}
-	rows.Scan(&retval.UserId, &retval.Username)
+	retval := SessionInfo{-1}
+	rows.Scan(&retval.UserID)
 
 	return retval
 }

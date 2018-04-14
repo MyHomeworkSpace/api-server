@@ -51,7 +51,7 @@ func GetAuthToken(c *echo.Context) string {
 }
 
 func GetSessionUserID(c *echo.Context) int {
-	return GetSessionInfo(c).UserId
+	return GetSessionInfo(c).UserID
 }
 
 func GetSessionInfo(c *echo.Context) auth.SessionInfo {
@@ -59,13 +59,13 @@ func GetSessionInfo(c *echo.Context) auth.SessionInfo {
 		// we have an authorization header, use that
 		token := GetAuthToken(c)
 		if token == "" {
-			return auth.SessionInfo{-1, ""}
+			return auth.SessionInfo{-1}
 		}
 		return auth.GetSessionFromAuthToken(token)
 	} else {
 		cookie, err := (*c).Cookie("session")
 		if err != nil {
-			return auth.SessionInfo{-1, ""}
+			return auth.SessionInfo{-1}
 		}
 		return auth.GetSession(cookie.Value)
 	}
@@ -149,12 +149,12 @@ func InitAuthAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
-		session := auth.SessionInfo{-1, ""}
+		session := auth.SessionInfo{-1}
 		if rows.Next() {
 			// exists, use it
-			userId := -1
-			rows.Scan(&userId)
-			session = auth.SessionInfo{userId, c.FormValue("username")}
+			userID := -1
+			rows.Scan(&userID)
+			session = auth.SessionInfo{userID}
 		} else {
 			// doesn't exist
 			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
@@ -169,7 +169,7 @@ func InitAuthAPI(e *echo.Echo) {
 				log.Println(err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			lastId, err := res.LastInsertId()
+			lastID, err := res.LastInsertId()
 			if err != nil {
 				log.Println("Error while trying to set user information: ")
 				log.Println(err)
@@ -182,13 +182,13 @@ func InitAuthAPI(e *echo.Echo) {
 				log.Println(err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			_, err = addClassesStmt.Exec(int(lastId), int(lastId), int(lastId), int(lastId), int(lastId))
+			_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
 			if err != nil {
 				log.Println("Error while trying to add default classes: ")
 				log.Println(err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			session = auth.SessionInfo{int(lastId), c.FormValue("username")}
+			session = auth.SessionInfo{int(lastID)}
 		}
 		cookie, _ := c.Cookie("session")
 		auth.SetSession(cookie.Value, session)
@@ -246,7 +246,7 @@ func InitAuthAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
 		cookie, _ := c.Cookie("session")
-		newSession := auth.SessionInfo{-1, ""}
+		newSession := auth.SessionInfo{-1}
 		auth.SetSession(cookie.Value, newSession)
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})

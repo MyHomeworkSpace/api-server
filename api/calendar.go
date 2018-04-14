@@ -163,8 +163,15 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		userId := GetSessionUserID(&c)
 
+		user, err := Data_GetUserByID(userId)
+		if err != nil {
+			log.Println("Error while importing calendar: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		// test the credentials first so we don't run into blackbaud's rate limiting
-		_, resp, err := auth.DaltonLogin(GetSessionInfo(&c).Username, c.FormValue("password"))
+		_, resp, err := auth.DaltonLogin(user.Username, c.FormValue("password"))
 		if resp != "" || err != nil {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 		}
@@ -185,7 +192,7 @@ func InitCalendarAPI(e *echo.Echo) {
 			"From":            "",
 			"InterfaceSource": "WebApp",
 			"Password":        c.FormValue("password"),
-			"Username":        GetSessionInfo(&c).Username,
+			"Username":        user.Username,
 			"remember":        "false",
 		}, jar, ajaxToken)
 
