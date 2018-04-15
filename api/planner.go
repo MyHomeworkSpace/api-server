@@ -5,41 +5,26 @@ import (
 	"net/http"
 	"time"
 
-	//"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/data"
 
 	"github.com/labstack/echo"
 )
 
-// structs for data
-type PlannerAnnouncement struct {
-	ID    int    `json:"id"`
-	Date  string `json:"date"`
-	Text  string `json:"text"`
-	Grade int    `json:"grade"`
-	Type  int    `json:"type"`
-}
-
-type PlannerFriday struct {
-	ID    int    `json:"id"`
-	Date  string `json:"date"`
-	Index int    `json:"index"`
-}
-
 // responses
 type MultiPlannerAnnouncementResponse struct {
-	Status        string                `json:"status"`
-	Announcements []PlannerAnnouncement `json:"announcements"`
+	Status        string                     `json:"status"`
+	Announcements []data.PlannerAnnouncement `json:"announcements"`
 }
 
 type PlannerFridayResponse struct {
-	Status string        `json:"status"`
-	Friday PlannerFriday `json:"friday"`
+	Status string             `json:"status"`
+	Friday data.PlannerFriday `json:"friday"`
 }
 
 type PlannerWeekInfoResponse struct {
-	Status        string                `json:"status"`
-	Announcements []PlannerAnnouncement `json:"announcements"`
-	Friday        PlannerFriday         `json:"friday"`
+	Status        string                     `json:"status"`
+	Announcements []data.PlannerAnnouncement `json:"announcements"`
+	Friday        data.PlannerFriday         `json:"friday"`
 }
 
 func InitPlannerAPI(e *echo.Echo) {
@@ -78,9 +63,9 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer announcementRows.Close()
-		announcements := []PlannerAnnouncement{}
+		announcements := []data.PlannerAnnouncement{}
 		for announcementRows.Next() {
-			resp := PlannerAnnouncement{-1, "", "", -1, -1}
+			resp := data.PlannerAnnouncement{-1, "", "", -1, -1}
 			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 			if resp.Type == AnnouncementType_BreakStart {
 				resp.Text = "Start of " + resp.Text
@@ -99,7 +84,7 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer fridayRows.Close()
-		friday := PlannerFriday{-1, "", -1}
+		friday := data.PlannerFriday{-1, "", -1}
 		if fridayRows.Next() {
 			fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
 		}
@@ -120,9 +105,9 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
-		announcements := []PlannerAnnouncement{}
+		announcements := []data.PlannerAnnouncement{}
 		for rows.Next() {
-			resp := PlannerAnnouncement{-1, "", "", -1, -1}
+			resp := data.PlannerAnnouncement{-1, "", "", -1, -1}
 			rows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 			announcements = append(announcements, resp)
 		}
@@ -138,7 +123,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 		if rows.Next() {
-			resp := PlannerFriday{-1, "", -1}
+			resp := data.PlannerFriday{-1, "", -1}
 			rows.Scan(&resp.ID, &resp.Date, &resp.Index)
 			return c.JSON(http.StatusOK, PlannerFridayResponse{"ok", resp})
 		} else {

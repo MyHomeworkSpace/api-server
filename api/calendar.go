@@ -10,17 +10,12 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/calendar"
 
 	"github.com/labstack/echo"
 )
 
 // structs for data
-type CalendarTerm struct {
-	ID     int    `json:"id"`
-	TermID int    `json:"termId"`
-	Name   string `json:"name"`
-	UserID int    `json:"userId"`
-}
 type CalendarClass struct {
 	ID        int    `json:"id"`
 	TermID    int    `json:"termId"`
@@ -70,7 +65,7 @@ type CalendarClassesResponse struct {
 }
 type CalendarScheduleResponse struct {
 	Status string                 `json:"status"`
-	Terms  []CalendarTerm         `json:"terms"`
+	Terms  []calendar.Term        `json:"terms"`
 	Items  []CalendarScheduleItem `json:"items"`
 }
 type CalendarStatusResponse struct {
@@ -85,14 +80,14 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// get the terms
-		terms := []CalendarTerm{}
+		terms := []calendar.Term{}
 		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ?", GetSessionUserID(&c))
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer termRows.Close()
 		for termRows.Next() {
-			term := CalendarTerm{-1, -1, "", -1}
+			term := calendar.Term{-1, -1, "", -1}
 			termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
 			terms = append(terms, term)
 		}
@@ -276,13 +271,13 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		totalTermList := response.([]interface{})
-		termMap := map[int]CalendarTerm{}
+		termMap := map[int]calendar.Term{}
 		termRequestString := ""
 		for _, term := range totalTermList {
 			termInfo := term.(map[string]interface{})
 			termId := int(termInfo["DurationId"].(float64))
 			if termInfo["OfferingType"].(float64) == 1 {
-				termMap[termId] = CalendarTerm{
+				termMap[termId] = calendar.Term{
 					-1,
 					termId,
 					termInfo["DurationDescription"].(string),
@@ -342,11 +337,11 @@ func InitCalendarAPI(e *echo.Echo) {
 				7: []CalendarPeriod{},
 			}
 
-			startDate := Term1_Import_Start
-			endDate := Term1_Import_End
+			startDate := calendar.Term1_Import_Start
+			endDate := calendar.Term1_Import_End
 			if term == 2 {
-				startDate = Term2_Import_Start
-				endDate = Term2_Import_End
+				startDate = calendar.Term2_Import_Start
+				endDate = calendar.Term2_Import_End
 			}
 
 			response, err = Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
@@ -439,24 +434,24 @@ func InitCalendarAPI(e *echo.Echo) {
 		// find locations of classes
 		datesToSearch := map[int][]time.Time{
 			1: {
-				Term1_Import_Start,
-				Term1_Import_Start.Add(1 * 24 * time.Hour),
-				Term1_Import_Start.Add(2 * 24 * time.Hour),
-				Term1_Import_Start.Add(3 * 24 * time.Hour),
-				Term1_Import_Start.Add(4 * 24 * time.Hour),
-				Term1_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
-				Term1_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
-				Term1_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
+				calendar.Term1_Import_Start,
+				calendar.Term1_Import_Start.Add(1 * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(2 * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(3 * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(4 * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
+				calendar.Term1_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
 			},
 			2: {
-				Term2_Import_Start,
-				Term2_Import_Start.Add(1 * 24 * time.Hour),
-				Term2_Import_Start.Add(2 * 24 * time.Hour),
-				Term2_Import_Start.Add(3 * 24 * time.Hour),
-				Term2_Import_Start.Add(4 * 24 * time.Hour),
-				Term2_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
-				Term2_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
-				Term2_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
+				calendar.Term2_Import_Start,
+				calendar.Term2_Import_Start.Add(1 * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(2 * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(3 * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(4 * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(((7 * 1) + 4) * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(((7 * 2) + 4) * 24 * time.Hour),
+				calendar.Term2_Import_Start.Add(((7 * 3) + 4) * 24 * time.Hour),
 			},
 		}
 

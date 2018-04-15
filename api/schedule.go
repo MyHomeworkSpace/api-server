@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/calendar"
+
 	"github.com/labstack/echo"
 )
 
@@ -130,11 +132,11 @@ func InitScheduleAPI(e *echo.Echo) {
 				7: []FacultyPeriod{},
 			}
 
-			startDate := Term1_Import_Start
-			endDate := Term1_Import_End
+			startDate := calendar.Term1_Import_Start
+			endDate := calendar.Term1_Import_End
 			if term == 2 {
-				startDate = Term2_Import_Start
-				endDate = Term2_Import_End
+				startDate = calendar.Term2_Import_Start
+				endDate = calendar.Term2_Import_End
 			}
 
 			response, err := Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
@@ -180,7 +182,7 @@ func InitScheduleAPI(e *echo.Echo) {
 				dayNumber := int(day.Weekday())
 				if dayNumber == int(time.Friday) {
 					// find what friday it is and add that to the day number
-					fridayNumber, ok := ScheduleFridayList[day.Format("2006-01-02")]
+					fridayNumber, ok := calendar.ScheduleFridayList[day.Format("2006-01-02")]
 					if !ok {
 						log.Println("Error while importing faculty schedule")
 						log.Println("Couldn't find Friday number")
