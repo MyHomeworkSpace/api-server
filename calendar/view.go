@@ -12,9 +12,9 @@ import (
 // A ViewDay represents a day in a View.
 type ViewDay struct {
 	DayString     string                     `json:"day"`
-	ShiftingIndex int                        `json:"specialIndex"` // if it's a shifting day, its current index (for example, friday 1/2/3/4)
+	ShiftingIndex int                        `json:"shiftingIndex"` // if it's a shifting day, its current index (for example, friday 1/2/3/4)
 	CurrentTerm   *Term                      `json:"currentTerm"`
-	Announcements []data.PlannerAnnouncement `json:"announcement"`
+	Announcements []data.PlannerAnnouncement `json:"announcements"`
 	Events        []Event                    `json:"events"`
 }
 
