@@ -8,38 +8,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/data"
+
 	"github.com/labstack/echo"
 )
 
-// structs for data
-type Homework struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Due      string `json:"due"`
-	Desc     string `json:"desc"`
-	Complete int    `json:"complete"`
-	ClassID  int    `json:"classId"`
-	UserID   int    `json:"userId"`
-}
-
 // responses
 type HomeworkResponse struct {
-	Status   string     `json:"status"`
-	Homework []Homework `json:"homework"`
+	Status   string          `json:"status"`
+	Homework []data.Homework `json:"homework"`
 }
 type HWViewResponse struct {
-	Status       string     `json:"status"`
-	TomorrowName string     `json:"tomorrowName"`
-	ShowToday    bool       `json:"showToday"`
-	Overdue      []Homework `json:"overdue"`
-	Today        []Homework `json:"today"`
-	Tomorrow     []Homework `json:"tomorrow"`
-	Soon         []Homework `json:"soon"`
-	Longterm     []Homework `json:"longterm"`
+	Status       string          `json:"status"`
+	TomorrowName string          `json:"tomorrowName"`
+	ShowToday    bool            `json:"showToday"`
+	Overdue      []data.Homework `json:"overdue"`
+	Today        []data.Homework `json:"today"`
+	Tomorrow     []data.Homework `json:"tomorrow"`
+	Soon         []data.Homework `json:"soon"`
+	Longterm     []data.Homework `json:"longterm"`
 }
 type SingleHomeworkResponse struct {
-	Status   string   `json:"status"`
-	Homework Homework `json:"homework"`
+	Status   string        `json:"status"`
+	Homework data.Homework `json:"homework"`
 }
 
 func InitHomeworkAPI(e *echo.Echo) {
@@ -55,9 +46,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
@@ -100,9 +91,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
@@ -134,9 +125,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
 			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
@@ -180,12 +171,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		overdue := []Homework{}
-		today := []Homework{}
+		overdue := []data.Homework{}
+		today := []data.Homework{}
 		tomorrowName := "Tomorrow"
-		tomorrow := []Homework{}
-		soon := []Homework{}
-		longterm := []Homework{}
+		tomorrow := []data.Homework{}
+		soon := []data.Homework{}
+		longterm := []data.Homework{}
 
 		tomorrowTimeToThreshold := 24 * time.Hour
 
@@ -206,7 +197,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			dueDate, err := time.ParseInLocation("2006-01-02", resp.Due, location)
 			if err != nil {
@@ -246,7 +237,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 					overdue = append(overdue, item)
 				}
 			}
-			today = []Homework{}
+			today = []data.Homework{}
 		}
 
 		return c.JSON(http.StatusOK, HWViewResponse{
@@ -277,7 +268,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
 		}
 
-		resp := Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{-1, "", "", "", -1, -1, -1}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
 		return c.JSON(http.StatusOK, SingleHomeworkResponse{"ok", resp})
@@ -302,9 +293,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
@@ -324,9 +315,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}
@@ -358,9 +349,9 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		defer rows.Close()
 
-		homework := []Homework{}
+		homework := []data.Homework{}
 		for rows.Next() {
-			resp := Homework{-1, "", "", "", -1, -1, -1}
+			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			homework = append(homework, resp)
 		}

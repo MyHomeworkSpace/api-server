@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/data"
+
 	"github.com/labstack/echo"
 )
 
@@ -20,11 +22,11 @@ type CalendarEvent struct {
 	UserID int    `json:"userId"`
 }
 type CalendarHWEvent struct {
-	ID       int      `json:"id"`
-	Homework Homework `json:"homework"`
-	Start    int      `json:"start"`
-	End      int      `json:"end"`
-	UserID   int      `json:"userId"`
+	ID       int           `json:"id"`
+	Homework data.Homework `json:"homework"`
+	Start    int           `json:"start"`
+	End      int           `json:"end"`
+	UserID   int           `json:"userId"`
 }
 
 // responses
@@ -185,7 +187,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		hwEvents := []CalendarHWEvent{}
 		for hwEventRows.Next() {
-			hwEvent := CalendarHWEvent{-1, Homework{-1, "", "", "", -1, -1, -1}, -1, -1, -1}
+			hwEvent := CalendarHWEvent{-1, data.Homework{-1, "", "", "", -1, -1, -1}, -1, -1, -1}
 			hwEventRows.Scan(&hwEvent.ID, &hwEvent.Homework.ID, &hwEvent.Homework.Name, &hwEvent.Homework.Due, &hwEvent.Homework.Desc, &hwEvent.Homework.Complete, &hwEvent.Homework.ClassID, &hwEvent.Homework.UserID, &hwEvent.Start, &hwEvent.End, &hwEvent.UserID)
 			hwEvents = append(hwEvents, hwEvent)
 		}
