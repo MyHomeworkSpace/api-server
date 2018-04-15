@@ -88,7 +88,7 @@ func GetSession(name string) SessionInfo {
 }
 
 func GetSessionFromAuthToken(authToken string) SessionInfo {
-	rows, err := DB.Query("SELECT users.id, users.username FROM application_authorizations INNER JOIN users ON application_authorizations.userId = users.id WHERE application_authorizations.token = ?", authToken)
+	rows, err := DB.Query("SELECT users.id FROM application_authorizations INNER JOIN users ON application_authorizations.userId = users.id WHERE application_authorizations.token = ?", authToken)
 	if err != nil {
 		log.Println("Error while getting session from auth token:")
 		log.Println(err)
