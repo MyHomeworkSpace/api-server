@@ -65,7 +65,7 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]O
 }
 
 // GetView retrieves a CalendarView for the given user with the given parameters.
-func GetView(db *sql.DB, userID int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
+func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
 		Days: []ViewDay{},
 	}
@@ -255,7 +255,7 @@ func GetView(db *sql.DB, userID int, announcementsGroupsSQL string, startTime ti
 			continue
 		}
 
-		dayTime, _ := time.Parse("2006-01-02", day.DayString)
+		dayTime, _ := time.ParseInLocation("2006-01-02", day.DayString, location)
 
 		dayNumber := int(dayTime.Weekday())
 

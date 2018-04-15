@@ -191,7 +191,14 @@ func InitCalendarAPI(e *echo.Echo) {
 		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
 		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
 
-		view, err := calendar.GetView(DB, userID, announcementsGroupsSQL, startDate, endDate)
+		timeZone, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			log.Println("Error while timezone info: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		view, err := calendar.GetView(DB, userID, timeZone, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
 			log.Println("Error while getting calendar view: ")
 			log.Println(err)

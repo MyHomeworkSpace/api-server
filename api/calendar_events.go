@@ -83,7 +83,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
-		view, err := calendar.GetView(DB, userID, announcementsGroupsSQL, startDate, endDate)
+		view, err := calendar.GetView(DB, userID, time.UTC, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
 			log.Println("Error while getting calendar week: ")
 			log.Println(err)
