@@ -2,6 +2,7 @@ package api
 
 import (
 	"log"
+	"math"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -146,6 +147,58 @@ func InitCalendarAPI(e *echo.Echo) {
 		rows.Scan(&statusNum)
 
 		return c.JSON(http.StatusOK, CalendarStatusResponse{"ok", statusNum})
+	})
+
+	e.GET("/calendar/getView", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		if c.FormValue("start") == "" || c.FormValue("end") == "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+
+		startDate, err := time.Parse("2006-01-02", c.FormValue("start"))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+		endDate, err := time.Parse("2006-01-02", c.FormValue("end"))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+
+		if int(math.Floor(endDate.Sub(startDate).Hours()/24)) > 2*365 {
+			// cap of 2 years between start and end
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+
+		userID := GetSessionUserID(&c)
+
+		user, err := Data_GetUserByID(userID)
+		if err != nil {
+			log.Println("Error while getting calendar view: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		grade, err := Data_GetUserGrade(user)
+		if err != nil {
+			log.Println("Error while getting calendar view: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
+		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
+
+		view, err := calendar.GetView(DB, userID, announcementsGroupsSQL, startDate, endDate)
+		if err != nil {
+			log.Println("Error while getting calendar view: ")
+			log.Println(err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.JSON(http.StatusOK, CalendarViewResponse{"ok", view})
 	})
 
 	e.POST("/calendar/import", func(c echo.Context) error {
