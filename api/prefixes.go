@@ -48,7 +48,7 @@ var DefaultPrefixes = []Prefix{
 	Prefix{
 		Background: "2AC0F1",
 		Color:      "FFFFFF",
-		Words:      []string{"ICA", "Field Trip", "Thingy"},
+		Words:      []string{"ICA", "FieldTrip", "Thingy"},
 		Default:    true,
 	},
 	Prefix{
