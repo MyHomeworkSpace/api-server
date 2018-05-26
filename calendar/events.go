@@ -71,11 +71,6 @@ type ScheduleEventData struct {
 	RoomNumber   string `json:"roomNumber"`
 }
 
-// ScheduleEventData stores additional data associated with a special assessment (midterm or final). Used when sending that data to the client.
-type SpecialAssessmentData struct {
-	RoomNumber string `json:"roomNumber"`
-}
-
 // SpecialAssessmentInfo stores information related to a special assessment (midterm or final). Used for the internal, server-side list.
 type SpecialAssessmentInfo struct {
 	Subject     SpecialAssessmentType `json:"subject"`

@@ -64,6 +64,7 @@ var (
 	}
 
 	SpecialAssessmentList = map[int]*SpecialAssessmentInfo{}
+	SpecialAssessmentDays = map[string]SpecialAssessmentType{}
 )
 
 const (
@@ -74,16 +75,23 @@ const (
 )
 
 const (
-	SpecialAssessmentType_English  = 0
-	SpecialAssessmentType_History  = 1
-	SpecialAssessmentType_Math     = 2
-	SpecialAssessmentType_Science  = 3
-	SpecialAssessmentType_Language = 4
+	SpecialAssessmentType_Unknown  SpecialAssessmentType = 0
+	SpecialAssessmentType_English  = 1
+	SpecialAssessmentType_History  = 2
+	SpecialAssessmentType_Math     = 3
+	SpecialAssessmentType_Science  = 4
+	SpecialAssessmentType_Language = 5
 )
 
 func InitCalendar() {
 	// special assessments
 	// final schedule for 2017-2018 school year
+
+	SpecialAssessmentDays["2018-05-30"] = SpecialAssessmentType_English
+	SpecialAssessmentDays["2018-05-31"] = SpecialAssessmentType_History
+	SpecialAssessmentDays["2018-06-01"] = SpecialAssessmentType_Math
+	SpecialAssessmentDays["2018-06-04"] = SpecialAssessmentType_Science
+	SpecialAssessmentDays["2018-06-05"] = SpecialAssessmentType_Language
 
 	// ** english **
 
