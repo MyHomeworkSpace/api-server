@@ -403,12 +403,12 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			startHour := int(math.Floor(float64(event.Start) / 60 / 60))
 			startMin := int(math.Floor((float64(event.Start) - (float64(startHour) * 60 * 60)) / 60))
 
-			event.Start = int(time.Date(0, 0, 0, startHour, startMin, 0, 0, location).Unix())
+			event.Start = int(time.Date(1970, time.January, 1, startHour, startMin, 0, 0, location).Unix())
 
 			endHour := int(math.Floor(float64(event.End) / 60 / 60))
 			endMin := int(math.Floor((float64(event.End) - (float64(endHour) * 60 * 60)) / 60))
 
-			event.End = int(time.Date(0, 0, 0, endHour, endMin, 0, 0, location).Unix())
+			event.End = int(time.Date(1970, time.January, 1, endHour, endMin, 0, 0, location).Unix())
 
 			data := ScheduleEventData{
 				TermID: -1,
