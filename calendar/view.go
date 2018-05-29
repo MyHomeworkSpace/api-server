@@ -391,34 +391,36 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			}
 
 			event := Event{
-				Type: ScheduleEvent,
-				ID: -1,
-				Name: fmt.Sprintf("Final - %s", assessmentForDay.ClassName),
-				Start: assessmentForDay.Start,
-				End: assessmentForDay.End,
+				Type:   ScheduleEvent,
+				ID:     -1,
+				Name:   fmt.Sprintf("Final - %s", assessmentForDay.ClassName),
+				Start:  assessmentForDay.Start,
+				End:    assessmentForDay.End,
 				UserID: userID,
 			}
+
+			finalDay := startTime.Add(time.Duration(i) * 24 * time.Hour)
 
 			// hacky time correction to shift the timezone properly
 			startHour := int(math.Floor(float64(event.Start) / 60 / 60))
 			startMin := int(math.Floor((float64(event.Start) - (float64(startHour) * 60 * 60)) / 60))
 
-			event.Start = int(time.Date(1970, time.January, 1, startHour, startMin, 0, 0, location).Unix())
+			event.Start = int(time.Date(finalDay.Year(), finalDay.Month(), finalDay.Day(), startHour, startMin, 0, 0, location).Unix())
 
 			endHour := int(math.Floor(float64(event.End) / 60 / 60))
 			endMin := int(math.Floor((float64(event.End) - (float64(endHour) * 60 * 60)) / 60))
 
-			event.End = int(time.Date(1970, time.January, 1, endHour, endMin, 0, 0, location).Unix())
+			event.End = int(time.Date(finalDay.Year(), finalDay.Month(), finalDay.Day(), endHour, endMin, 0, 0, location).Unix())
 
 			data := ScheduleEventData{
-				TermID: -1,
-				ClassID: -1,
-				OwnerID: -1,
-				OwnerName: assessmentForDay.TeacherName,
-				DayNumber: -1,
-				Block: "",
+				TermID:       -1,
+				ClassID:      -1,
+				OwnerID:      -1,
+				OwnerName:    assessmentForDay.TeacherName,
+				DayNumber:    -1,
+				Block:        "",
 				BuildingName: "",
-				RoomNumber: assessmentForDay.RoomNumber,
+				RoomNumber:   assessmentForDay.RoomNumber,
 			}
 			event.Data = data
 
