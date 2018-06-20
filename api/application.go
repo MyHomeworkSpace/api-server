@@ -38,324 +38,390 @@ type MultipleApplicationsResponse struct {
 	Applications []Application `json:"applications"`
 }
 
-func InitApplicationAPI(e *echo.Echo) {
-	e.POST("/application/completeAuth", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
+func Route_Application_CompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
 
-		// get the application
-		applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", c.FormValue("clientId"))
-		if err != nil {
-			ErrorLog_LogError("completing application auth", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer applicationRows.Close()
+	// get the application
+	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.FormValue("clientId"))
+	if err != nil {
+		ErrorLog_LogError("completing application auth", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer applicationRows.Close()
 
-		if !applicationRows.Next() {
-			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
-		}
+	if !applicationRows.Next() {
+		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		return
+	}
 
-		application := Application{-1, "", "", "", ""}
-		applicationRows.Scan(&application.ID, &application.Name, &application.AuthorName, &application.CallbackURL)
+	application := Application{-1, "", "", "", ""}
+	applicationRows.Scan(&application.ID, &application.Name, &application.AuthorName, &application.CallbackURL)
 
-		// check if we've already authorized this application
-		tokenCheckRows, err := DB.Query("SELECT token FROM application_authorizations WHERE applicationId = ? AND userId = ?", application.ID, GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("completing application auth", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer tokenCheckRows.Close()
+	// check if we've already authorized this application
+	tokenCheckRows, err := DB.Query("SELECT token FROM application_authorizations WHERE applicationId = ? AND userId = ?", application.ID, GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("completing application auth", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer tokenCheckRows.Close()
 
-		if tokenCheckRows.Next() {
-			// if we have, just return that token
-			token := ""
-			tokenCheckRows.Scan(&token)
-			return c.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
-		}
+	if tokenCheckRows.Next() {
+		// if we have, just return that token
+		token := ""
+		tokenCheckRows.Scan(&token)
+		ec.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
+		return
+	}
 
-		// add the new authorization
-		token, err := Util_GenerateRandomString(56)
-		if err != nil {
-			ErrorLog_LogError("generating application token", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// add the new authorization
+	token, err := Util_GenerateRandomString(56)
+	if err != nil {
+		ErrorLog_LogError("generating application token", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		stmt, err := DB.Prepare("INSERT INTO application_authorizations(applicationId, userId, token) VALUES(?, ?, ?)")
-		if err != nil {
-			ErrorLog_LogError("authorizing application", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(application.ID, GetSessionUserID(&c), token)
-		if err != nil {
-			ErrorLog_LogError("authorizing application", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	stmt, err := DB.Prepare("INSERT INTO application_authorizations(applicationId, userId, token) VALUES(?, ?, ?)")
+	if err != nil {
+		ErrorLog_LogError("authorizing application", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(application.ID, GetSessionUserID(&ec), token)
+	if err != nil {
+		ErrorLog_LogError("authorizing application", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		return c.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
-	})
-	e.GET("/application/get/:id", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
+	ec.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
+}
 
-		rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", c.Param("id"))
-		if err != nil {
-			ErrorLog_LogError("getting application information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
+func Route_Application_Get(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
 
-		if !rows.Next() {
-			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
-		}
+	rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.Param("id"))
+	if err != nil {
+		ErrorLog_LogError("getting application information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
 
+	if !rows.Next() {
+		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		return
+	}
+
+	resp := Application{-1, "", "", "", ""}
+	rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.CallbackURL)
+
+	ec.JSON(http.StatusOK, SingleApplicationResponse{"ok", resp})
+}
+
+func Route_Application_GetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	rows, err := DB.Query("SELECT application_authorizations.id, applications.id, applications.name, applications.authorName FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.userId = ?", GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting authorizations", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	authorizations := []ApplicationAuthorization{}
+	for rows.Next() {
+		resp := ApplicationAuthorization{-1, -1, "", ""}
+		rows.Scan(&resp.ID, &resp.ApplicationID, &resp.Name, &resp.AuthorName)
+		authorizations = append(authorizations, resp)
+	}
+	ec.JSON(http.StatusOK, ApplicationAuthorizationsResponse{"ok", authorizations})
+}
+
+func Route_Application_RequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	state := ec.FormValue("state")
+	if state == "" {
+		ec.Redirect(http.StatusFound, AuthURLBase+"?id="+ec.Param("id"))
+	} else {
+		ec.Redirect(http.StatusFound, AuthURLBase+"?id="+ec.Param("id")+"&state="+ec.FormValue("state"))
+	}
+}
+
+func Route_Application_RevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	// find the authorization
+	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("revoking authorization", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
+
+	userId := -1
+	rows.Scan(&userId)
+
+	if GetSessionUserID(&ec) != userId {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
+
+	// delete the authorization
+	deleteStmt, err := DB.Prepare("DELETE FROM application_authorizations WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("revoking authorization", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer deleteStmt.Close()
+	_, err = deleteStmt.Exec(ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("revoking authorization", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func Route_Application_RevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	if !HasAuthToken(&ec) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "bad_request"})
+		return
+	}
+
+	// delete the authorization
+	deleteStmt, err := DB.Prepare("DELETE FROM application_authorizations WHERE token = ?")
+	if err != nil {
+		ErrorLog_LogError("revoking authorization", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer deleteStmt.Close()
+	_, err = deleteStmt.Exec(GetAuthToken(&ec))
+	if err != nil {
+		ErrorLog_LogError("revoking authorization", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	// generate client id
+	clientId, err := Util_GenerateRandomString(42)
+	if err != nil {
+		log.Println("Error while creating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// get author name
+	rows, err := DB.Query("SELECT name FROM users WHERE id = ?", GetSessionUserID(&ec))
+	if err != nil {
+		log.Println("Error while creating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		log.Println("Error while creating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	authorName := ""
+	rows.Scan(&authorName)
+
+	// actually create the application
+	stmt, err := DB.Prepare("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')")
+	if err != nil {
+		log.Println("Error while creating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(GetSessionUserID(&ec), authorName, clientId)
+	if err != nil {
+		log.Println("Error while creating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func Route_Application_Manage_GetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", GetSessionUserID(&ec))
+	if err != nil {
+		log.Println("Error while getting user applications: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	apps := []Application{}
+	for rows.Next() {
 		resp := Application{-1, "", "", "", ""}
-		rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.CallbackURL)
+		rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.ClientID, &resp.CallbackURL)
+		apps = append(apps, resp)
+	}
 
-		return c.JSON(http.StatusOK, SingleApplicationResponse{"ok", resp})
-	})
-	e.GET("/application/getAuthorizations", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		rows, err := DB.Query("SELECT application_authorizations.id, applications.id, applications.name, applications.authorName FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting authorizations", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
+	ec.JSON(http.StatusOK, MultipleApplicationsResponse{"ok", apps})
+}
 
-		authorizations := []ApplicationAuthorization{}
-		for rows.Next() {
-			resp := ApplicationAuthorization{-1, -1, "", ""}
-			rows.Scan(&resp.ID, &resp.ApplicationID, &resp.Name, &resp.AuthorName)
-			authorizations = append(authorizations, resp)
-		}
-		return c.JSON(http.StatusOK, ApplicationAuthorizationsResponse{"ok", authorizations})
-	})
-	e.GET("/application/requestAuth/:id", func(c echo.Context) error {
-		state := c.FormValue("state")
-		if state == "" {
-			return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id"))
-		} else {
-			return c.Redirect(http.StatusFound, AuthURLBase+"?id="+c.Param("id")+"&state="+c.FormValue("state"))
-		}
-	})
-	e.POST("/application/revokeAuth", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
+func Route_Application_Manage_Update(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
 
-		// find the authorization
-		rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("revoking authorization", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
+	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("callbackUrl") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	// check that you can actually edit the application
+	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	if err != nil {
+		log.Println("Error while updating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		userId := -1
-		rows.Scan(&userId)
+	// update the application
+	stmt, err := DB.Prepare("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?")
+	if err != nil {
+		log.Println("Error while updating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("callbackUrl"), ec.FormValue("id"))
+	if err != nil {
+		log.Println("Error while updating application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		if GetSessionUserID(&c) != userId {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
 
-		// delete the authorization
-		deleteStmt, err := DB.Prepare("DELETE FROM application_authorizations WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("revoking authorization", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer deleteStmt.Close()
-		_, err = deleteStmt.Exec(c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("revoking authorization", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-	e.POST("/application/revokeSelf", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
+	if ec.FormValue("id") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		if !HasAuthToken(&c) {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "bad_request"})
-		}
+	// check that you can actually edit the application
+	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		// delete the authorization
-		deleteStmt, err := DB.Prepare("DELETE FROM application_authorizations WHERE token = ?")
-		if err != nil {
-			ErrorLog_LogError("revoking authorization", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer deleteStmt.Close()
-		_, err = deleteStmt.Exec(GetAuthToken(&c))
-		if err != nil {
-			ErrorLog_LogError("revoking authorization", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	tx, err := DB.Begin()
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	// delete authorizations
+	authStmt, err := tx.Prepare("DELETE FROM application_authorizations WHERE applicationId = ?")
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer authStmt.Close()
+	_, err = authStmt.Exec(ec.FormValue("id"))
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-	e.POST("/application/manage/create", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
+	// delete applications
+	appStmt, err := tx.Prepare("DELETE FROM applications WHERE id = ?")
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer appStmt.Close()
+	_, err = appStmt.Exec(ec.FormValue("id"))
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// generate client id
-		clientId, err := Util_GenerateRandomString(42)
-		if err != nil {
-			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// go!
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Error while deleting application: ", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// get author name
-		rows, err := DB.Query("SELECT name FROM users WHERE id = ?", GetSessionUserID(&c))
-		if err != nil {
-			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		if !rows.Next() {
-			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		authorName := ""
-		rows.Scan(&authorName)
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
 
-		// actually create the application
-		stmt, err := DB.Prepare("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')")
-		if err != nil {
-			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(GetSessionUserID(&c), authorName, clientId)
-		if err != nil {
-			log.Println("Error while creating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+func InitApplicationAPI(e *echo.Echo) {
+	e.POST("/application/completeAuth", Route(Route_Application_CompleteAuth))
+	e.GET("/application/get/:id", Route(Route_Application_Get))
+	e.GET("/application/getAuthorizations", Route(Route_Application_GetAuthorizations))
+	e.GET("/application/requestAuth/:id", Route(Route_Application_RequestAuth))
+	e.POST("/application/revokeAuth", Route(Route_Application_RevokeAuth))
+	e.POST("/application/revokeSelf", Route(Route_Application_RevokeSelf))
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-	e.GET("/application/manage/getAll", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			log.Println("Error while getting user applications: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-
-		apps := []Application{}
-		for rows.Next() {
-			resp := Application{-1, "", "", "", ""}
-			rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.ClientID, &resp.CallbackURL)
-			apps = append(apps, resp)
-		}
-
-		return c.JSON(http.StatusOK, MultipleApplicationsResponse{"ok", apps})
-	})
-	e.POST("/application/manage/update", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("callbackUrl") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		// check that you can actually edit the application
-		rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
-		if err != nil {
-			log.Println("Error while updating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
-
-		// update the application
-		stmt, err := DB.Prepare("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?")
-		if err != nil {
-			log.Println("Error while updating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("callbackUrl"), c.FormValue("id"))
-		if err != nil {
-			log.Println("Error while updating application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-	e.POST("/application/manage/delete", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("id") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		// check that you can actually edit the application
-		rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
-
-		tx, err := DB.Begin()
-
-		// delete authorizations
-		authStmt, err := tx.Prepare("DELETE FROM application_authorizations WHERE applicationId = ?")
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer authStmt.Close()
-		_, err = authStmt.Exec(c.FormValue("id"))
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		// delete applications
-		appStmt, err := tx.Prepare("DELETE FROM applications WHERE id = ?")
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer appStmt.Close()
-		_, err = appStmt.Exec(c.FormValue("id"))
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		// go!
-		err = tx.Commit()
-		if err != nil {
-			log.Println("Error while deleting application: ", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	e.POST("/application/manage/create", Route(Route_Application_Manage_Create))
+	e.GET("/application/manage/getAll", Route(Route_Application_Manage_GetAll))
+	e.POST("/application/manage/update", Route(Route_Application_Manage_Update))
+	e.POST("/application/manage/delete", Route(Route_Application_Manage_Delete))
 }
