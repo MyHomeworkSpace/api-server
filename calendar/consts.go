@@ -76,11 +76,11 @@ const (
 
 const (
 	SpecialAssessmentType_Unknown  SpecialAssessmentType = 0
-	SpecialAssessmentType_English  = 1
-	SpecialAssessmentType_History  = 2
-	SpecialAssessmentType_Math     = 3
-	SpecialAssessmentType_Science  = 4
-	SpecialAssessmentType_Language = 5
+	SpecialAssessmentType_English                        = 1
+	SpecialAssessmentType_History                        = 2
+	SpecialAssessmentType_Math                           = 3
+	SpecialAssessmentType_Science                        = 4
+	SpecialAssessmentType_Language                       = 5
 )
 
 func InitCalendar() {
