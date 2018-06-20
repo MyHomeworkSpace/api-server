@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -242,7 +241,7 @@ func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec 
 	// generate client id
 	clientId, err := Util_GenerateRandomString(42)
 	if err != nil {
-		log.Println("Error while creating application: ", err)
+		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -250,13 +249,13 @@ func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec 
 	// get author name
 	rows, err := DB.Query("SELECT name FROM users WHERE id = ?", GetSessionUserID(&ec))
 	if err != nil {
-		log.Println("Error while creating application: ", err)
+		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		log.Println("Error while creating application: ", err)
+		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -266,13 +265,13 @@ func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec 
 	// actually create the application
 	stmt, err := DB.Prepare("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')")
 	if err != nil {
-		log.Println("Error while creating application: ", err)
+		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	_, err = stmt.Exec(GetSessionUserID(&ec), authorName, clientId)
 	if err != nil {
-		log.Println("Error while creating application: ", err)
+		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -288,7 +287,7 @@ func Route_Application_Manage_GetAll(w http.ResponseWriter, r *http.Request, ec 
 
 	rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
-		log.Println("Error while getting user applications: ", err)
+		ErrorLog_LogError("getting user applications", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -318,7 +317,7 @@ func Route_Application_Manage_Update(w http.ResponseWriter, r *http.Request, ec 
 	// check that you can actually edit the application
 	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
 	if err != nil {
-		log.Println("Error while updating application: ", err)
+		ErrorLog_LogError("updating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -331,13 +330,13 @@ func Route_Application_Manage_Update(w http.ResponseWriter, r *http.Request, ec 
 	// update the application
 	stmt, err := DB.Prepare("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?")
 	if err != nil {
-		log.Println("Error while updating application: ", err)
+		ErrorLog_LogError("updating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("callbackUrl"), ec.FormValue("id"))
 	if err != nil {
-		log.Println("Error while updating application: ", err)
+		ErrorLog_LogError("updating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -359,7 +358,7 @@ func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec 
 	// check that you can actually edit the application
 	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -374,14 +373,14 @@ func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec 
 	// delete authorizations
 	authStmt, err := tx.Prepare("DELETE FROM application_authorizations WHERE applicationId = ?")
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer authStmt.Close()
 	_, err = authStmt.Exec(ec.FormValue("id"))
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -389,14 +388,14 @@ func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec 
 	// delete applications
 	appStmt, err := tx.Prepare("DELETE FROM applications WHERE id = ?")
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer appStmt.Close()
 	_, err = appStmt.Exec(ec.FormValue("id"))
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -404,7 +403,7 @@ func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec 
 	// go!
 	err = tx.Commit()
 	if err != nil {
-		log.Println("Error while deleting application: ", err)
+		ErrorLog_LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
