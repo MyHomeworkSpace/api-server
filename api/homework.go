@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,8 +39,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting homework information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -72,8 +70,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		classRows, err := DB.Query("SELECT id FROM classes WHERE id = ? AND userId = ?", classId, GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework for class:")
-			log.Println(err)
+			ErrorLog_LogError("getting homework for class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer classRows.Close()
@@ -85,8 +82,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// actually get the homework
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classId, GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework for class:")
-			log.Println(err)
+			ErrorLog_LogError("getting homework for class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -119,8 +115,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting homework information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -165,8 +160,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 3 DAY) OR `complete` != '1') ORDER BY `due` ASC", GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework view: ")
-			log.Println(err)
+			ErrorLog_LogError("getting homework view", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -201,8 +195,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 			dueDate, err := time.ParseInLocation("2006-01-02", resp.Due, location)
 			if err != nil {
-				log.Println("Error while getting homework view: ")
-				log.Println(err)
+				ErrorLog_LogError("getting homework view", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
@@ -258,8 +251,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.Param("id"))
 		if err != nil {
-			log.Println("Error while getting homework information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting homework information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -287,8 +279,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (due >= ? and due < ?)", GetSessionUserID(&c), startDate, endDate)
 		if err != nil {
-			log.Println("Error while getting homework information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting homework information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -309,8 +300,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` DESC", GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting homework picker suggestions:")
-			log.Println(err)
+			ErrorLog_LogError("getting homework picker suggestions", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -343,8 +333,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`name` LIKE ? OR `desc` LIKE ?) ORDER BY `due` DESC", GetSessionUserID(&c), query, query)
 		if err != nil {
-			log.Println("Error while getting homework search results:")
-			log.Println(err)
+			ErrorLog_LogError("getting homework search results", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -369,8 +358,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// check if you are allowed to add to the given classId
 		rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("classId"))
 		if err != nil {
-			log.Println("Error while adding homework: ")
-			log.Println(err)
+			ErrorLog_LogError("adding homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -380,14 +368,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)")
 		if err != nil {
-			log.Println("Error while adding homework: ")
-			log.Println(err)
+			ErrorLog_LogError("adding homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while adding homework: ")
-			log.Println(err)
+			ErrorLog_LogError("adding homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -404,8 +390,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing homework: ")
-			log.Println(err)
+			ErrorLog_LogError("editing homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -416,8 +401,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// check if you are allowed to add to the given classId
 		classRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("classId"))
 		if err != nil {
-			log.Println("Error while editing homework: ")
-			log.Println(err)
+			ErrorLog_LogError("editing homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer classRows.Close()
@@ -427,14 +411,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while editing homework: ")
-			log.Println(err)
+			ErrorLog_LogError("editing homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("due"), c.FormValue("desc"), c.FormValue("complete"), c.FormValue("classId"), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing homework: ")
-			log.Println(err)
+			ErrorLog_LogError("editing homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -451,8 +433,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting homework: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -465,23 +446,20 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// delete the homework records
 		_, err = deleteTx.Exec("DELETE FROM homework WHERE id = ?", c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting homework: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// delete any associated calendar events
 		_, err = deleteTx.Exec("DELETE FROM calendar_hwevents WHERE homeworkId = ?", c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting homework: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		err = deleteTx.Commit()
 		if err != nil {
-			log.Println("Error while deleting homework: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting homework", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -516,8 +494,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 
 		_, err = DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ? AND FIND_IN_SET(classId, ?) = 0", GetSessionUserID(&c), hiddenClassesSet)
 		if err != nil {
-			log.Println("Error while marking overdue homework as done: ")
-			log.Println(err)
+			ErrorLog_LogError("marking overdue homework as done", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 

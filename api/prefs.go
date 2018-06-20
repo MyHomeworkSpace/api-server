@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -28,8 +27,7 @@ func InitPrefsAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&c), c.Param("key"))
 		if err != nil {
-			log.Println("Error while getting pref: ")
-			log.Println(err)
+			ErrorLog_LogError("getting pref", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -54,8 +52,7 @@ func InitPrefsAPI(e *echo.Echo) {
 
 		rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&c), c.FormValue("key"))
 		if err != nil {
-			log.Println("Error while setting pref: ")
-			log.Println(err)
+			ErrorLog_LogError("setting pref", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -64,14 +61,12 @@ func InitPrefsAPI(e *echo.Echo) {
 			// doesn't exist, add it
 			stmt, err := DB.Prepare("INSERT INTO prefs(userId, `key`, `value`) VALUES(?, ?, ?)")
 			if err != nil {
-				log.Println("Error while inserting pref: ")
-				log.Println(err)
+				ErrorLog_LogError("inserting pref", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("key"), c.FormValue("value"))
 			if err != nil {
-				log.Println("Error while inserting pref: ")
-				log.Println(err)
+				ErrorLog_LogError("inserting pref", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -79,14 +74,12 @@ func InitPrefsAPI(e *echo.Echo) {
 			// exists already, update it
 			stmt, err := DB.Prepare("UPDATE prefs SET `key` = ?, `value` = ? WHERE userId = ? AND `key` = ?")
 			if err != nil {
-				log.Println("Error while updating pref: ")
-				log.Println(err)
+				ErrorLog_LogError("updating pref", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = stmt.Exec(c.FormValue("key"), c.FormValue("value"), GetSessionUserID(&c), c.FormValue("key"))
 			if err != nil {
-				log.Println("Error while updating pref: ")
-				log.Println(err)
+				ErrorLog_LogError("updating pref", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			return c.JSON(http.StatusOK, StatusResponse{"ok"})

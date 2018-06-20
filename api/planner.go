@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -41,15 +40,13 @@ func InitPlannerAPI(e *echo.Echo) {
 
 		user, err := Data_GetUserByID(GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting planner week information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting planner week information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		grade, err := Data_GetUserGrade(user)
 		if err != nil {
-			log.Println("Error while getting planner week information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting planner week information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -58,8 +55,7 @@ func InitPlannerAPI(e *echo.Echo) {
 
 		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+")", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
-			log.Println("Error while getting announcement information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting announcement information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer announcementRows.Close()
@@ -79,8 +75,7 @@ func InitPlannerAPI(e *echo.Echo) {
 
 		fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
 		if err != nil {
-			log.Println("Error while getting friday information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting friday information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer fridayRows.Close()
@@ -100,8 +95,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		endDate := startDate.Add(time.Hour * 24 * 7)
 		rows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
 		if err != nil {
-			log.Println("Error while getting announcement information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting announcement information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -117,8 +111,7 @@ func InitPlannerAPI(e *echo.Echo) {
 	e.GET("/planner/fridays/get/:date", func(c echo.Context) error {
 		rows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", c.Param("date"))
 		if err != nil {
-			log.Println("Error while getting friday information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting friday information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()

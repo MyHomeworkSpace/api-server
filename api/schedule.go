@@ -99,15 +99,13 @@ func InitScheduleAPI(e *echo.Echo) {
 
 		jar, err := cookiejar.New(nil)
 		if err != nil {
-			log.Println("Error while importing faculty schedule")
-			log.Println(err)
+			ErrorLog_LogError("importing faculty schedule", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		mySchoolAppURL, err := url.Parse("https://dalton.myschoolapp.com")
 		if err != nil {
-			log.Println("Error while importing faculty schedule")
-			log.Println(err)
+			ErrorLog_LogError("importing faculty schedule", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -148,8 +146,7 @@ func InitScheduleAPI(e *echo.Echo) {
 				"end":             {strconv.FormatInt(endDate.Unix(), 10)},
 			}, map[string]interface{}{}, jar, "")
 			if err != nil {
-				log.Println("Error while importing faculty schedule")
-				log.Println(err)
+				ErrorLog_LogError("importing faculty schedule", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
@@ -204,8 +201,7 @@ func InitScheduleAPI(e *echo.Echo) {
 				endTime, err2 := time.Parse("3:04 PM", strings.SplitN(periodInfo["end"].(string), " ", 2)[1])
 
 				if err != nil || err2 != nil {
-					log.Println("Error while importing faculty schedule")
-					log.Println(err)
+					ErrorLog_LogError("importing faculty schedule", err)
 					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				}
 
@@ -259,8 +255,7 @@ func InitScheduleAPI(e *echo.Echo) {
 
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Error while adding faculty schedule to DB")
-			log.Println(err)
+			ErrorLog_LogError("adding faculty schedule to DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -283,15 +278,13 @@ func InitScheduleAPI(e *echo.Echo) {
 
 		jar, err := cookiejar.New(nil)
 		if err != nil {
-			log.Println("Error while importing class metadata")
-			log.Println(err)
+			ErrorLog_LogError("importing class metadata", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		mySchoolAppURL, err := url.Parse("https://dalton.myschoolapp.com")
 		if err != nil {
-			log.Println("Error while importing class metadata")
-			log.Println(err)
+			ErrorLog_LogError("importing class metadata", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -308,8 +301,7 @@ func InitScheduleAPI(e *echo.Echo) {
 			"associationId": {"1"},
 		}, map[string]interface{}{}, jar, "")
 		if err != nil {
-			log.Println("Error while importing class metadata")
-			log.Println(err)
+			ErrorLog_LogError("importing class metadata", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -328,8 +320,7 @@ func InitScheduleAPI(e *echo.Echo) {
 
 		_, err = DB.Exec("UPDATE faculty_periods SET room = ?, block = ?, grade = ? WHERE sectionId = ?", room, block, grade, sectionId)
 		if err != nil {
-			log.Println("Error while importing class metadata")
-			log.Println(err)
+			ErrorLog_LogError("importing class metadata", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 

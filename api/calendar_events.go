@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -62,15 +61,13 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		user, err := Data_GetUserByID(userID)
 		if err != nil {
-			log.Println("Error while getting planner week information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting planner week information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		grade, err := Data_GetUserGrade(user)
 		if err != nil {
-			log.Println("Error while getting planner week information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting planner week information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -85,16 +82,14 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		view, err := calendar.GetView(DB, userID, time.UTC, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
-			log.Println("Error while getting calendar week: ")
-			log.Println(err)
+			ErrorLog_LogError("getting calendar week", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// get all terms for this user
 		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", userID)
 		if err != nil {
-			log.Println("Error while getting term information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting term information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer termRows.Close()
@@ -123,8 +118,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
 		if err != nil {
-			log.Println("Error while getting friday information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting friday information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer fridayRows.Close()
@@ -217,14 +211,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("INSERT INTO calendar_events(name, `start`, `end`, `desc`, userId) VALUES(?, ?, ?, ?, ?)")
 		if err != nil {
-			log.Println("Error while adding calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), start, end, c.FormValue("desc"), GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while adding calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -246,8 +238,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM calendar_events WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -257,14 +248,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while editing calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), start, end, c.FormValue("desc"), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -280,8 +269,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM calendar_events WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -291,14 +279,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("DELETE FROM calendar_events WHERE id = ?")
 		if err != nil {
-			log.Println("Error while deleting calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting calendar event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -322,8 +308,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check you own the homework you're trying to associate this with
 		rows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("homeworkId"))
 		if err != nil {
-			log.Println("Error while adding calendar homework event:")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -333,14 +318,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("INSERT INTO calendar_hwevents(homeworkId, `start`, `end`, userId) VALUES(?, ?, ?, ?)")
 		if err != nil {
-			log.Println("Error while adding calendar homework event:")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("homeworkId"), start, end, GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while adding calendar homework event:")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -362,8 +345,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM calendar_hwevents WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -374,8 +356,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check you own the homework you're trying to associate this with
 		rows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("homeworkId"))
 		if err != nil {
-			log.Println("Error while adding calendar homework event:")
-			log.Println(err)
+			ErrorLog_LogError("adding calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -385,14 +366,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("UPDATE calendar_hwevents SET homeworkId = ?, `start` = ?, `end` = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while editing calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("homeworkId"), start, end, c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("editing calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -408,8 +387,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM calendar_hwevents WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -419,14 +397,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("DELETE FROM calendar_hwevents WHERE id = ?")
 		if err != nil {
-			log.Println("Error while deleting calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting calendar homework event: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting calendar homework event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})

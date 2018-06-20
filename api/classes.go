@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -52,8 +51,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting class information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting class information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -76,8 +74,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting class information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting class information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -99,8 +96,7 @@ func InitClassesAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while getting class information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting class information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -126,14 +122,12 @@ func InitClassesAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)")
 		if err != nil {
-			log.Println("Error while adding class: ")
-			log.Println(err)
+			ErrorLog_LogError("adding class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while adding class: ")
-			log.Println(err)
+			ErrorLog_LogError("adding class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -153,8 +147,7 @@ func InitClassesAPI(e *echo.Echo) {
 		// check if you are allowed to edit the given id
 		idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing classes: ")
-			log.Println(err)
+			ErrorLog_LogError("editing classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -164,14 +157,12 @@ func InitClassesAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while editing class: ")
-			log.Println(err)
+			ErrorLog_LogError("editing class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while editing class: ")
-			log.Println(err)
+			ErrorLog_LogError("editing class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -188,8 +179,7 @@ func InitClassesAPI(e *echo.Echo) {
 		// check if you are allowed to delete the given id
 		idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting classes: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer idRows.Close()
@@ -203,32 +193,28 @@ func InitClassesAPI(e *echo.Echo) {
 		// delete HW calendar events
 		_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// delete HW
 		_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// delete class
 		_, err = tx.Exec("DELETE FROM classes WHERE id = ?", c.FormValue("id"))
 		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// go!
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -246,8 +232,7 @@ func InitClassesAPI(e *echo.Echo) {
 		// check if you are allowed to change id1
 		id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id1"))
 		if err != nil {
-			log.Println("Error while deleting classes: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer id1Rows.Close()
@@ -258,8 +243,7 @@ func InitClassesAPI(e *echo.Echo) {
 		// check if you are allowed to change id2
 		id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id2"))
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer id2Rows.Close()
@@ -273,8 +257,7 @@ func InitClassesAPI(e *echo.Echo) {
 		// hopefully no one adds 100 classes in the time this transaction takes to complete
 		swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		swapId := -1
@@ -288,92 +271,79 @@ func InitClassesAPI(e *echo.Echo) {
 		// update class id1 -> tmp
 		class1Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = class1Stmt.Exec(swapId, c.FormValue("id1"))
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// update class id2 -> id1
 		class2Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = class2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// update class tmp -> id2
 		classTmpStmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = classTmpStmt.Exec(c.FormValue("id2"), swapId)
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// update homework id1 -> swp
 		hw1Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = hw1Stmt.Exec(swapId, c.FormValue("id1"))
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// update homework id2 -> id1
 		hw2Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = hw2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// update homework swp -> id2
 		hwSwapStmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = hwSwapStmt.Exec(c.FormValue("id2"), swapId)
 		if err != nil {
-			log.Println("Error while swapping classes: ")
-			log.Println(err)
+			ErrorLog_LogError("swapping classes", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// go!
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Error while deleting class: ")
-			log.Println(err)
+			ErrorLog_LogError("deleting class", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 

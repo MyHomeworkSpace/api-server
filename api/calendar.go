@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"math"
 	"net/http"
 	"net/http/cookiejar"
@@ -176,15 +175,13 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		user, err := Data_GetUserByID(userID)
 		if err != nil {
-			log.Println("Error while getting calendar view: ")
-			log.Println(err)
+			ErrorLog_LogError("getting calendar view", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		grade, err := Data_GetUserGrade(user)
 		if err != nil {
-			log.Println("Error while getting calendar view: ")
-			log.Println(err)
+			ErrorLog_LogError("getting calendar view", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -193,15 +190,13 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		timeZone, err := time.LoadLocation("America/New_York")
 		if err != nil {
-			log.Println("Error while timezone info: ")
-			log.Println(err)
+			ErrorLog_LogError("timezone info", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		view, err := calendar.GetView(DB, userID, timeZone, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
-			log.Println("Error while getting calendar view: ")
-			log.Println(err)
+			ErrorLog_LogError("getting calendar view", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -220,8 +215,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		user, err := Data_GetUserByID(userId)
 		if err != nil {
-			log.Println("Error while importing calendar: ")
-			log.Println(err)
+			ErrorLog_LogError("importing calendar", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -637,8 +631,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		// go!
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Error while adding schedule to DB")
-			log.Println(err)
+			ErrorLog_LogError("adding schedule to DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
@@ -654,16 +647,14 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		tx, err := DB.Begin()
 		if err != nil {
-			log.Println("Error while clearing schedule from DB")
-			log.Println(err)
+			ErrorLog_LogError("clearing schedule from DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		// clear away anything that is in the db
 		termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
 		if err != nil {
-			log.Println("Error while clearing schedule from DB")
-			log.Println(err)
+			ErrorLog_LogError("clearing schedule from DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer termDeleteStmt.Close()
@@ -671,8 +662,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
 		if err != nil {
-			log.Println("Error while clearing schedule from DB")
-			log.Println(err)
+			ErrorLog_LogError("clearing schedule from DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer classDeleteStmt.Close()
@@ -680,8 +670,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
 		if err != nil {
-			log.Println("Error while clearing schedule from DB")
-			log.Println(err)
+			ErrorLog_LogError("clearing schedule from DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer periodsDeleteStmt.Close()
@@ -689,8 +678,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
 		if err != nil {
-			log.Println("Error while clearing schedule from DB")
-			log.Println(err)
+			ErrorLog_LogError("clearing schedule from DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer statusDeleteStmt.Close()
@@ -698,8 +686,7 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		err = tx.Commit()
 		if err != nil {
-			log.Println("Error while adding schedule to DB")
-			log.Println(err)
+			ErrorLog_LogError("adding schedule to DB", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 

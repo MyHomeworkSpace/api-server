@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/slack"
@@ -33,22 +32,19 @@ func InitFeedbackAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text) VALUES(?, ?, ?)")
 		if err != nil {
-			log.Println("Error while adding feedback: ")
-			log.Println(err)
+			ErrorLog_LogError("adding feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("type"), c.FormValue("text"))
 		if err != nil {
-			log.Println("Error while adding feedback: ")
-			log.Println(err)
+			ErrorLog_LogError("adding feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		if FeedbackSlackEnabled {
 			user, err := Data_GetUserByID(GetSessionUserID(&c))
 			if err != nil {
-				log.Println("Error while posting feedback to Slack: ")
-				log.Println(err)
+				ErrorLog_LogError("posting feedback to Slack", err)
 				return c.JSON(http.StatusOK, StatusResponse{"ok"})
 			}
 
@@ -98,8 +94,7 @@ func InitFeedbackAPI(e *echo.Echo) {
 				},
 			})
 			if err != nil {
-				log.Println("Error while posting feedback to Slack: ")
-				log.Println(err)
+				ErrorLog_LogError("posting feedback to Slack", err)
 			}
 		}
 

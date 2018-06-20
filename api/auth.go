@@ -95,14 +95,12 @@ func InitAuthAPI(e *echo.Echo) {
 
 		stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
 		if err != nil {
-			log.Println("Error while clearing migration flag: ")
-			log.Println(err)
+			ErrorLog_LogError("clearing migration flag", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		_, err = stmt.Exec(GetSessionUserID(&c))
 		if err != nil {
-			log.Println("Error while clearing migration flag: ")
-			log.Println(err)
+			ErrorLog_LogError("clearing migration flag", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
@@ -124,8 +122,7 @@ func InitAuthAPI(e *echo.Echo) {
 		if WhitelistEnabled {
 			file, err := os.Open(WhitelistFile)
 			if err != nil {
-				log.Println("Error while getting whitelist: ")
-				log.Println(err)
+				ErrorLog_LogError("getting whitelist", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			scanner := bufio.NewScanner(file)
@@ -144,8 +141,7 @@ func InitAuthAPI(e *echo.Echo) {
 		}
 		rows, err := DB.Query("SELECT id from users where username = ?", c.FormValue("username"))
 		if err != nil {
-			log.Println("Error while getting user information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting user information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
@@ -159,33 +155,28 @@ func InitAuthAPI(e *echo.Echo) {
 			// doesn't exist
 			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
 			if err != nil {
-				log.Println("Error while trying to set user information: ")
-				log.Println(err)
+				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]interface{})[0])
 			if err != nil {
-				log.Println("Error while trying to set user information: ")
-				log.Println(err)
+				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			lastID, err := res.LastInsertId()
 			if err != nil {
-				log.Println("Error while trying to set user information: ")
-				log.Println(err)
+				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			// add default classes
 			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
 			if err != nil {
-				log.Println("Error while trying to add default classes: ")
-				log.Println(err)
+				ErrorLog_LogError("trying to add default classes", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
 			if err != nil {
-				log.Println("Error while trying to add default classes: ")
-				log.Println(err)
+				ErrorLog_LogError("trying to add default classes", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 			session = auth.SessionInfo{int(lastID)}
@@ -204,22 +195,19 @@ func InitAuthAPI(e *echo.Echo) {
 		if err == ErrDataNotFound {
 			return c.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
 		} else if err != nil {
-			log.Println("Error while getting user information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting user information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		grade, err := Data_GetUserGrade(user)
 		if err != nil {
-			log.Println("Error while getting user information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting user information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
 		tabs, err := Data_GetTabsByUserID(user.ID)
 		if err != nil {
-			log.Println("Error while getting user information: ")
-			log.Println(err)
+			ErrorLog_LogError("getting user information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
