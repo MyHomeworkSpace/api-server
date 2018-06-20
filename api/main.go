@@ -10,6 +10,14 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+type RouteFunc func(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext)
+type AuthLevel int
+
+const (
+	AuthLevelNone AuthLevel = iota
+	AuthLevelSignedIn
+)
+
 var AuthURLBase string
 var DB *sql.DB
 var RedisClient *redis.Client
@@ -32,10 +40,22 @@ type ErrorResponse struct {
 	Error  string `json:"error"`
 }
 
+type RouteContext struct {
+}
+
+func Route(f RouteFunc) func(ec echo.Context) error {
+	return func(ec echo.Context) error {
+		f(ec.Response(), ec.Request(), ec, RouteContext{})
+		return nil
+	}
+}
+
+func Route_Status(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	ec.String(http.StatusOK, "Alive")
+}
+
 func Init(e *echo.Echo) {
-	e.GET("/status", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Alive")
-	})
+	e.GET("/status", Route(Route_Status))
 
 	InitApplicationAPI(e)
 	InitAuthAPI(e)
