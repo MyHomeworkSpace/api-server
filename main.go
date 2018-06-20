@@ -9,6 +9,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/calendar"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -30,6 +31,8 @@ func main() {
 	InitConfig()
 	InitDatabase()
 	InitRedis()
+
+	calendar.InitCalendar()
 
 	api.AuthURLBase = config.Server.AuthURLBase
 	api.DB = DB

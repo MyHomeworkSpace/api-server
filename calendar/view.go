@@ -2,6 +2,7 @@ package calendar
 
 import (
 	"database/sql"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -159,6 +160,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 	// create days in array, set friday indices
 	dayCount := int(math.Ceil(endTime.Sub(startTime).Hours() / 24))
 	currentDay := startTime
+	viewIncludesSpecialAssessmentDay := false
 	for i := 0; i < dayCount; i++ {
 		view.Days = append(view.Days, ViewDay{
 			DayString:     currentDay.Format("2006-01-02"),
@@ -190,6 +192,13 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 					view.Days[i].ShiftingIndex = friday.Index
 					break
 				}
+			}
+		}
+
+		for specialAssessmentDay, _ := range SpecialAssessmentDays {
+			if view.Days[i].DayString == specialAssessmentDay {
+				viewIncludesSpecialAssessmentDay = true
+				break
 			}
 		}
 
@@ -313,6 +322,109 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 					view.Days[i].Events[eventIndex].Name = "Assembly"
 				}
 			}
+		}
+	}
+
+	if viewIncludesSpecialAssessmentDay {
+		// get a list of the user's calendar classes
+		sectionIDs := []int{}
+		classRows, err := db.Query("SELECT sectionId FROM calendar_classes WHERE userId = ? GROUP BY `sectionId`", userID)
+		if err != nil {
+			return View{}, err
+		}
+		defer classRows.Close()
+		for classRows.Next() {
+			sectionID := -1
+			classRows.Scan(&sectionID)
+			sectionIDs = append(sectionIDs, sectionID)
+		}
+
+		// find the applicable special assessments
+		allSpecialAssessments := []*SpecialAssessmentInfo{}
+		for _, sectionID := range sectionIDs {
+			specialAssessment, foundAssessment := SpecialAssessmentList[sectionID]
+			if !foundAssessment {
+				// no assessment for this class
+				continue
+			}
+
+			isDuplicate := false
+			for _, alreadyFoundSpecialAssessment := range allSpecialAssessments {
+				if specialAssessment == alreadyFoundSpecialAssessment {
+					isDuplicate = true
+					break
+				}
+			}
+			if isDuplicate {
+				continue
+			}
+
+			allSpecialAssessments = append(allSpecialAssessments, specialAssessment)
+		}
+
+		for i := 0; i < dayCount; i++ {
+			day := view.Days[i]
+
+			dayType := SpecialAssessmentType_Unknown
+
+			for specialAssessmentDay, specialAssessmentDayType := range SpecialAssessmentDays {
+				if day.DayString == specialAssessmentDay {
+					dayType = specialAssessmentDayType
+					break
+				}
+			}
+
+			if dayType == SpecialAssessmentType_Unknown {
+				continue
+			}
+
+			var assessmentForDay *SpecialAssessmentInfo
+			for _, assessment := range allSpecialAssessments {
+				if assessment.Subject == dayType {
+					assessmentForDay = assessment
+					break
+				}
+			}
+
+			if assessmentForDay == nil {
+				continue
+			}
+
+			event := Event{
+				Type:   ScheduleEvent,
+				ID:     -1,
+				Name:   fmt.Sprintf("Final - %s", assessmentForDay.ClassName),
+				Start:  assessmentForDay.Start,
+				End:    assessmentForDay.End,
+				UserID: userID,
+			}
+
+			finalDay := startTime.Add(time.Duration(i) * 24 * time.Hour)
+
+			// hacky time correction to shift the timezone properly
+			startHour := int(math.Floor(float64(event.Start) / 60 / 60))
+			startMin := int(math.Floor((float64(event.Start) - (float64(startHour) * 60 * 60)) / 60))
+
+			event.Start = int(time.Date(finalDay.Year(), finalDay.Month(), finalDay.Day(), startHour, startMin, 0, 0, location).Unix())
+
+			endHour := int(math.Floor(float64(event.End) / 60 / 60))
+			endMin := int(math.Floor((float64(event.End) - (float64(endHour) * 60 * 60)) / 60))
+
+			event.End = int(time.Date(finalDay.Year(), finalDay.Month(), finalDay.Day(), endHour, endMin, 0, 0, location).Unix())
+
+			data := ScheduleEventData{
+				TermID:       -1,
+				ClassID:      -1,
+				OwnerID:      -1,
+				OwnerName:    assessmentForDay.TeacherName,
+				DayNumber:    -1,
+				Block:        "",
+				BuildingName: "",
+				RoomNumber:   assessmentForDay.RoomNumber,
+			}
+			event.Data = data
+
+			view.Days[i].Events = append(view.Days[i].Events, event)
 		}
 	}
 

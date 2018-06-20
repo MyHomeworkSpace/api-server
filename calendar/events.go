@@ -9,6 +9,9 @@ import (
 // An EventType represents the type of a calendar event: plain, homework, or schedule.
 type EventType int
 
+// An SpecialAssessmentType represents the subject of a special event.
+type SpecialAssessmentType int
+
 // The available event types.
 const (
 	PlainEvent EventType = iota
@@ -66,4 +69,14 @@ type ScheduleEventData struct {
 	Block        string `json:"block"`
 	BuildingName string `json:"buildingName"`
 	RoomNumber   string `json:"roomNumber"`
+}
+
+// SpecialAssessmentInfo stores information related to a special assessment (midterm or final). Used for the internal, server-side list.
+type SpecialAssessmentInfo struct {
+	Subject     SpecialAssessmentType `json:"subject"`
+	Start       int                   `json:"start"`
+	End         int                   `json:"end"`
+	ClassName   string                `json:"className"`
+	TeacherName string                `json:"teacherName"`
+	RoomNumber  string                `json:"roomNumber"`
 }

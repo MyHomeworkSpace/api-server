@@ -42,13 +42,13 @@ var DefaultPrefixes = []Prefix{
 	Prefix{
 		Background: "DC143C",
 		Color:      "FFFFFF",
-		Words:      []string{"Test", "Final", "Exam", "Midterm"},
+		Words:      []string{"Test", "Final", "Exam", "Midterm", "Ahh"},
 		Default:    true,
 	},
 	Prefix{
 		Background: "2AC0F1",
 		Color:      "FFFFFF",
-		Words:      []string{"ICA"},
+		Words:      []string{"ICA", "FieldTrip", "Thingy"},
 		Default:    true,
 	},
 	Prefix{
@@ -99,7 +99,7 @@ var DefaultPrefixes = []Prefix{
 	Prefix{
 		Background: "01b501",
 		Color:      "FFFFFF",
-		Words:      []string{"Begin", "Start"},
+		Words:      []string{"Begin", "Start", "Do"},
 		TimedEvent: true,
 		Default:    true,
 	},
