@@ -113,6 +113,10 @@ type PrefixesResponse struct {
 }
 
 func InitPrefixesAPI(e *echo.Echo) {
+	e.GET("/prefixes/getDefaultList", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes, "FFD3BD", "000000"})
+	})
+
 	e.GET("/prefixes/getList", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
