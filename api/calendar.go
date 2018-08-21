@@ -157,11 +157,17 @@ func InitCalendarAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
-		startDate, err := time.Parse("2006-01-02", c.FormValue("start"))
+		timeZone, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			ErrorLog_LogError("timezone info", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		startDate, err := time.ParseInLocation("2006-01-02", c.FormValue("start"), timeZone)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
-		endDate, err := time.Parse("2006-01-02", c.FormValue("end"))
+		endDate, err := time.ParseInLocation("2006-01-02", c.FormValue("end"), timeZone)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
@@ -187,12 +193,6 @@ func InitCalendarAPI(e *echo.Echo) {
 
 		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
 		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
-
-		timeZone, err := time.LoadLocation("America/New_York")
-		if err != nil {
-			ErrorLog_LogError("timezone info", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
 
 		view, err := calendar.GetView(DB, userID, timeZone, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
