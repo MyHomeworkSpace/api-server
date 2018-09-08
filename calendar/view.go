@@ -319,7 +319,22 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 				// starting 11:50, ending 12:50
 				if strings.HasPrefix(event.Name, "HS House") && event.Start == int(dayTime.Unix())+42600 && event.End == int(dayTime.Unix())+46200 {
 					// found it
-					view.Days[i].Events[eventIndex].Name = "Assembly"
+					// now look up what type of assembly period it is this week
+					assemblyType, foundType := AssemblyTypeList[dayTime.Format("2006-01-02")]
+
+					if !foundType || assemblyType == AssemblyType_Assembly {
+						// set name to assembly and room to Theater
+						view.Days[i].Events[eventIndex].Name = "Assembly"
+						data := view.Days[i].Events[eventIndex].Data.(ScheduleEventData)
+						data.RoomNumber = "Theater"
+						view.Days[i].Events[eventIndex].Data = data
+					} else if assemblyType == AssemblyType_LongHouse {
+						// set name to long house
+						view.Days[i].Events[eventIndex].Name = "Long House"
+					} else if assemblyType == AssemblyType_Lab {
+						// just remove it
+						view.Days[i].Events = append(view.Days[i].Events[:eventIndex], view.Days[i].Events[eventIndex+1:]...)
+					}
 				}
 			}
 		}
