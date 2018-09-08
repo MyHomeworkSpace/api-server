@@ -4,7 +4,7 @@ package api
 const (
 	// the grade that someone in the class of 2019 is in for this year
 	// used to calculate other people's grade
-	Grade_ClassOf2019 = 11
+	Grade_ClassOf2019 = 12
 )
 
 // these are constants used to keep track of things
