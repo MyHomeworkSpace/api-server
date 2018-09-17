@@ -202,7 +202,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			}
 		}
 
-		currentDay = currentDay.Add(24 * time.Hour)
+		currentDay = currentDay.AddDate(0, 0, 1)
 	}
 
 	// get plain events
