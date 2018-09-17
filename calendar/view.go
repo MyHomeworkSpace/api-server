@@ -40,7 +40,7 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]O
 
 	// find the matching ends
 	for i, block := range blocks {
-		offBlockEndRows, err := db.Query("SELECT date FROM announcements WHERE ("+groupSQL+") AND `type` = 3 AND `text` = ?", block.Name)
+		offBlockEndRows, err := db.Query("SELECT date FROM announcements WHERE ("+groupSQL+") AND `type` = 3 AND `text` = ? AND `date` > ?", block.Name, block.StartText)
 		if err != nil {
 			return nil, err
 		}
