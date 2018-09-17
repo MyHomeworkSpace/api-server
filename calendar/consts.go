@@ -76,7 +76,7 @@ var (
 	AssemblyTypeList = map[string]AssemblyType{
 		"2018-09-13": AssemblyType_Assembly,
 		"2018-09-20": AssemblyType_Assembly,
-		"2018-09-27": AssemblyType_Lab,
+		"2018-09-27": AssemblyType_LongHouse,
 		"2018-10-04": AssemblyType_Assembly,
 		"2018-10-11": AssemblyType_Lab,
 		"2018-10-18": AssemblyType_Assembly,
