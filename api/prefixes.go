@@ -97,10 +97,16 @@ var DefaultPrefixes = []Prefix{
 		Default:    true,
 	},
 	Prefix{
-		Background: "01b501",
+		Background: "01B501",
 		Color:      "FFFFFF",
 		Words:      []string{"Begin", "Start", "Do"},
 		TimedEvent: true,
+		Default:    true,
+	},
+	Prefix{
+		Background: "E34000",
+		Color:      "FFFFFF",
+		Words:      []string{"Apply", "Application", "Deadline"},
 		Default:    true,
 	},
 }
