@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/blackbaud"
 	"github.com/MyHomeworkSpace/api-server/calendar"
 
 	"github.com/labstack/echo"
@@ -137,7 +138,7 @@ func InitScheduleAPI(e *echo.Echo) {
 				endDate = calendar.Term2_Import_End
 			}
 
-			response, err := Blackbaud_Request("GET", "DataDirect/ScheduleList", url.Values{
+			response, err := blackbaud.Request("GET", "DataDirect/ScheduleList", url.Values{
 				"format":          {"json"},
 				"viewerId":        {strconv.Itoa(targetId)},
 				"personaId":       {"3"},
@@ -295,7 +296,7 @@ func InitScheduleAPI(e *echo.Echo) {
 			},
 		})
 
-		response, err := Blackbaud_Request("GET", "datadirect/SectionInfoView", url.Values{
+		response, err := blackbaud.Request("GET", "datadirect/SectionInfoView", url.Values{
 			"format":        {"json"},
 			"sectionId":     {strconv.Itoa(sectionId)},
 			"associationId": {"1"},

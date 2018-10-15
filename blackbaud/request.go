@@ -1,4 +1,4 @@
-package api
+package blackbaud
 
 import (
 	"encoding/json"
@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-var Blackbaud_AjaxRegex = regexp.MustCompile("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"(.*)\" \\/>")
+var AjaxRegex = regexp.MustCompile("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"(.*)\" \\/>")
 
 const (
-	Blackbaud_AjaxPage = "https://dalton.myschoolapp.com/app/"
-	Blackbaud_Domain   = "https://dalton.myschoolapp.com/api/"
+	AjaxPage = "https://dalton.myschoolapp.com/app/"
+	Domain   = "https://dalton.myschoolapp.com/api/"
 )
 
-func Blackbaud_GetAjaxToken() (string, error) {
-	resp, err := http.Get(Blackbaud_AjaxPage)
+func GetAjaxToken() (string, error) {
+	resp, err := http.Get(AjaxPage)
 	if err != nil {
 		return "", err
 	}
@@ -27,13 +27,13 @@ func Blackbaud_GetAjaxToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(Blackbaud_AjaxRegex.FindAllSubmatch(strResponse, -1)[0][1]), nil
+	return string(AjaxRegex.FindAllSubmatch(strResponse, -1)[0][1]), nil
 }
 
-func Blackbaud_Request(requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (interface{}, error) {
+func Request(requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (interface{}, error) {
 	client := http.Client{Jar: jar}
 
-	url := Blackbaud_Domain + path
+	url := Domain + path
 	url = url + "?" + urlParams.Encode()
 
 	var requestBody io.Reader
