@@ -10,15 +10,6 @@ var (
 	ErrDataNotFound    = errors.New("data: not found")
 )
 
-type FacultyInfo struct {
-	BlackbaudUserID     int    `json:"bbUserId"`
-	FirstName           string `json:"firstName"`
-	LastName            string `json:"lastName"`
-	LargeFileName       string `json:"largeFileName"`
-	DepartmentDisplay   string `json:"departmentDisplay"`
-	GradeNumericDisplay string `json:"gradeNumericDisplay"`
-}
-
 type Tab struct {
 	ID     int    `json:"id"`
 	Slug   string `json:"slug"`
