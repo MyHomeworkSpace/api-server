@@ -12,13 +12,20 @@ import (
 
 var AjaxRegex = regexp.MustCompile("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"(.*)\" \\/>")
 
-const (
-	AjaxPage = "https://dalton.myschoolapp.com/app/"
-	Domain   = "https://dalton.myschoolapp.com/api/"
-)
+func GetBaseDomain(schoolSlug string) string {
+	return "https://" + schoolSlug + ".myschoolapp.com"
+}
 
-func GetAjaxToken() (string, error) {
-	resp, err := http.Get(AjaxPage)
+func GetAjaxPageURL(schoolSlug string) string {
+	return GetBaseDomain(schoolSlug) + "/app/"
+}
+
+func GetAPIBaseURL(schoolSlug string) string {
+	return GetBaseDomain(schoolSlug) + "/api/"
+}
+
+func GetAjaxToken(schoolSlug string) (string, error) {
+	resp, err := http.Get(GetAjaxPageURL(schoolSlug))
 	if err != nil {
 		return "", err
 	}
@@ -30,10 +37,10 @@ func GetAjaxToken() (string, error) {
 	return string(AjaxRegex.FindAllSubmatch(strResponse, -1)[0][1]), nil
 }
 
-func Request(requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (interface{}, error) {
+func Request(schoolSlug string, requestType string, path string, urlParams url.Values, postData map[string]interface{}, jar http.CookieJar, ajaxToken string) (interface{}, error) {
 	client := http.Client{Jar: jar}
 
-	url := Domain + path
+	url := GetAPIBaseURL(schoolSlug) + path
 	url = url + "?" + urlParams.Encode()
 
 	var requestBody io.Reader
@@ -57,7 +64,7 @@ func Request(requestType string, path string, urlParams url.Values, postData map
 	req.Header.Set("Accept", "application/json, text/javascript, */*; q=0.01")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36")
-	req.Header.Set("Referer", "https://dalton.myschoolapp.com/app/")
+	req.Header.Set("Referer", GetAjaxPageURL(schoolSlug))
 	req.Header["RequestVerificationToken"] = []string{ajaxToken}
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 

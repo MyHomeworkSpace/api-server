@@ -226,8 +226,10 @@ func InitCalendarAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 		}
 
+		schoolSlug := "dalton"
+
 		// set up ajax token and stuff
-		ajaxToken, err := blackbaud.GetAjaxToken()
+		ajaxToken, err := blackbaud.GetAjaxToken(schoolSlug)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "ajaxtoken_error"})
 		}
@@ -238,7 +240,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// sign in to blackbaud
-		response, err := blackbaud.Request("POST", "SignIn", url.Values{}, map[string]interface{}{
+		response, err := blackbaud.Request(schoolSlug, "POST", "SignIn", url.Values{}, map[string]interface{}{
 			"From":            "",
 			"InterfaceSource": "WebApp",
 			"Password":        c.FormValue("password"),
@@ -261,7 +263,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// get user id
-		response, err = blackbaud.Request("GET", "webapp/context", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
+		response, err = blackbaud.Request(schoolSlug, "GET", "webapp/context", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
@@ -295,7 +297,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// get list of grades
-		response, err = blackbaud.Request("GET", "datadirect/StudentGradeLevelList", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
+		response, err = blackbaud.Request(schoolSlug, "GET", "datadirect/StudentGradeLevelList", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
@@ -316,7 +318,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// get list of terms
-		response, err = blackbaud.Request("GET", "DataDirect/StudentGroupTermList", url.Values{
+		response, err = blackbaud.Request(schoolSlug, "GET", "DataDirect/StudentGroupTermList", url.Values{
 			"studentUserId":   {strconv.Itoa(bbUserId)},
 			"schoolYearLabel": {schoolYearLabel},
 			"personaId":       {"2"},
@@ -346,7 +348,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		// get list of classes
-		response, err = blackbaud.Request("GET", "datadirect/ParentStudentUserAcademicGroupsGet", url.Values{
+		response, err = blackbaud.Request(schoolSlug, "GET", "datadirect/ParentStudentUserAcademicGroupsGet", url.Values{
 			"userId":          {strconv.Itoa(bbUserId)},
 			"schoolYearLabel": {schoolYearLabel},
 			"memberLevel":     {"3"},
@@ -399,7 +401,7 @@ func InitCalendarAPI(e *echo.Echo) {
 				endDate = calendar.Term2_Import_End
 			}
 
-			response, err = blackbaud.Request("GET", "DataDirect/ScheduleList", url.Values{
+			response, err = blackbaud.Request(schoolSlug, "GET", "DataDirect/ScheduleList", url.Values{
 				"format":          {"json"},
 				"viewerId":        {strconv.Itoa(bbUserId)},
 				"personaId":       {"2"},
@@ -514,7 +516,7 @@ func InitCalendarAPI(e *echo.Echo) {
 			for dayNumber, date := range termDates {
 				periods := dayMap[termNum][dayNumber+1]
 
-				scheduleInfo, err := blackbaud.Request("GET", "schedule/MyDayCalendarStudentList", url.Values{
+				scheduleInfo, err := blackbaud.Request(schoolSlug, "GET", "schedule/MyDayCalendarStudentList", url.Values{
 					"scheduleDate": {date.Format("1/2/2006")},
 					"personaId":    {"2"},
 				}, map[string]interface{}{}, jar, ajaxToken)

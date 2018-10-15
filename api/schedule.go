@@ -283,7 +283,9 @@ func InitScheduleAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
-		mySchoolAppURL, err := url.Parse("https://dalton.myschoolapp.com")
+		schoolSlug := "dalton"
+
+		mySchoolAppURL, err := url.Parse(blackbaud.GetBaseDomain(schoolSlug))
 		if err != nil {
 			ErrorLog_LogError("importing class metadata", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -296,7 +298,7 @@ func InitScheduleAPI(e *echo.Echo) {
 			},
 		})
 
-		response, err := blackbaud.Request("GET", "datadirect/SectionInfoView", url.Values{
+		response, err := blackbaud.Request(schoolSlug, "GET", "datadirect/SectionInfoView", url.Values{
 			"format":        {"json"},
 			"sectionId":     {strconv.Itoa(sectionId)},
 			"associationId": {"1"},
