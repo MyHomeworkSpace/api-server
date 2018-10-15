@@ -67,7 +67,6 @@ func Init(e *echo.Echo) {
 	InitPlannerAPI(e)
 	InitPrefixesAPI(e)
 	InitPrefsAPI(e)
-	InitScheduleAPI(e)
 
 	log.Println("API endpoints ready.")
 }
