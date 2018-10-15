@@ -104,7 +104,9 @@ func InitScheduleAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
-		mySchoolAppURL, err := url.Parse("https://dalton.myschoolapp.com")
+		schoolSlug := "dalton"
+
+		mySchoolAppURL, err := url.Parse(blackbaud.GetBaseDomain(schoolSlug))
 		if err != nil {
 			ErrorLog_LogError("importing faculty schedule", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -138,7 +140,7 @@ func InitScheduleAPI(e *echo.Echo) {
 				endDate = calendar.Term2_Import_End
 			}
 
-			response, err := blackbaud.Request("GET", "DataDirect/ScheduleList", url.Values{
+			response, err := blackbaud.Request(schoolSlug, "GET", "DataDirect/ScheduleList", url.Values{
 				"format":          {"json"},
 				"viewerId":        {strconv.Itoa(targetId)},
 				"personaId":       {"3"},
