@@ -158,7 +158,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 	}
 
 	// create days in array, set friday indices
-	dayCount := int(math.Ceil(endTime.Sub(startTime).Hours() / 24))
+	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
 	currentDay := startTime
 	viewIncludesSpecialAssessmentDay := false
 	for i := 0; i < dayCount; i++ {
