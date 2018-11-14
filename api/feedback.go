@@ -10,13 +10,11 @@ import (
 
 // structs for data
 type Feedback struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Due      string `json:"due"`
-	Desc     string `json:"desc"`
-	Complete int    `json:"complete"`
-	ClassID  int    `json:"classId"`
-	UserID   int    `json:"userId"`
+	ID        int    `json:"id"`
+	UserID    int    `json:"userid"`
+	Type      string `json:"type"`
+	Text      string `json:"text"`
+	Timestamp string `json:"timestamp"`
 }
 
 // responses
