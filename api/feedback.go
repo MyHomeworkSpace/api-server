@@ -8,17 +8,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-// structs for data
-type Feedback struct {
-	ID        int    `json:"id"`
-	UserID    int    `json:"userid"`
-	Type      string `json:"type"`
-	Text      string `json:"text"`
-	Timestamp string `json:"timestamp"`
-}
-
-// responses
-
 func InitFeedbackAPI(e *echo.Echo) {
 	e.POST("/feedback/add", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {

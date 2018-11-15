@@ -6,12 +6,12 @@ import (
 	"github.com/labstack/echo"
 )
 
-type AllUsersResponse struct {
+type UsersResponse struct {
 	Status string `json:"status"`
 	Users  []User `json:"users"`
 }
 
-type AllFeedbacksResponse struct {
+type FeedbacksResponse struct {
 	Status    string     `json:"status"`
 	Feedbacks []Feedback `json:"feedbacks"`
 }
@@ -25,18 +25,21 @@ func InitAdminAPI(e *echo.Echo) {
 		if user.Level < 1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
+
 		rows, err := DB.Query("SELECT ID, name, username, email, type, features, level, showMigrateMessage FROM users")
 		if err != nil {
 			ErrorLog_LogError("getting all users", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
 		users := []User{}
 		for rows.Next() {
 			resp := User{-1, "", "", "", "", "", -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Username, &resp.Email, &resp.Type, &resp.Features, &resp.Level, &resp.ShowMigrateMessage)
 			users = append(users, resp)
 		}
-		return c.JSON(http.StatusOK, AllUsersResponse{"ok", users})
+
+		return c.JSON(http.StatusOK, UsersResponse{"ok", users})
 	})
 
 	e.GET("/admin/getAllFeedback", func(c echo.Context) error {
@@ -47,17 +50,20 @@ func InitAdminAPI(e *echo.Echo) {
 		if user.Level < 1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
+
 		rows, err := DB.Query("SELECT * FROM feedback")
 		if err != nil {
 			ErrorLog_LogError("getting all feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
 		feedbacks := []Feedback{}
 		for rows.Next() {
 			resp := Feedback{-1, -1, "", "", ""}
 			rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &resp.Timestamp)
 			feedbacks = append(feedbacks, resp)
 		}
-		return c.JSON(http.StatusOK, AllFeedbacksResponse{"ok", feedbacks})
+
+		return c.JSON(http.StatusOK, FeedbacksResponse{"ok", feedbacks})
 	})
 }

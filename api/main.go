@@ -57,6 +57,7 @@ func Route_Status(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rou
 func Init(e *echo.Echo) {
 	e.GET("/status", Route(Route_Status))
 
+	InitAdminAPI(e)
 	InitApplicationAPI(e)
 	InitAuthAPI(e)
 	InitCalendarAPI(e)
@@ -64,11 +65,10 @@ func Init(e *echo.Echo) {
 	InitClassesAPI(e)
 	InitFeedbackAPI(e)
 	InitHomeworkAPI(e)
+	InitNotificationsAPI(e)
 	InitPlannerAPI(e)
 	InitPrefixesAPI(e)
 	InitPrefsAPI(e)
-	InitAnnoucncementsAPI(e)
-	InitAdminAPI(e)
 
 	log.Println("API endpoints ready.")
 }
