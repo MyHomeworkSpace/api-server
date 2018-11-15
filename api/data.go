@@ -16,6 +16,8 @@ type Feedback struct {
 	Type      string `json:"type"`
 	Text      string `json:"text"`
 	Timestamp string `json:"timestamp"`
+	UserName  string `json:"userName"`
+	UserEmail string `json:"userEmail"`
 }
 
 type Tab struct {
