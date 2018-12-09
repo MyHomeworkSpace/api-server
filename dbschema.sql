@@ -149,6 +149,15 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `prefixes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `words` text COLLATE utf8mb4_unicode_ci,
+  `color` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `background` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `isTimedEvent` tinyint(1) DEFAULT NULL,
+  `userId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `prefs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
