@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/util"
 )
 
 // A ViewDay represents a day in a View.
@@ -195,6 +196,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			}
 		}
 
+		// do we have special assessments?
 		for specialAssessmentDay, _ := range SpecialAssessmentDays {
 			if view.Days[i].DayString == specialAssessmentDay {
 				viewIncludesSpecialAssessmentDay = true
@@ -265,17 +267,83 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 		}
 
 		dayTime, _ := time.ParseInLocation("2006-01-02", day.DayString, location)
+		dayOffset := int(dayTime.Unix())
 
-		dayNumber := int(dayTime.Weekday())
+		// is it candlelighting?
+		if dayTime.Year() == Day_Candlelighting.Year() && dayTime.Month() == Day_Candlelighting.Month() && dayTime.Day() == Day_Candlelighting.Day() {
+			itemsForPeriod := map[string][]Event{}
+			seenClassIds := []int{}
+			rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.block IN ('C', 'D', 'H', 'G') GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", userID, day.CurrentTerm.TermID)
+			if err != nil {
+				return View{}, err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				event := Event{
+					Type: ScheduleEvent,
+				}
+				data := ScheduleEventData{}
+				rows.Scan(&event.ID, &data.TermID, &data.ClassID, &event.Name, &data.OwnerID, &data.OwnerName, &data.DayNumber, &data.Block, &data.BuildingName, &data.RoomNumber, &event.Start, &event.End, &event.UserID)
+				event.Data = data
 
-		if dayTime.Weekday() == time.Friday {
-			if day.ShiftingIndex != -1 {
-				dayNumber = 4 + day.ShiftingIndex
-			} else {
-				continue
+				if !util.IntSliceContains(seenClassIds, data.ClassID) {
+					_, sliceExists := itemsForPeriod[data.Block]
+					if !sliceExists {
+						itemsForPeriod[data.Block] = []Event{}
+					}
+					itemsForPeriod[data.Block] = append(itemsForPeriod[data.Block], event)
+					seenClassIds = append(seenClassIds, data.ClassID)
+				}
+			}
+
+			for _, specialScheduleItem := range SpecialSchedule_HS_Candlelighting {
+				if specialScheduleItem.Block != "" {
+					// it references a specific class, look it up
+					items, haveItems := itemsForPeriod[specialScheduleItem.Block]
+					if haveItems {
+						for _, scheduleItem := range items {
+							newEvent := scheduleItem
+							newEvent.Start = dayOffset + specialScheduleItem.Start
+							newEvent.End = dayOffset + specialScheduleItem.End
+
+							// remove building + room number because we can't tell which one to use
+							// (in the case of classes where the room changes, like most science classes)
+							eventData := newEvent.Data.(ScheduleEventData)
+							eventData.BuildingName = ""
+							eventData.RoomNumber = ""
+							newEvent.Data = eventData
+
+							view.Days[i].Events = append(view.Days[i].Events, newEvent)
+						}
+					} else {
+						// the person doesn't have a class for that period
+						// just skip it
+					}
+				} else {
+					// it's a fixed thing, just add it directly
+					newEvent := Event{
+						ID:    -1,
+						Name:  specialScheduleItem.Name,
+						Start: dayOffset + specialScheduleItem.Start,
+						End:   dayOffset + specialScheduleItem.End,
+						Data: ScheduleEventData{
+							TermID:       day.CurrentTerm.TermID,
+							ClassID:      -1,
+							OwnerID:      -1,
+							OwnerName:    "",
+							DayNumber:    -1,
+							Block:        "",
+							BuildingName: "",
+							RoomNumber:   "",
+						},
+						UserID: -1,
+					}
+					view.Days[i].Events = append(view.Days[i].Events, newEvent)
+				}
 			}
 		}
 
+		// check if it's an off day
 		isOff := false
 
 		for _, offDay := range offDays {
@@ -287,6 +355,17 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 
 		if isOff {
 			continue
+		}
+
+		// calculate day index (1 = monday, 8 = friday 4)
+		dayNumber := int(dayTime.Weekday())
+
+		if dayTime.Weekday() == time.Friday {
+			if day.ShiftingIndex != -1 {
+				dayNumber = 4 + day.ShiftingIndex
+			} else {
+				continue
+			}
 		}
 
 		if dayTime.Weekday() == time.Saturday || dayTime.Weekday() == time.Sunday {
@@ -306,8 +385,8 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			rows.Scan(&event.ID, &data.TermID, &data.ClassID, &event.Name, &data.OwnerID, &data.OwnerName, &data.DayNumber, &data.Block, &data.BuildingName, &data.RoomNumber, &event.Start, &event.End, &event.UserID)
 			event.Data = data
 
-			event.Start += int(dayTime.Unix())
-			event.End += int(dayTime.Unix())
+			event.Start += dayOffset
+			event.End += dayOffset
 
 			view.Days[i].Events = append(view.Days[i].Events, event)
 		}

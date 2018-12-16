@@ -11,14 +11,14 @@ var (
 	Day_ExamRelief, _     = time.Parse("2006-01-02", "2019-01-25")
 	Day_SchoolEnd, _      = time.Parse("2006-01-02", "2019-06-06")
 
-	// SpecialSchedule_HS_Candlelighting = []CalendarSpecialScheduleItem{
-	// 	CalendarSpecialScheduleItem{"C", "", 29400, 31500},
-	// 	CalendarSpecialScheduleItem{"D", "", 31800, 33900},
-	// 	CalendarSpecialScheduleItem{"H", "", 34200, 36300},
-	// 	CalendarSpecialScheduleItem{"G", "", 36600, 38700},
-	// 	CalendarSpecialScheduleItem{"", "Long House", 39000, 41100},
-	// 	CalendarSpecialScheduleItem{"", "Candlelighting ceremony", 41400, 43200},
-	// }
+	SpecialSchedule_HS_Candlelighting = []SpecialScheduleItem{
+		SpecialScheduleItem{"C", "", 29400, 31500},
+		SpecialScheduleItem{"D", "", 31800, 33900},
+		SpecialScheduleItem{"H", "", 34200, 36300},
+		SpecialScheduleItem{"G", "", 36600, 38700},
+		SpecialScheduleItem{"", "Long House", 39000, 41100},
+		SpecialScheduleItem{"", "Candlelighting ceremony", 41400, 43200},
+	}
 
 	// import ranges
 	// these should be ranges with 4 fridays in a row and the first week having no off days

@@ -12,6 +12,14 @@ type EventType int
 // An SpecialAssessmentType represents the subject of a special event.
 type SpecialAssessmentType int
 
+// A SpecialScheduleItem represents an item on a day with a special schedule, such as as Candlelighting.
+type SpecialScheduleItem struct {
+	Block string
+	Name  string
+	Start int
+	End   int
+}
+
 // The available event types.
 const (
 	PlainEvent EventType = iota
