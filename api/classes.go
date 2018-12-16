@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/labstack/echo"
 )
 
@@ -116,7 +117,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if c.FormValue("name") == "" || c.FormValue("color") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
-		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
+		if !util.StringSliceContains(DefaultColors, c.FormValue("color")) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
@@ -140,7 +141,7 @@ func InitClassesAPI(e *echo.Echo) {
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("color") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
-		if !Util_StringSliceContains(DefaultColors, c.FormValue("color")) {
+		if !util.StringSliceContains(DefaultColors, c.FormValue("color")) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 

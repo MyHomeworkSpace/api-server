@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/util"
 
 	"github.com/labstack/echo"
 )
@@ -125,7 +126,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 			resp := data.Homework{-1, "", "", "", -1, -1, -1}
 			rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
-			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
+			if util.IntSliceContains(hiddenClasses, resp.ClassID) {
 				continue
 			}
 
@@ -199,7 +200,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
-			if Util_IntSliceContains(hiddenClasses, resp.ClassID) {
+			if util.IntSliceContains(hiddenClasses, resp.ClassID) {
 				continue
 			}
 

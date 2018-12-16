@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/labstack/echo"
 )
 
@@ -78,7 +79,7 @@ func Route_Application_CompleteAuth(w http.ResponseWriter, r *http.Request, ec e
 	}
 
 	// add the new authorization
-	token, err := Util_GenerateRandomString(56)
+	token, err := util.GenerateRandomString(56)
 	if err != nil {
 		ErrorLog_LogError("generating application token", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -239,7 +240,7 @@ func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec 
 	}
 
 	// generate client id
-	clientId, err := Util_GenerateRandomString(42)
+	clientId, err := util.GenerateRandomString(42)
 	if err != nil {
 		ErrorLog_LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
