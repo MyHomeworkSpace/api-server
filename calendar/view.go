@@ -326,6 +326,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 						Name:  specialScheduleItem.Name,
 						Start: dayOffset + specialScheduleItem.Start,
 						End:   dayOffset + specialScheduleItem.End,
+						Type:  ScheduleEvent,
 						Data: ScheduleEventData{
 							TermID:       day.CurrentTerm.TermID,
 							ClassID:      -1,
