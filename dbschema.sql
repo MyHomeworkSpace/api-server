@@ -7,7 +7,7 @@
 #
 # Host: 127.0.0.1 (MySQL 5.7.18)
 # Database: myhomeworkspace
-# Generation Time: 2019-02-08 04:11:36 +0000
+# Generation Time: 2019-02-08 04:17:43 +0000
 # ************************************************************
 
 
@@ -175,7 +175,7 @@ CREATE TABLE `feedback` (
   `type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `text` mediumtext COLLATE utf8mb4_unicode_ci,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `screenshot` blob,
+  `screenshot` longblob,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
