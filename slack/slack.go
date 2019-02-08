@@ -21,6 +21,7 @@ type WebhookAttachment struct {
 	Text       string         `json:"text"`
 	Fields     []WebhookField `json:"fields"`
 	MarkdownIn []string       `json:"mrkdwn_in"`
+	ImageURL   string         `json:"image_url"`
 }
 
 // A WebhookMessage is a message sent to a Slack webhook URL.

@@ -17,12 +17,12 @@ func InitFeedbackAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
-		stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text) VALUES(?, ?, ?)")
+		stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)")
 		if err != nil {
 			ErrorLog_LogError("adding feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
-		_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("type"), c.FormValue("text"))
+		_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("type"), c.FormValue("text"), c.FormValue("screenshot"))
 		if err != nil {
 			ErrorLog_LogError("adding feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -42,6 +42,7 @@ func InitFeedbackAPI(e *echo.Echo) {
 						Color:    "good",
 						Title:    "New feedback submission",
 						Text:     c.FormValue("text"),
+						ImageURL: c.FormValue("screenshot"),
 						Fields: []slack.WebhookField{
 							slack.WebhookField{
 								Title: "Feedback type",
