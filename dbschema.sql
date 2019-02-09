@@ -1,27 +1,9 @@
-# ************************************************************
-# Sequel Pro SQL dump
-# Version 4541
-#
-# http://www.sequelpro.com/
-# https://github.com/sequelpro/sequelpro
-#
-# Host: 127.0.0.1 (MySQL 5.7.18)
-# Database: myhomeworkspace
-# Generation Time: 2019-02-08 04:17:43 +0000
-# ************************************************************
+SET NAMES utf8;
+SET time_zone = '+00:00';
+SET foreign_key_checks = 0;
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
-
-# Dump of table announcements
-# ------------------------------------------------------------
+SET NAMES utf8mb4;
 
 CREATE TABLE `announcements` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -33,23 +15,6 @@ CREATE TABLE `announcements` (
   KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table application_authorizations
-# ------------------------------------------------------------
-
-CREATE TABLE `application_authorizations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `applicationId` int(11) DEFAULT NULL,
-  `token` mediumtext COLLATE utf8mb4_unicode_ci,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-# Dump of table applications
-# ------------------------------------------------------------
 
 CREATE TABLE `applications` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -63,9 +28,14 @@ CREATE TABLE `applications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `application_authorizations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userId` int(11) DEFAULT NULL,
+  `applicationId` int(11) DEFAULT NULL,
+  `token` mediumtext COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-# Dump of table calendar_classes
-# ------------------------------------------------------------
 
 CREATE TABLE `calendar_classes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -79,10 +49,6 @@ CREATE TABLE `calendar_classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table calendar_events
-# ------------------------------------------------------------
-
 CREATE TABLE `calendar_events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` mediumtext COLLATE utf8mb4_unicode_ci,
@@ -94,10 +60,6 @@ CREATE TABLE `calendar_events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table calendar_hwevents
-# ------------------------------------------------------------
-
 CREATE TABLE `calendar_hwevents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `homeworkId` int(11) DEFAULT NULL,
@@ -107,10 +69,6 @@ CREATE TABLE `calendar_hwevents` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table calendar_periods
-# ------------------------------------------------------------
 
 CREATE TABLE `calendar_periods` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -126,10 +84,6 @@ CREATE TABLE `calendar_periods` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table calendar_status
-# ------------------------------------------------------------
-
 CREATE TABLE `calendar_status` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) DEFAULT NULL,
@@ -137,10 +91,6 @@ CREATE TABLE `calendar_status` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table calendar_terms
-# ------------------------------------------------------------
 
 CREATE TABLE `calendar_terms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -150,10 +100,6 @@ CREATE TABLE `calendar_terms` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table classes
-# ------------------------------------------------------------
 
 CREATE TABLE `classes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -165,24 +111,16 @@ CREATE TABLE `classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table feedback
-# ------------------------------------------------------------
-
 CREATE TABLE `feedback` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) DEFAULT NULL,
   `type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `text` mediumtext COLLATE utf8mb4_unicode_ci,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `screenshot` longblob,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table fridays
-# ------------------------------------------------------------
 
 CREATE TABLE `fridays` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -192,10 +130,6 @@ CREATE TABLE `fridays` (
   KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table homework
-# ------------------------------------------------------------
 
 CREATE TABLE `homework` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -209,10 +143,6 @@ CREATE TABLE `homework` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table notifications
-# ------------------------------------------------------------
-
 CREATE TABLE `notifications` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `content` text COLLATE utf8mb4_unicode_ci,
@@ -220,10 +150,6 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table prefixes
-# ------------------------------------------------------------
 
 CREATE TABLE `prefixes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -236,10 +162,6 @@ CREATE TABLE `prefixes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
-# Dump of table prefs
-# ------------------------------------------------------------
-
 CREATE TABLE `prefs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `userId` int(11) DEFAULT NULL,
@@ -248,22 +170,6 @@ CREATE TABLE `prefs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-# Dump of table tab_permissions
-# ------------------------------------------------------------
-
-CREATE TABLE `tab_permissions` (
-  `id` int(11) NOT NULL,
-  `userId` int(11) DEFAULT NULL,
-  `tabId` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-# Dump of table tabs
-# ------------------------------------------------------------
 
 CREATE TABLE `tabs` (
   `id` int(11) NOT NULL,
@@ -275,9 +181,13 @@ CREATE TABLE `tabs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `tab_permissions` (
+  `id` int(11) NOT NULL,
+  `userId` int(11) DEFAULT NULL,
+  `tabId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-# Dump of table users
-# ------------------------------------------------------------
 
 CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -292,13 +202,3 @@ CREATE TABLE `users` (
   `showMigrateMessage` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
