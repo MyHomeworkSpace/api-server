@@ -1,7 +1,10 @@
 package api
 
 import (
+	"encoding/base64"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/labstack/echo"
 )
@@ -26,7 +29,7 @@ func InitAdminAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
 
-		rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
+		rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.timestamp, users.name, users.email, feedback.screenshot FROM feedback INNER JOIN users ON feedback.userId = users.id")
 		if err != nil {
 			ErrorLog_LogError("getting all feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -34,12 +37,66 @@ func InitAdminAPI(e *echo.Echo) {
 
 		feedbacks := []Feedback{}
 		for rows.Next() {
-			resp := Feedback{-1, -1, "", "", "", "", ""}
-			rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
+			resp := Feedback{-1, -1, "", "", "", "", "", false}
+			var screenshot string
+			rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &resp.Timestamp, &resp.UserName, &resp.UserEmail, &screenshot)
+			if screenshot != "" {
+				resp.HasScreenshot = true
+			}
 			feedbacks = append(feedbacks, resp)
 		}
 
 		return c.JSON(http.StatusOK, FeedbacksResponse{"ok", feedbacks})
+	})
+
+	e.GET("/admin/getFeedbackScreenshot/:id", func(c echo.Context) error {
+		/* Use id in route so that browser can navigate to screenshot */
+
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+		user, _ := Data_GetUserByID(GetSessionUserID(&c))
+		if user.Level < 1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
+		}
+
+		id, err := strconv.Atoi(strings.Replace(c.Param("id"), ".png", "", -1))
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_paramas"})
+		}
+
+		rows, err := DB.Query("SELECT screenshot FROM feedback WHERE id = ?", id)
+		if err != nil {
+			ErrorLog_LogError("getting screenshot", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		if !rows.Next() {
+			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		}
+
+		var screenshot64 string
+		err = rows.Scan(&screenshot64)
+		if err != nil {
+			ErrorLog_LogError("getting screenshot", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		rows.Close()
+
+		if screenshot64 == "" {
+			return c.JSON(http.StatusNotFound, ErrorResponse{"error", "no_screenshot"})
+		}
+
+		screenshot64 = strings.Replace(screenshot64, "data:image/png;base64,", "", 1)
+
+		screenshot, err := base64.StdEncoding.DecodeString(screenshot64)
+		if err != nil {
+			ErrorLog_LogError("getting screenshot", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.Blob(http.StatusOK, "image/png;base64", screenshot)
 	})
 
 	e.GET("/admin/getUserCount", func(c echo.Context) error {

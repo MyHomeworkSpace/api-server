@@ -35,6 +35,11 @@ func InitFeedbackAPI(e *echo.Echo) {
 				return c.JSON(http.StatusOK, StatusResponse{"ok"})
 			}
 
+			screenshotStatement := "No screenshot included."
+			if c.FormValue("screenshot") != "" {
+				screenshotStatement = "View screenshot on admin console."
+			}
+
 			err = slack.Post(FeedbackSlackURL, slack.WebhookMessage{
 				Attachments: []slack.WebhookAttachment{
 					slack.WebhookAttachment{
@@ -42,7 +47,6 @@ func InitFeedbackAPI(e *echo.Echo) {
 						Color:    "good",
 						Title:    "New feedback submission",
 						Text:     c.FormValue("text"),
-						ImageURL: c.FormValue("screenshot"),
 						Fields: []slack.WebhookField{
 							slack.WebhookField{
 								Title: "Feedback type",
@@ -72,6 +76,11 @@ func InitFeedbackAPI(e *echo.Echo) {
 							slack.WebhookField{
 								Title: "User (type)",
 								Value: user.Type,
+								Short: true,
+							},
+							slack.WebhookField{
+								Title: "Screenshot",
+								Value: screenshotStatement,
 								Short: true,
 							},
 						},
