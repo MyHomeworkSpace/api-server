@@ -29,7 +29,7 @@ func InitAdminAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
 
-		rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.timestamp, users.name, users.email, feedback.screenshot FROM feedback INNER JOIN users ON feedback.userId = users.id")
+		rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 		if err != nil {
 			ErrorLog_LogError("getting all feedback", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -39,7 +39,7 @@ func InitAdminAPI(e *echo.Echo) {
 		for rows.Next() {
 			resp := Feedback{-1, -1, "", "", "", "", "", false}
 			var screenshot string
-			rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &resp.Timestamp, &resp.UserName, &resp.UserEmail, &screenshot)
+			rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
 			if screenshot != "" {
 				resp.HasScreenshot = true
 			}
@@ -50,8 +50,6 @@ func InitAdminAPI(e *echo.Echo) {
 	})
 
 	e.GET("/admin/getFeedbackScreenshot/:id", func(c echo.Context) error {
-		/* Use id in route so that browser can navigate to screenshot */
-
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
@@ -60,7 +58,7 @@ func InitAdminAPI(e *echo.Echo) {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
 		}
 
-		id, err := strconv.Atoi(strings.Replace(c.Param("id"), ".png", "", -1))
+		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_paramas"})
 		}
