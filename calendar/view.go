@@ -67,7 +67,7 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]O
 }
 
 // GetView retrieves a CalendarView for the given user with the given parameters.
-func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
+func GetView(db *sql.DB, userID int, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
 		Days: []ViewDay{},
 	}
@@ -158,6 +158,12 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 		})
 	}
 
+	// if user is a senior, their classes end earlier
+	lastDayOfClasses := Day_SchoolEnd
+	if grade == 12 {
+		lastDayOfClasses = Day_SeniorLastDay
+	}
+
 	// create days in array, set friday indices
 	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
 	currentDay := startTime
@@ -171,7 +177,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, announcementsGroup
 			Events:        []Event{},
 		})
 
-		if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(Day_SchoolEnd) {
+		if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses) {
 			if currentDay.After(Day_ExamRelief) {
 				// it's the second term
 				view.Days[i].CurrentTerm = &availableTerms[1]

@@ -80,7 +80,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 		endDate := startDate.Add(time.Hour * 24 * 7)
 
-		view, err := calendar.GetView(DB, userID, time.UTC, announcementsGroupsSQL, startDate, endDate)
+		view, err := calendar.GetView(DB, userID, time.UTC, grade, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
 			ErrorLog_LogError("getting calendar week", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

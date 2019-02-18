@@ -189,7 +189,7 @@ func InitCalendarAPI(e *echo.Echo) {
 		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
 		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
 
-		view, err := calendar.GetView(DB, userID, timeZone, announcementsGroupsSQL, startDate, endDate)
+		view, err := calendar.GetView(DB, userID, timeZone, grade, announcementsGroupsSQL, startDate, endDate)
 		if err != nil {
 			ErrorLog_LogError("getting calendar view", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

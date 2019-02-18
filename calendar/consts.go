@@ -9,6 +9,7 @@ var (
 	Day_SchoolStart, _    = time.Parse("2006-01-02", "2018-09-12")
 	Day_Candlelighting, _ = time.Parse("2006-01-02", "2018-12-21")
 	Day_ExamRelief, _     = time.Parse("2006-01-02", "2019-01-25")
+	Day_SeniorLastDay, _  = time.Parse("2006-01-02", "2019-04-26")
 	Day_SchoolEnd, _      = time.Parse("2006-01-02", "2019-06-06")
 
 	SpecialSchedule_HS_Candlelighting = []SpecialScheduleItem{
