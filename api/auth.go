@@ -158,7 +158,7 @@ func InitAuthAPI(e *echo.Echo) {
 				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]interface{})[0])
+			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]string)[0])
 			if err != nil {
 				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
