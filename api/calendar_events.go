@@ -51,6 +51,37 @@ type CalendarViewResponse struct {
 	View   calendar.View `json:"view"`
 }
 
+func parseRecurFormInfo(c echo.Context) (bool, int, int, string, string) {
+	if c.FormValue("recur") != "" {
+		recurStr := c.FormValue("recur")
+		recur, err := strconv.ParseBool(recurStr)
+		if err != nil {
+			return false, 0, 0, "", "invalid_params"
+		}
+
+		if !recur {
+			return false, 0, 0, "", ""
+		}
+
+		if c.FormValue("recurFrequency") == "" || c.FormValue("recurInterval") == "" || c.FormValue("recurUntil") == "" {
+			return false, 0, 0, "", "missing_params"
+		}
+
+		recurFrequency, err := strconv.Atoi(c.FormValue("recurFrequency"))
+		recurInterval, err1 := strconv.Atoi(c.FormValue("recurInterval"))
+		_, err2 := time.Parse("2006-01-02", c.FormValue("recurUntil"))
+		recurUntil := c.FormValue("recurUntil")
+
+		if err != nil || err1 != nil || err2 != nil {
+			return false, 0, 0, "", "invalid_params"
+		}
+
+		return true, recurFrequency, recurInterval, recurUntil, ""
+	}
+
+	return false, 0, 0, "", ""
+}
+
 func InitCalendarEventsAPI(e *echo.Echo) {
 	e.GET("/calendar/events/getWeek/:monday", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
@@ -203,22 +234,50 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
 
+		recur, recurFrequency, recurInterval, recurUntil, errorCode := parseRecurFormInfo(c)
+
+		if errorCode != "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", errorCode})
+		}
+
 		start, err := strconv.Atoi(c.FormValue("start"))
 		end, err2 := strconv.Atoi(c.FormValue("end"))
 		if err != nil || err2 != nil || start > end {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
+		// insert the event
 		stmt, err := DB.Prepare("INSERT INTO calendar_events(name, `start`, `end`, `desc`, userId) VALUES(?, ?, ?, ?, ?)")
 		if err != nil {
 			ErrorLog_LogError("adding calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
-		_, err = stmt.Exec(c.FormValue("name"), start, end, c.FormValue("desc"), GetSessionUserID(&c))
+		insertResult, err := stmt.Exec(c.FormValue("name"), start, end, c.FormValue("desc"), GetSessionUserID(&c))
 		if err != nil {
 			ErrorLog_LogError("adding calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
+		eventID, err := insertResult.LastInsertId()
+		if err != nil {
+			ErrorLog_LogError("adding calendar event", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		// insert the recur rule if needed
+		if recur {
+			insertStmt, err := DB.Prepare("INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)")
+			if err != nil {
+				ErrorLog_LogError("adding calendar event", err)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
+			_, err = insertStmt.Exec(eventID, recurFrequency, recurInterval, recurUntil)
+			if err != nil {
+				ErrorLog_LogError("adding calendar event", err)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
+		}
+
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 	e.POST("/calendar/events/edit", func(c echo.Context) error {
@@ -227,6 +286,12 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 		}
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("start") == "" || c.FormValue("end") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+
+		recur, recurFrequency, recurInterval, recurUntil, errorCode := parseRecurFormInfo(c)
+
+		if errorCode != "" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", errorCode})
 		}
 
 		start, err := strconv.Atoi(c.FormValue("start"))
@@ -246,6 +311,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "forbidden"})
 		}
 
+		// update the event
 		stmt, err := DB.Prepare("UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?")
 		if err != nil {
 			ErrorLog_LogError("editing calendar event", err)
@@ -256,6 +322,70 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			ErrorLog_LogError("editing calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
+		// is there a recur rule associated with this event?
+		recurCheckStmt, err := DB.Query("SELECT COUNT(*) FROM calendar_event_rules WHERE eventId = ?", c.FormValue("id"))
+		if err != nil {
+			ErrorLog_LogError("editing calendar event", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		ruleCount := -1
+		recurCheckStmt.Next()
+		recurCheckStmt.Scan(&ruleCount)
+
+		if ruleCount < 0 || ruleCount > 1 {
+			ErrorLog_LogError("editing calendar event", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		recurRuleExists := (ruleCount == 1)
+
+		if recur {
+			// want recurrence
+			if recurRuleExists {
+				// we have a rule -> update it
+				insertStmt, err := DB.Prepare("UPDATE calendar_event_rules SET `frequency` = ?, `interval` = ?, `until` = ? WHERE eventId = ?")
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				_, err = insertStmt.Exec(recurFrequency, recurInterval, recurUntil, c.FormValue("id"))
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+			} else {
+				// no rule -> insert it
+				insertStmt, err := DB.Prepare("INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)")
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				_, err = insertStmt.Exec(c.FormValue("id"), recurFrequency, recurInterval, recurUntil)
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+			}
+		} else {
+			// don't want recurrence
+			if recurRuleExists {
+				// we have a rule -> delete it
+				insertStmt, err := DB.Prepare("DELETE FROM calendar_event_rules WHERE eventId = ?")
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				_, err = insertStmt.Exec(c.FormValue("id"))
+				if err != nil {
+					ErrorLog_LogError("editing calendar event", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+			} else {
+				// no rule -> do nothing
+			}
+		}
+
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 	e.POST("/calendar/events/delete", func(c echo.Context) error {
@@ -277,6 +407,7 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
 		}
 
+		// delete the event
 		stmt, err := DB.Prepare("DELETE FROM calendar_events WHERE id = ?")
 		if err != nil {
 			ErrorLog_LogError("deleting calendar event", err)
@@ -287,6 +418,19 @@ func InitCalendarEventsAPI(e *echo.Echo) {
 			ErrorLog_LogError("deleting calendar event", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
+
+		// delete any recur rules associated with the event
+		rulesStmt, err := DB.Prepare("DELETE FROM calendar_event_rules WHERE eventId = ?")
+		if err != nil {
+			ErrorLog_LogError("deleting calendar event", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+		_, err = rulesStmt.Exec(c.FormValue("id"))
+		if err != nil {
+			ErrorLog_LogError("deleting calendar event", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
