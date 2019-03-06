@@ -63,16 +63,25 @@ func parseRecurFormInfo(c echo.Context) (bool, int, int, string, string) {
 			return false, 0, 0, "", ""
 		}
 
-		if c.FormValue("recurFrequency") == "" || c.FormValue("recurInterval") == "" || c.FormValue("recurUntil") == "" {
+		if c.FormValue("recurFrequency") == "" || c.FormValue("recurInterval") == "" {
 			return false, 0, 0, "", "missing_params"
 		}
 
 		recurFrequency, err := strconv.Atoi(c.FormValue("recurFrequency"))
 		recurInterval, err1 := strconv.Atoi(c.FormValue("recurInterval"))
-		_, err2 := time.Parse("2006-01-02", c.FormValue("recurUntil"))
-		recurUntil := c.FormValue("recurUntil")
+		recurUntil := ""
+		if c.FormValue("recurUntil") != "" {
+			_, err2 := time.Parse("2006-01-02", c.FormValue("recurUntil"))
+			recurUntil = c.FormValue("recurUntil")
+			if err2 != nil {
+				return false, 0, 0, "", "invalid_params"
+			}
+		} else {
+			// fill in a placeholder value because mysql wants one
+			recurUntil = "2099-12-12"
+		}
 
-		if err != nil || err1 != nil || err2 != nil {
+		if err != nil || err1 != nil {
 			return false, 0, 0, "", "invalid_params"
 		}
 

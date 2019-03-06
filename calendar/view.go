@@ -241,9 +241,14 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
 
-			event.RecurRule.Until, err = time.Parse("2006-01-02", event.RecurRule.UntilString)
-			if err != nil {
-				return View{}, err
+			if event.RecurRule.UntilString == "2099-12-12" {
+				// just a placeholder value for mysql, ignore it
+				event.RecurRule.UntilString = ""
+			} else {
+				event.RecurRule.Until, err = time.Parse("2006-01-02", event.RecurRule.UntilString)
+				if err != nil {
+					return View{}, err
+				}
 			}
 		}
 

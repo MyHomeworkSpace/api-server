@@ -61,10 +61,13 @@ func (e *Event) CalculateTimes(until time.Time) []time.Time {
 			days *= e.RecurRule.Interval
 
 			currentTime = currentTime.AddDate(years, months, days)
-			ruleUntil := e.RecurRule.Until
 
-			if ruleUntil.Sub(currentTime) < -24*time.Hour {
-				break
+			if e.RecurRule.UntilString != "" {
+				ruleUntil := e.RecurRule.Until
+
+				if ruleUntil.Sub(currentTime) < -24*time.Hour {
+					break
+				}
 			}
 
 			eventTimes = append(eventTimes, currentTime)
