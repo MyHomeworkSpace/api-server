@@ -60,6 +60,19 @@ CREATE TABLE `calendar_events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `calendar_event_rules` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `eventId` INT NULL,
+  `frequency` TINYINT(1) NULL,
+  `interval` INT NULL,
+  `byDay` VARCHAR(45) NOT NULL,
+  `byMonthDay` INT NULL,
+  `byMonth` INT NULL,
+  `until` DATE NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `calendar_hwevents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `homeworkId` int(11) DEFAULT NULL,

@@ -214,7 +214,12 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	}
 
 	// get plain events
-	plainEventRows, err := db.Query("SELECT id, name, `start`, `end`, `desc`, userId FROM calendar_events WHERE userId = ? AND (`end` >= ? AND `start` <= ?)", userID, startTime.Unix(), endTime.Unix())
+	plainEventRows, err := db.Query(
+		"SELECT calendar_events.id, calendar_events.name, calendar_events.`start`, calendar_events.`end`, calendar_events.`desc`, calendar_events.userId, calendar_event_rules.id, calendar_event_rules.eventId, calendar_event_rules.frequency, calendar_event_rules.interval, calendar_event_rules.byDay, calendar_event_rules.byMonthDay, calendar_event_rules.byMonth, calendar_event_rules.until FROM calendar_events "+
+			"LEFT JOIN calendar_event_rules ON calendar_events.id = calendar_event_rules.eventId "+
+			"WHERE calendar_events.userId = ? AND ((calendar_events.`end` >= ? AND calendar_events.`start` <= ?) OR calendar_event_rules.frequency IS NOT NULL)",
+		userID, startTime.Unix(), endTime.Unix(),
+	)
 	if err != nil {
 		return View{}, err
 	}
@@ -225,17 +230,34 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 			Type: PlainEvent,
 		}
 		data := PlainEventData{}
-		plainEventRows.Scan(&event.ID, &event.Name, &event.Start, &event.End, &data.Desc, &event.UserID)
+		recurRule := RecurRule{
+			ID: -1,
+		}
+		plainEventRows.Scan(
+			&event.ID, &event.Name, &event.Start, &event.End, &data.Desc, &event.UserID,
+			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
+		)
 		event.Data = data
+		if recurRule.ID != -1 {
+			event.RecurRule = &recurRule
 
-		eventStartTime := time.Unix(int64(event.Start), 0)
-		dayOffset := int(math.Floor(eventStartTime.Sub(startTime).Hours() / 24))
-
-		if dayOffset < 0 || dayOffset > len(view.Days)-1 {
-			continue
+			event.RecurRule.Until, err = time.Parse("2006-01-02", event.RecurRule.UntilString)
+			if err != nil {
+				return View{}, err
+			}
 		}
 
-		view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
+		eventTimes := event.CalculateTimes(endTime)
+
+		for _, eventTime := range eventTimes {
+			dayOffset := int(math.Floor(eventTime.Sub(startTime).Hours() / 24))
+
+			if dayOffset < 0 || dayOffset > len(view.Days)-1 {
+				continue
+			}
+
+			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
+		}
 	}
 
 	// get homework events

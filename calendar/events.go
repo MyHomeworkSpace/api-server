@@ -48,13 +48,14 @@ type Term struct {
 
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
 type Event struct {
-	ID     int         `json:"id"`
-	Name   string      `json:"name"`
-	Start  int         `json:"start"`
-	End    int         `json:"end"`
-	Type   EventType   `json:"type"`
-	Data   interface{} `json:"data"`
-	UserID int         `json:"userId"`
+	ID        int         `json:"id"`
+	Name      string      `json:"name"`
+	Start     int         `json:"start"`
+	End       int         `json:"end"`
+	RecurRule *RecurRule  `json:"recurRule"`
+	Type      EventType   `json:"type"`
+	Data      interface{} `json:"data"`
+	UserID    int         `json:"userId"`
 }
 
 // PlainEventData stores additional data associated with a plain event.
