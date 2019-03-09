@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -186,16 +184,7 @@ func main() {
 	})
 	e.Static("/api_tester", "api_tester")
 	e.GET("/", func(c echo.Context) error {
-		cmd := exec.Command("git", "rev-parse", "HEAD")
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		err := cmd.Run()
-		commit := out.String()
-		if err != nil {
-			api.ErrorLog_LogError("getting commit number", err)
-			commit = "Commit unavailable"
-		}
-		return c.JSON(http.StatusOK, HelloResponse{"MyHomeworkSpace API Server", strings.TrimSpace(commit)})
+		return c.String(http.StatusOK, "MyHomeworkSpace API Server")
 	})
 
 	api.Init(e) // API init delayed because router must be started first
