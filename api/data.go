@@ -38,6 +38,7 @@ type User struct {
 	Features           string `json:"features"`
 	Level              int    `json:"level"`
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
+	TwoFactorVerified  int    `json:"twoFactorVerified"`
 }
 
 func Data_GetAnnouncementGroupSQL(groups []int) string {
@@ -112,14 +113,14 @@ func Data_GetTabsByUserID(userId int) ([]Tab, error) {
 }
 
 func Data_GetUserByID(id int) (User, error) {
-	rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
+	rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage, twoFactorVerified FROM users WHERE id = ?", id)
 	if err != nil {
 		return User{}, err
 	}
 	defer rows.Close()
 	if rows.Next() {
 		user := User{}
-		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
+		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage, &user.TwoFactorVerified)
 		if err != nil {
 			return User{}, err
 		}
