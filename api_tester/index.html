@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title>API tester</title>
 
-		<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-		<script src="/api_tester/tester.js"></script>
+<head>
+	<meta charset="utf-8">
+	<title>API tester</title>
 
-		<style>
+	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+	<script src="/api_tester/tester.js"></script>
+
+	<style>
 		#path {
 			width: 200px;
 		}
+
 		.keyText {
 			width: 70px;
 		}
+
 		#response {
 			font-family: monospace;
 			min-width: 500px;
@@ -21,30 +24,35 @@
 			min-height: 200px;
 			max-height: 200px;
 		}
-		</style>
-	</head>
-	<body>
-		<h1>API tester</h1>
-		<h2>Make request:</h2>
+	</style>
+</head>
 
-		<select id="method">
-			<option value="GET">GET</option>
-			<option value="POST">POST</option>
-		</select>
-		<input type="text" id="path" placeholder="Path for request" value="/auth/me" />
-		<br />
+<body>
+	<h1>API tester</h1>
+	<h2>Make request:</h2>
 
-		<div id="parameters">
-			Parameters:
-			<ul id="paramContainer"></ul>
-			<button id="addParameter">+ Add</button>
-		</div>
+	<select id="method">
+		<option value="GET">GET</option>
+		<option value="POST">POST</option>
+	</select>
+	<input type="text" id="path" placeholder="Path for request" value="/auth/me" />
+	<br />
 
-		<br />
-		<button id="submit">Submit</button>
+	<div id="parameters">
+		Parameters:
+		<ul id="paramContainer"></ul>
+		<button id="addParameter">+ Add</button>
+	</div>
 
-		<h2>Response</h2>
-		<div id="responseLine"></div>
-		<textarea id="response" disabled="disabled"></textarea>
-	</body>
+	<br />
+	<button id="submit">Submit</button>
+
+	<h2>Response</h2>
+	<div id="responseLine"></div>
+	<code id="response"></code>
+
+	<p>Want a more interactive API tester with documention? Check the <a
+			href="https://support.myhomework.space/apireference.html">API Reference</a></p>
+</body>
+
 </html>
