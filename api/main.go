@@ -60,6 +60,7 @@ func Init(e *echo.Echo) {
 	InitAdminAPI(e)
 	InitApplicationAPI(e)
 	InitAuthAPI(e)
+	InitAuth2FAAPI(e)
 	InitCalendarAPI(e)
 	InitCalendarEventsAPI(e)
 	InitClassesAPI(e)

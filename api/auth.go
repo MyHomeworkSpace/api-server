@@ -2,9 +2,6 @@ package api
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/base64"
-	"image/png"
 	"log"
 	"net/http"
 	"os"
@@ -40,7 +37,6 @@ type UserResponse struct {
 	Features           string `json:"features"`
 	Level              int    `json:"level"`
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
-	TwoFactorVerified  int    `json:"twoFactorVerified"`
 }
 
 type TwoFactorEnabled struct {
@@ -123,154 +119,19 @@ func InitAuthAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
 	})
 
-	e.POST("/auth/enableTOTP", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		rows, err := DB.Query("SELECT email, twoFactorVerified FROM users WHERE id = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting user email and 2fa status", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		var userEmail string
-		var verified int
-
-		if verified == 1 {
-			return c.JSON(http.StatusAlreadyReported, ErrorResponse{"error", "already_enabled"})
-		}
-
-		if rows.Next() {
-			rows.Scan(&userEmail, &verified)
-		} else {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if verified == 1 {
-			return c.JSON(http.StatusAlreadyReported, ErrorResponse{"error", "already_enabled"})
-		}
-
-		key, err := totp.Generate(totp.GenerateOpts{
-			Issuer:      "MyHomeworkSpace",
-			AccountName: userEmail,
-		})
-
-		if err != nil {
-			ErrorLog_LogError("generating 2FA key", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		_, err = DB.Exec("UPDATE users SET twoFactorSecret = ? WHERE id = ?", key.Secret(), GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("setting 2fa key in db", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		image, err := key.Image(200, 200)
-		if err != nil {
-			ErrorLog_LogError("generating 2fa QR code", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		var pngImage bytes.Buffer
-
-		err = png.Encode(&pngImage, image)
-		if err != nil {
-			ErrorLog_LogError("encoding 2fa qr code to png", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		encodedString := base64.StdEncoding.EncodeToString(pngImage.Bytes())
-
-		imageurl := "data:image/png;base64," + encodedString
-
-		return c.JSON(http.StatusOK, TwoFactorEnabled{"ok", key.Secret(), imageurl})
-	})
-
-	e.POST("/auth/verifyTOTP", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("code") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		rows, err := DB.Query("SELECT twoFactorSecret, twoFactorVerified FROM users WHERE id = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting 2fa details from DB", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		var secret string
-		var verified int
-
-		if rows.Next() {
-			rows.Scan(&secret, &verified)
-		} else {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if verified == 1 {
-			return c.JSON(http.StatusAlreadyReported, ErrorResponse{"error", "already_verified"})
-		}
-		if totp.Validate(c.FormValue("code"), secret) {
-			_, err = DB.Exec("UPDATE users SET twoFactorVerified = 1 WHERE id = ?", GetSessionUserID(&c))
-			if err != nil {
-				ErrorLog_LogError("getting 2fa details from DB", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			return c.JSON(http.StatusOK, StatusResponse{"ok"})
-		}
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "incorrect_code"})
-	})
-
-	e.POST("/auth/disableTOTP", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("code") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		rows, err := DB.Query("SELECT twoFactorSecret, twoFactorVerified from users where id = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting user information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		var twoFactorSecret string
-		var twoFactorVerified int
-
-		if rows.Next() {
-			rows.Scan(&twoFactorSecret, &twoFactorVerified)
-		} else {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if twoFactorVerified == 0 {
-			return c.JSON(http.StatusFailedDependency, ErrorResponse{"error", "two_factor_not_enabled"})
-		}
-
-		if totp.Validate(c.FormValue("code"), twoFactorSecret) {
-			_, err = DB.Exec("UPDATE users SET twoFactorSecret = NULL, twoFactorVerified = 0 WHERE id = ?", GetSessionUserID(&c))
-			return c.JSON(http.StatusOK, StatusResponse{"ok"})
-		}
-
-		return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "two_factor_incorrect"})
-	})
-
 	e.POST("/auth/login", func(c echo.Context) error {
 		if c.FormValue("username") == "" || c.FormValue("password") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		}
-		data, resp, err := auth.DaltonLogin(strings.ToLower(c.FormValue("username")), c.FormValue("password"))
+
+		username := strings.ToLower(c.FormValue("username"))
+		password := c.FormValue("password")
+
+		data, resp, err := auth.DaltonLogin(username, password)
 		if resp != "" || err != nil {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 		}
+
 		if WhitelistEnabled {
 			file, err := os.Open(WhitelistFile)
 			if err != nil {
@@ -291,36 +152,62 @@ func InitAuthAPI(e *echo.Echo) {
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", WhitelistBlockMsg})
 			}
 		}
-		rows, err := DB.Query("SELECT id, twoFactorSecret, twoFactorVerified from users where username = ?", c.FormValue("username"))
+
+		rows, err := DB.Query("SELECT id FROM users WHERE username = ?", c.FormValue("username"))
 		if err != nil {
 			ErrorLog_LogError("getting user information", err)
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 		defer rows.Close()
-		session := auth.SessionInfo{-1}
+
+		session := auth.SessionInfo{
+			UserID: -1,
+		}
 		if rows.Next() {
 			// exists, use it
 			userID := -1
-			var twoFactorVerified int
-			var twoFactorSecret string
-			rows.Scan(&userID, &twoFactorSecret, &twoFactorVerified)
-			if twoFactorVerified == 1 {
+
+			rows.Scan(&userID)
+
+			enrolled2fa, err := isUser2FAEnrolled(userID)
+			if err != nil {
+				ErrorLog_LogError("getting user enrollment status", err)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
+
+			if enrolled2fa {
 				if c.FormValue("code") == "" {
-					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "two_factor_required"})
+					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
 				}
-				if !totp.Validate(c.FormValue("code"), twoFactorSecret) {
+
+				secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
+				if err != nil {
+					ErrorLog_LogError("getting user 2fa secret", err)
+					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				}
+				defer secretRows.Close()
+
+				secret := ""
+
+				secretRows.Next()
+				secretRows.Scan(&secret)
+
+				if !totp.Validate(c.FormValue("code"), secret) {
 					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "two_factor_incorrect"})
 				}
 			}
-			session = auth.SessionInfo{userID}
+
+			session = auth.SessionInfo{
+				UserID: userID,
+			}
 		} else {
-			// doesn't exist
+			// doesn't exist, insert new record
 			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
 			if err != nil {
 				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			res, err := stmt.Exec(data["fullname"], c.FormValue("username"), c.FormValue("username")+"@dalton.org", data["roles"].([]string)[0])
+			res, err := stmt.Exec(data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0])
 			if err != nil {
 				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -330,21 +217,28 @@ func InitAuthAPI(e *echo.Echo) {
 				ErrorLog_LogError("trying to set user information", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
+
 			// add default classes
 			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
 			if err != nil {
 				ErrorLog_LogError("trying to add default classes", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
+
 			_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
 			if err != nil {
 				ErrorLog_LogError("trying to add default classes", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
-			session = auth.SessionInfo{int(lastID)}
+
+			session = auth.SessionInfo{
+				UserID: int(lastID),
+			}
 		}
+
 		cookie, _ := c.Cookie("session")
 		auth.SetSession(cookie.Value, session)
+
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
@@ -388,7 +282,6 @@ func InitAuthAPI(e *echo.Echo) {
 			Features:           user.Features,
 			Level:              user.Level,
 			ShowMigrateMessage: user.ShowMigrateMessage,
-			TwoFactorVerified:  user.TwoFactorVerified,
 		})
 	})
 

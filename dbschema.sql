@@ -202,6 +202,13 @@ CREATE TABLE `tab_permissions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `totp` (
+  `userId` INT NOT NULL,
+  `secret` TEXT NULL,
+  PRIMARY KEY (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -213,7 +220,5 @@ CREATE TABLE `users` (
   `canFeedback` tinyint(1) NOT NULL DEFAULT '0',
   `canAnnouncements` tinyint(1) NOT NULL DEFAULT '0',
   `showMigrateMessage` int(11) DEFAULT NULL,
-  `twoFactorSecret` varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `twoFactorVerified` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
