@@ -12,6 +12,11 @@ import (
 	"github.com/pquerna/otp/totp"
 )
 
+type EnrollmentResponse struct {
+	Status   string `json:"status"`
+	Enrolled bool   `json:"enrolled"`
+}
+
 type TOTPSecretResponse struct {
 	Status   string `json:"status"`
 	Secret   string `json:"secret"`
@@ -44,6 +49,11 @@ func InitAuth2FAAPI(e *echo.Echo) {
 
 		// are they enrolled already?
 		enrolled, err := isUser2FAEnrolled(GetSessionUserID(&c))
+		if err != nil {
+			ErrorLog_LogError("starting TOTP enrollment", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		if enrolled {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "already_enrolled"})
 		}
@@ -107,6 +117,11 @@ func InitAuth2FAAPI(e *echo.Echo) {
 
 		// are they enrolled already?
 		enrolled, err := isUser2FAEnrolled(GetSessionUserID(&c))
+		if err != nil {
+			ErrorLog_LogError("completing TOTP enrollment", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		if enrolled {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "already_enrolled"})
 		}
@@ -137,6 +152,20 @@ func InitAuth2FAAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, StatusResponse{"ok"})
 	})
 
+	e.GET("/auth/2fa/status", func(c echo.Context) error {
+		if GetSessionUserID(&c) == -1 {
+			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		}
+
+		enrolled, err := isUser2FAEnrolled(GetSessionUserID(&c))
+		if err != nil {
+			ErrorLog_LogError("getting TOTP enrollment status", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
+		return c.JSON(http.StatusOK, EnrollmentResponse{"ok", enrolled})
+	})
+
 	e.POST("/auth/2fa/unenroll", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
@@ -152,6 +181,11 @@ func InitAuth2FAAPI(e *echo.Echo) {
 
 		// are they enrolled already?
 		enrolled, err := isUser2FAEnrolled(GetSessionUserID(&c))
+		if err != nil {
+			ErrorLog_LogError("handling TOTP unenrollment", err)
+			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		}
+
 		if !enrolled {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "not_enrolled"})
 		}
