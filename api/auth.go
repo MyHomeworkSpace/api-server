@@ -193,7 +193,7 @@ func InitAuthAPI(e *echo.Echo) {
 				secretRows.Scan(&secret)
 
 				if !totp.Validate(c.FormValue("code"), secret) {
-					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "two_factor_incorrect"})
+					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
 				}
 			}
 
