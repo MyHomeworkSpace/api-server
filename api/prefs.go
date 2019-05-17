@@ -15,8 +15,13 @@ type Pref struct {
 
 // responses
 type PrefResponse struct {
-	Status       string `json:"status"`
-	ReturnedPref Pref   `json:"pref"`
+	Status string `json:"status"`
+	Pref   Pref   `json:"pref"`
+}
+
+type PrefsResponse struct {
+	Status string `json:"status"`
+	Prefs  []Pref `json:"prefs"`
 }
 
 func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -42,6 +47,31 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 	rows.Scan(&resp.ID, &resp.Key, &resp.Value)
 
 	ec.JSON(http.StatusOK, PrefResponse{"ok", resp})
+}
+
+func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting prefs", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	prefs := []Pref{}
+
+	for rows.Next() {
+		pref := Pref{}
+		rows.Scan(&pref.ID, &pref.Key, &pref.Value)
+		prefs = append(prefs, pref)
+	}
+
+	ec.JSON(http.StatusOK, PrefsResponse{"ok", prefs})
 }
 
 func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -98,5 +128,6 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 
 func InitPrefsAPI(e *echo.Echo) {
 	e.GET("/prefs/get/:key", Route(routePrefsGet))
+	e.GET("/prefs/getAll", Route(routePrefsGetAll))
 	e.POST("/prefs/set", Route(routePrefsSet))
 }
