@@ -352,8 +352,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
+
 		if c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+		if c.FormValue("complete") != "0" && c.FormValue("complete") != "1" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
 		// check if you are allowed to add to the given classId
@@ -384,8 +388,12 @@ func InitHomeworkAPI(e *echo.Echo) {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		}
+
 		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("due") == "" || c.FormValue("complete") == "" || c.FormValue("classId") == "" {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		}
+		if c.FormValue("complete") != "0" && c.FormValue("complete") != "1" {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
 		// check if you are allowed to edit the given id
