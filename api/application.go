@@ -38,7 +38,7 @@ type MultipleApplicationsResponse struct {
 	Applications []Application `json:"applications"`
 }
 
-func Route_Application_CompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -102,7 +102,7 @@ func Route_Application_CompleteAuth(w http.ResponseWriter, r *http.Request, ec e
 	ec.JSON(http.StatusOK, ApplicationTokenResponse{"ok", token})
 }
 
-func Route_Application_Get(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -127,7 +127,7 @@ func Route_Application_Get(w http.ResponseWriter, r *http.Request, ec echo.Conte
 	ec.JSON(http.StatusOK, SingleApplicationResponse{"ok", resp})
 }
 
-func Route_Application_GetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -149,7 +149,7 @@ func Route_Application_GetAuthorizations(w http.ResponseWriter, r *http.Request,
 	ec.JSON(http.StatusOK, ApplicationAuthorizationsResponse{"ok", authorizations})
 }
 
-func Route_Application_RequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	state := ec.FormValue("state")
 	if state == "" {
 		ec.Redirect(http.StatusFound, AuthURLBase+"?id="+ec.Param("id"))
@@ -158,7 +158,7 @@ func Route_Application_RequestAuth(w http.ResponseWriter, r *http.Request, ec ec
 	}
 }
 
-func Route_Application_RevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -204,7 +204,7 @@ func Route_Application_RevokeAuth(w http.ResponseWriter, r *http.Request, ec ech
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
-func Route_Application_RevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -233,7 +233,7 @@ func Route_Application_RevokeSelf(w http.ResponseWriter, r *http.Request, ec ech
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
-func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -280,7 +280,7 @@ func Route_Application_Manage_Create(w http.ResponseWriter, r *http.Request, ec 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
-func Route_Application_Manage_GetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -304,7 +304,7 @@ func Route_Application_Manage_GetAll(w http.ResponseWriter, r *http.Request, ec 
 	ec.JSON(http.StatusOK, MultipleApplicationsResponse{"ok", apps})
 }
 
-func Route_Application_Manage_Update(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -345,7 +345,7 @@ func Route_Application_Manage_Update(w http.ResponseWriter, r *http.Request, ec 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
-func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if GetSessionUserID(&ec) == -1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
 		return
@@ -413,15 +413,15 @@ func Route_Application_Manage_Delete(w http.ResponseWriter, r *http.Request, ec 
 }
 
 func InitApplicationAPI(e *echo.Echo) {
-	e.POST("/application/completeAuth", Route(Route_Application_CompleteAuth))
-	e.GET("/application/get/:id", Route(Route_Application_Get))
-	e.GET("/application/getAuthorizations", Route(Route_Application_GetAuthorizations))
-	e.GET("/application/requestAuth/:id", Route(Route_Application_RequestAuth))
-	e.POST("/application/revokeAuth", Route(Route_Application_RevokeAuth))
-	e.POST("/application/revokeSelf", Route(Route_Application_RevokeSelf))
+	e.POST("/application/completeAuth", Route(routeApplicationCompleteAuth))
+	e.GET("/application/get/:id", Route(routeApplicationGet))
+	e.GET("/application/getAuthorizations", Route(routeApplicationGetAuthorizations))
+	e.GET("/application/requestAuth/:id", Route(routeApplicationRequestAuth))
+	e.POST("/application/revokeAuth", Route(routeApplicationRevokeAuth))
+	e.POST("/application/revokeSelf", Route(routeApplicationRevokeSelf))
 
-	e.POST("/application/manage/create", Route(Route_Application_Manage_Create))
-	e.GET("/application/manage/getAll", Route(Route_Application_Manage_GetAll))
-	e.POST("/application/manage/update", Route(Route_Application_Manage_Update))
-	e.POST("/application/manage/delete", Route(Route_Application_Manage_Delete))
+	e.POST("/application/manage/create", Route(routeApplicationManageCreate))
+	e.GET("/application/manage/getAll", Route(routeApplicationManageGetAll))
+	e.POST("/application/manage/update", Route(routeApplicationManageUpdate))
+	e.POST("/application/manage/delete", Route(routeApplicationManageDelete))
 }
