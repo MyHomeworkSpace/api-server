@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo"
 )
@@ -222,13 +223,24 @@ func InitPrefixesAPI(e *echo.Echo) {
 
 		wordsInputString := c.FormValue("words")
 		wordsList := []string{}
+		cleanedWordsList := []string{}
 
 		err = json.Unmarshal([]byte(wordsInputString), &wordsList)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
 
-		wordsFormatted, err := json.Marshal(wordsList)
+		for _, word := range wordsList {
+			if strings.TrimSpace(word) != "" {
+				cleanedWordsList = append(cleanedWordsList, strings.TrimSpace(word))
+			}
+		}
+
+		if len(cleanedWordsList) == 0 {
+			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		}
+
+		wordsFormatted, err := json.Marshal(cleanedWordsList)
 		if err != nil {
 			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		}
