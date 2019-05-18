@@ -10,6 +10,7 @@ import (
 	"github.com/pquerna/otp/totp"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/data"
 
 	"github.com/labstack/echo"
 )
@@ -25,18 +26,18 @@ type SessionResponse struct {
 }
 
 type UserResponse struct {
-	Status             string `json:"status"`
-	User               User   `json:"user"`
-	Grade              int    `json:"grade"`
-	Tabs               []Tab  `json:"tabs"`
-	ID                 int    `json:"id"`
-	Name               string `json:"name"`
-	Username           string `json:"username"`
-	Email              string `json:"email"`
-	Type               string `json:"type"`
-	Features           string `json:"features"`
-	Level              int    `json:"level"`
-	ShowMigrateMessage int    `json:"showMigrateMessage"`
+	Status             string    `json:"status"`
+	User               data.User `json:"user"`
+	Grade              int       `json:"grade"`
+	Tabs               []Tab     `json:"tabs"`
+	ID                 int       `json:"id"`
+	Name               string    `json:"name"`
+	Username           string    `json:"username"`
+	Email              string    `json:"email"`
+	Type               string    `json:"type"`
+	Features           string    `json:"features"`
+	Level              int       `json:"level"`
+	ShowMigrateMessage int       `json:"showMigrateMessage"`
 }
 
 type TwoFactorEnabled struct {

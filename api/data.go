@@ -3,6 +3,8 @@ package api
 import (
 	"errors"
 	"strconv"
+
+	"github.com/MyHomeworkSpace/api-server/data"
 )
 
 var (
@@ -27,17 +29,6 @@ type Tab struct {
 	Icon   string `json:"icon"`
 	Label  string `json:"label"`
 	Target string `json:"target"`
-}
-
-type User struct {
-	ID                 int    `json:"id"`
-	Name               string `json:"name"`
-	Username           string `json:"username"`
-	Email              string `json:"email"`
-	Type               string `json:"type"`
-	Features           string `json:"features"`
-	Level              int    `json:"level"`
-	ShowMigrateMessage int    `json:"showMigrateMessage"`
 }
 
 func Data_GetAnnouncementGroupSQL(groups []int) string {
@@ -111,25 +102,25 @@ func Data_GetTabsByUserID(userId int) ([]Tab, error) {
 	return tabs, nil
 }
 
-func Data_GetUserByID(id int) (User, error) {
+func Data_GetUserByID(id int) (data.User, error) {
 	rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
 	if err != nil {
-		return User{}, err
+		return data.User{}, err
 	}
 	defer rows.Close()
 	if rows.Next() {
-		user := User{}
+		user := data.User{}
 		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
 		if err != nil {
-			return User{}, err
+			return data.User{}, err
 		}
 		return user, nil
 	} else {
-		return User{}, ErrDataNotFound
+		return data.User{}, ErrDataNotFound
 	}
 }
 
-func Data_GetUserGrade(user User) (int, error) {
+func Data_GetUserGrade(user data.User) (int, error) {
 	if len(user.Username) < 4 {
 		// the username is not in the cXXyy format
 		// this is probably a faculty member
