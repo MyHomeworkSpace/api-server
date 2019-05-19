@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/schools/manager"
 	"github.com/MyHomeworkSpace/api-server/util"
 )
 
 // A ViewDay represents a day in a View.
 type ViewDay struct {
 	DayString     string                     `json:"day"`
-	ShiftingIndex int                        `json:"shiftingIndex"` // if it's a shifting day, its current index (for example, friday 1/2/3/4)
 	CurrentTerm   *Term                      `json:"currentTerm"`
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
 	Events        []data.Event               `json:"events"`
@@ -67,9 +67,14 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]O
 }
 
 // GetView retrieves a CalendarView for the given user with the given parameters.
-func GetView(db *sql.DB, userID int, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
+func GetView(db *sql.DB, user *data.User, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
 		Days: []ViewDay{},
+	}
+
+	providers := []data.Provider{
+		// TODO: not hardcode this for dalton
+		manager.GetSchoolByID("dalton").CalendarProvider(),
 	}
 
 	// get announcements for time period
@@ -99,7 +104,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	}
 
 	// get terms for user
-	termRows, err := db.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", userID)
+	termRows, err := db.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", user.ID)
 	if err != nil {
 		return View{}, err
 	}
@@ -171,7 +176,6 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	for i := 0; i < dayCount; i++ {
 		view.Days = append(view.Days, ViewDay{
 			DayString:     currentDay.Format("2006-01-02"),
-			ShiftingIndex: -1,
 			CurrentTerm:   nil,
 			Announcements: []data.PlannerAnnouncement{},
 			Events:        []data.Event{},
@@ -193,15 +197,6 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 			}
 		}
 
-		if currentDay.Weekday() == time.Friday {
-			for _, friday := range fridays {
-				if view.Days[i].DayString == friday.Date {
-					view.Days[i].ShiftingIndex = friday.Index
-					break
-				}
-			}
-		}
-
 		// do we have special assessments?
 		for specialAssessmentDay, _ := range SpecialAssessmentDays {
 			if view.Days[i].DayString == specialAssessmentDay {
@@ -218,7 +213,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		"SELECT calendar_events.id, calendar_events.name, calendar_events.`start`, calendar_events.`end`, calendar_events.`desc`, calendar_events.userId, calendar_event_rules.id, calendar_event_rules.eventId, calendar_event_rules.frequency, calendar_event_rules.interval, calendar_event_rules.byDay, calendar_event_rules.byMonthDay, calendar_event_rules.byMonth, calendar_event_rules.until FROM calendar_events "+
 			"LEFT JOIN calendar_event_rules ON calendar_events.id = calendar_event_rules.eventId "+
 			"WHERE calendar_events.userId = ? AND ((calendar_events.`end` >= ? AND calendar_events.`start` <= ?) OR calendar_event_rules.frequency IS NOT NULL)",
-		userID, startTime.Unix(), endTime.Unix(),
+		user.ID, startTime.Unix(), endTime.Unix(),
 	)
 	if err != nil {
 		return View{}, err
@@ -266,7 +261,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	}
 
 	// get homework events
-	hwEventRows, err := db.Query("SELECT calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)", userID, startTime.Unix(), endTime.Unix())
+	hwEventRows, err := db.Query("SELECT calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)", user.ID, startTime.Unix(), endTime.Unix())
 	if err != nil {
 		return View{}, err
 	}
@@ -291,6 +286,29 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
 	}
 
+	// get data from calendar providers
+	for _, provider := range providers {
+		providerData, err := provider.GetData(db, user, startTime, endTime, data.ProviderDataAll)
+		if err != nil {
+			return View{}, err
+		}
+
+		// add announcements
+		for _, announcement := range providerData.Announcements {
+			announcementDate, err := time.Parse("2006-01-02", announcement.Date)
+			if err != nil {
+				return View{}, err
+			}
+			dayOffset := int(math.Ceil(announcementDate.Sub(startTime).Hours() / 24))
+
+			if dayOffset < 0 || dayOffset > len(view.Days)-1 {
+				continue
+			}
+
+			view.Days[dayOffset].Announcements = append(view.Days[dayOffset].Announcements, announcement)
+		}
+	}
+
 	// get schedule events
 	for i := 0; i < dayCount; i++ {
 		day := view.Days[i]
@@ -306,7 +324,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		if dayTime.Year() == Day_Candlelighting.Year() && dayTime.Month() == Day_Candlelighting.Month() && dayTime.Day() == Day_Candlelighting.Day() {
 			itemsForPeriod := map[string][]data.Event{}
 			seenClassIds := []int{}
-			rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.block IN ('C', 'D', 'H', 'G') GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", userID, day.CurrentTerm.TermID)
+			rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.block IN ('C', 'D', 'H', 'G') GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", user.ID, day.CurrentTerm.TermID)
 			if err != nil {
 				return View{}, err
 			}
@@ -395,8 +413,16 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		dayNumber := int(dayTime.Weekday())
 
 		if dayTime.Weekday() == time.Friday {
-			if day.ShiftingIndex != -1 {
-				dayNumber = 4 + day.ShiftingIndex
+			fridayNumber := -1
+			for _, friday := range fridays {
+				if day.DayString == friday.Date {
+					fridayNumber = friday.Index
+					break
+				}
+			}
+
+			if fridayNumber != -1 {
+				dayNumber = 4 + fridayNumber
 			} else {
 				continue
 			}
@@ -406,7 +432,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 			continue
 		}
 
-		rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.dayNumber = ? GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", userID, day.CurrentTerm.TermID, dayNumber)
+		rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.dayNumber = ? GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", user.ID, day.CurrentTerm.TermID, dayNumber)
 		if err != nil {
 			return View{}, err
 		}
@@ -456,7 +482,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	if viewIncludesSpecialAssessmentDay {
 		// get a list of the user's calendar classes
 		sectionIDs := []int{}
-		classRows, err := db.Query("SELECT sectionId FROM calendar_classes WHERE userId = ? GROUP BY `sectionId`", userID)
+		classRows, err := db.Query("SELECT sectionId FROM calendar_classes WHERE userId = ? GROUP BY `sectionId`", user.ID)
 		if err != nil {
 			return View{}, err
 		}
@@ -524,7 +550,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 				Name:   fmt.Sprintf("Final - %s", assessmentForDay.ClassName),
 				Start:  assessmentForDay.Start,
 				End:    assessmentForDay.End,
-				UserID: userID,
+				UserID: user.ID,
 			}
 
 			finalDay := startTime.Add(time.Duration(i) * 24 * time.Hour)

@@ -5,25 +5,15 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/schools/manager"
 
 	"github.com/labstack/echo"
 )
 
 // responses
-type MultiPlannerAnnouncementResponse struct {
-	Status        string                     `json:"status"`
-	Announcements []data.PlannerAnnouncement `json:"announcements"`
-}
-
-type PlannerFridayResponse struct {
-	Status string             `json:"status"`
-	Friday data.PlannerFriday `json:"friday"`
-}
-
 type PlannerWeekInfoResponse struct {
 	Status        string                     `json:"status"`
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
-	Friday        data.PlannerFriday         `json:"friday"`
 }
 
 func InitPlannerAPI(e *echo.Echo) {
@@ -71,56 +61,25 @@ func InitPlannerAPI(e *echo.Echo) {
 			announcements = append(announcements, resp)
 		}
 
-		fridayDate := startDate.Add(time.Hour * 24 * 4)
+		// TODO: merge the above into the calendar provider
 
-		fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
-		if err != nil {
-			ErrorLog_LogError("getting friday information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer fridayRows.Close()
-		friday := data.PlannerFriday{-1, "", -1}
-		if fridayRows.Next() {
-			fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
+		providers := []data.Provider{
+			// TODO: not hardcode this for dalton
+			manager.GetSchoolByID("dalton").CalendarProvider(),
 		}
 
-		return c.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements, friday})
-	})
+		for _, provider := range providers {
+			providerData, err := provider.GetData(DB, &user, startDate, endDate, data.ProviderDataAnnouncements)
+			if err != nil {
+				ErrorLog_LogError("getting calendar provider data", err)
+				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			}
 
-	e.GET("/planner/announcements/getWeek/:date", func(c echo.Context) error {
-		startDate, err := time.Parse("2006-01-02", c.Param("date"))
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			for _, announcement := range providerData.Announcements {
+				announcements = append(announcements, announcement)
+			}
 		}
-		endDate := startDate.Add(time.Hour * 24 * 7)
-		rows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ?", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
-		if err != nil {
-			ErrorLog_LogError("getting announcement information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		announcements := []data.PlannerAnnouncement{}
-		for rows.Next() {
-			resp := data.PlannerAnnouncement{-1, "", "", -1, -1}
-			rows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
-			announcements = append(announcements, resp)
-		}
-		return c.JSON(http.StatusOK, MultiPlannerAnnouncementResponse{"ok", announcements})
-	})
 
-	e.GET("/planner/fridays/get/:date", func(c echo.Context) error {
-		rows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", c.Param("date"))
-		if err != nil {
-			ErrorLog_LogError("getting friday information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		if rows.Next() {
-			resp := data.PlannerFriday{-1, "", -1}
-			rows.Scan(&resp.ID, &resp.Date, &resp.Index)
-			return c.JSON(http.StatusOK, PlannerFridayResponse{"ok", resp})
-		} else {
-			return c.JSON(http.StatusOK, StatusResponse{"ok"})
-		}
+		return c.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
 	})
 }

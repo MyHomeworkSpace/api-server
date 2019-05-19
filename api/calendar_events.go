@@ -33,7 +33,6 @@ type CalendarWeekResponse struct {
 	Status         string                     `json:"status"`
 	Announcements  []data.PlannerAnnouncement `json:"announcements"`
 	CurrentTerm    *calendar.Term             `json:"currentTerm"`
-	Friday         data.PlannerFriday         `json:"friday"`
 	Events         []CalendarEvent            `json:"events"`
 	HWEvents       []CalendarHWEvent          `json:"hwEvents"`
 	ScheduleEvents [][]CalendarScheduleItem   `json:"scheduleEvents"`
@@ -131,7 +130,7 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
 
-	view, err := calendar.GetView(DB, userID, time.UTC, grade, announcementsGroupsSQL, startDate, endDate)
+	view, err := calendar.GetView(DB, &user, time.UTC, grade, announcementsGroupsSQL, startDate, endDate)
 	if err != nil {
 		ErrorLog_LogError("getting calendar week", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -164,25 +163,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 			// it's the first term
 			currentTerm = &availableTerms[0]
 		}
-	}
-
-	// get friday info
-	fridayDate := startDate.Add(time.Hour * 24 * 4)
-
-	fridayRows, err := DB.Query("SELECT * FROM fridays WHERE date = ?", fridayDate)
-	if err != nil {
-		ErrorLog_LogError("getting friday information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	defer fridayRows.Close()
-	friday := data.PlannerFriday{
-		ID:    -1,
-		Date:  "",
-		Index: -1,
-	}
-	if fridayRows.Next() {
-		fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
 	}
 
 	announcements := []data.PlannerAnnouncement{}
@@ -245,7 +225,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 		Status:         "ok",
 		Announcements:  announcements,
 		CurrentTerm:    currentTerm,
-		Friday:         friday,
 		Events:         plainEvents,
 		HWEvents:       hwEvents,
 		ScheduleEvents: scheduleEvents,
