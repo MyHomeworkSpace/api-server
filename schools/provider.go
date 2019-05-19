@@ -6,5 +6,5 @@ type Provider struct {
 }
 
 func (p *Provider) Name() string {
-	return p.School.Name() + " Calendar"
+	return p.School.Name() + " Schedule"
 }

@@ -42,6 +42,7 @@ type Event struct {
 	RecurRule *RecurRule  `json:"recurRule"`
 	Type      EventType   `json:"type"`
 	Data      interface{} `json:"data"`
+	Source    int         `json:"source"`
 	UserID    int         `json:"userId"`
 }
 

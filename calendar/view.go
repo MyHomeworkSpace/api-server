@@ -66,7 +66,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	for plainEventRows.Next() {
 		event := data.Event{
-			Type: data.EventTypePlain,
+			Type:   data.EventTypePlain,
+			Source: -1,
 		}
 		eventData := data.PlainEventData{}
 		recurRule := data.RecurRule{
@@ -113,7 +114,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	for hwEventRows.Next() {
 		event := data.Event{
-			Type: data.EventTypeHomework,
+			Type:   data.EventTypeHomework,
+			Source: -1,
 		}
 		eventData := data.HomeworkEventData{}
 		hwEventRows.Scan(&event.ID, &eventData.Homework.ID, &eventData.Homework.Name, &eventData.Homework.Due, &eventData.Homework.Desc, &eventData.Homework.Complete, &eventData.Homework.ClassID, &eventData.Homework.UserID, &event.Start, &event.End, &event.UserID)
@@ -131,7 +133,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 	}
 
 	// handle calendar providers
-	for _, provider := range providers {
+	for providerIndex, provider := range providers {
 		// add them to the list
 		view.Providers = append(view.Providers, ProviderInfo{
 			Name: provider.Name(),
@@ -166,6 +168,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			if dayOffset < 0 || dayOffset > len(view.Days)-1 {
 				continue
 			}
+
+			event.Source = providerIndex
 
 			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
 		}
