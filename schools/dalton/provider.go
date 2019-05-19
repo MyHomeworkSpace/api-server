@@ -63,13 +63,23 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]d
 	return blocks, err
 }
 
-func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
+func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
 	result := data.ProviderData{
 		Announcements: nil,
 		Events:        nil,
 	}
 
 	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
+
+	// get user's grade
+	grade, err := getUserGrade(*user)
+	if err != nil {
+		return data.ProviderData{}, err
+	}
+
+	// get user's announcement groups
+	announcementGroups := getGradeAnnouncementGroups(grade)
+	announcementGroupsSQL := getAnnouncementGroupSQL(announcementGroups)
 
 	// get all friday information for time period
 	fridayRows, err := db.Query("SELECT * FROM fridays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
@@ -85,7 +95,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	fridayRows.Close()
 
 	// get announcements for time period
-	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date <= ? AND ("+announcementsGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 	if err != nil {
 		return data.ProviderData{}, err
 	}
@@ -98,7 +108,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	}
 
 	// get off blocks for time period
-	offBlocks, err := getOffBlocksStartingBefore(db, endTime.Format("2006-01-02"), announcementsGroupsSQL)
+	offBlocks, err := getOffBlocksStartingBefore(db, endTime.Format("2006-01-02"), announcementGroupsSQL)
 	if err != nil {
 		return data.ProviderData{}, err
 	}

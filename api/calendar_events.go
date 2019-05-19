@@ -112,16 +112,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 
-	grade, err := Data_GetUserGrade(user)
-	if err != nil {
-		ErrorLog_LogError("getting planner week information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
-	announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
-
 	startDate, err := time.Parse("2006-01-02", ec.Param("monday"))
 	if err != nil {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
@@ -129,7 +119,7 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
 
-	view, err := calendar.GetView(DB, &user, time.UTC, grade, announcementsGroupsSQL, startDate, endDate)
+	view, err := calendar.GetView(DB, &user, time.UTC, startDate, endDate)
 	if err != nil {
 		ErrorLog_LogError("getting calendar week", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

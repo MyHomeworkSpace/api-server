@@ -34,17 +34,6 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
-		// TODO: merge the above into the calendar provider
-
-		grade, err := Data_GetUserGrade(user)
-		if err != nil {
-			ErrorLog_LogError("getting planner week information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
-		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
-
 		providers := []data.Provider{
 			// TODO: not hardcode this for dalton
 			manager.GetSchoolByID("dalton").CalendarProvider(),
@@ -53,7 +42,7 @@ func InitPlannerAPI(e *echo.Echo) {
 		announcements := []data.PlannerAnnouncement{}
 
 		for _, provider := range providers {
-			providerData, err := provider.GetData(DB, &user, time.UTC, grade, announcementsGroupsSQL, startDate, endDate, data.ProviderDataAnnouncements)
+			providerData, err := provider.GetData(DB, &user, time.UTC, startDate, endDate, data.ProviderDataAnnouncements)
 			if err != nil {
 				ErrorLog_LogError("getting calendar provider data", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

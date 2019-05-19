@@ -28,7 +28,7 @@ type ProviderInfo struct {
 }
 
 // GetView retrieves a CalendarView for the given user with the given parameters.
-func GetView(db *sql.DB, user *data.User, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time) (View, error) {
+func GetView(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
 		Providers: []ProviderInfo{},
 		Days:      []ViewDay{},
@@ -138,7 +138,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, grade int, an
 		})
 
 		// get data
-		providerData, err := provider.GetData(db, user, location, grade, announcementsGroupsSQL, startTime, endTime, data.ProviderDataAll)
+		providerData, err := provider.GetData(db, user, location, startTime, endTime, data.ProviderDataAll)
 		if err != nil {
 			return View{}, err
 		}

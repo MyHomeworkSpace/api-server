@@ -2,6 +2,25 @@ package dalton
 
 import "time"
 
+const (
+	AnnouncementGrade_All              = 0  // everyone
+	AnnouncementGrade_MiddleSchool     = 14 // 4th grade through 8th grade
+	AnnouncementGrade_HighSchool       = 15 // 9th grade through 12th grade
+	AnnouncementGrade_MiddleSchool_456 = 16 // 4th, 5th, and 6th grade
+	AnnouncementGrade_MiddleSchool_78  = 17 // 7th, and 8th grade
+	AnnouncementGrade_Faculty          = 18 // faculty member
+)
+
+const (
+	BlackbaudLevel_MiddleSchool = 167
+	BlackbaudLevel_HighSchool   = 166
+)
+
+const (
+	BlackbaudPersona_Student = 2
+	BlackbaudPersona_Faculty = 3
+)
+
 // An AssemblyType describes what happens for assembly on a given week.
 type AssemblyType int
 
@@ -13,6 +32,10 @@ const (
 
 // these change every year
 var (
+	// the grade that someone in the class of 2019 is in for this year
+	// used to calculate other people's grade
+	Grade_ClassOf2019 = 12
+
 	Day_SchoolStart, _   = time.Parse("2006-01-02", "2018-09-12")
 	Day_ExamRelief, _    = time.Parse("2006-01-02", "2019-01-25")
 	Day_SeniorLastDay, _ = time.Parse("2006-01-02", "2019-04-26")

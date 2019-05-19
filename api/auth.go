@@ -28,7 +28,6 @@ type SessionResponse struct {
 type UserResponse struct {
 	Status             string    `json:"status"`
 	User               data.User `json:"user"`
-	Grade              int       `json:"grade"`
 	Tabs               []Tab     `json:"tabs"`
 	ID                 int       `json:"id"`
 	Name               string    `json:"name"`
@@ -256,12 +255,6 @@ func InitAuthAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
-		grade, err := Data_GetUserGrade(user)
-		if err != nil {
-			ErrorLog_LogError("getting user information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
 		tabs, err := Data_GetTabsByUserID(user.ID)
 		if err != nil {
 			ErrorLog_LogError("getting user information", err)
@@ -271,7 +264,6 @@ func InitAuthAPI(e *echo.Echo) {
 		return c.JSON(http.StatusOK, UserResponse{
 			Status: "ok",
 			User:   user,
-			Grade:  grade,
 			Tabs:   tabs,
 
 			// these are set for backwards compatibility

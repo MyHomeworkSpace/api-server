@@ -18,7 +18,7 @@ const (
 // A Provider is a source of calendar data (events, announcements, etc)
 type Provider interface {
 	Name() string
-	GetData(db *sql.DB, user *User, location *time.Location, grade int, announcementsGroupsSQL string, startTime time.Time, endTime time.Time, dataType ProviderDataType) (ProviderData, error)
+	GetData(db *sql.DB, user *User, location *time.Location, startTime time.Time, endTime time.Time, dataType ProviderDataType) (ProviderData, error)
 }
 
 // A ProviderData struct contains all data returned by a Provider for a given time
