@@ -1,4 +1,4 @@
-package calendar
+package data
 
 import (
 	"time"
@@ -14,6 +14,50 @@ const (
 	RecurFrequencyMonthly
 	RecurFrequencyYearly
 )
+
+// An EventType represents the type of a calendar event: plain, homework, or schedule.
+type EventType int
+
+// The available event types.
+const (
+	EventTypePlain EventType = iota
+	EventTypeHomework
+	EventTypeSchedule
+)
+
+// An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
+type Event struct {
+	ID        int         `json:"id"`
+	Name      string      `json:"name"`
+	Start     int         `json:"start"`
+	End       int         `json:"end"`
+	RecurRule *RecurRule  `json:"recurRule"`
+	Type      EventType   `json:"type"`
+	Data      interface{} `json:"data"`
+	UserID    int         `json:"userId"`
+}
+
+// PlainEventData stores additional data associated with a plain event.
+type PlainEventData struct {
+	Desc string `json:"desc"`
+}
+
+// HomeworkEventData stores additional data associated with a homework event.
+type HomeworkEventData struct {
+	Homework Homework `json:"homework"`
+}
+
+// ScheduleEventData stores additional data associated with a schedule event.
+type ScheduleEventData struct {
+	TermID       int    `json:"termId"`
+	ClassID      int    `json:"classId"`
+	OwnerID      int    `json:"ownerId"`
+	OwnerName    string `json:"ownerName"`
+	DayNumber    int    `json:"dayNumber"`
+	Block        string `json:"block"`
+	BuildingName string `json:"buildingName"`
+	RoomNumber   string `json:"roomNumber"`
+}
 
 // A RecurRule struct contains information about how an event recurs. Inspired by the iCal RRULE system.
 type RecurRule struct {

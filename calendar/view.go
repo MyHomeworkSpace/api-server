@@ -17,7 +17,7 @@ type ViewDay struct {
 	ShiftingIndex int                        `json:"shiftingIndex"` // if it's a shifting day, its current index (for example, friday 1/2/3/4)
 	CurrentTerm   *Term                      `json:"currentTerm"`
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
-	Events        []Event                    `json:"events"`
+	Events        []data.Event               `json:"events"`
 }
 
 // A View represents a view of a user's calendar over a certain period of time.
@@ -174,7 +174,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 			ShiftingIndex: -1,
 			CurrentTerm:   nil,
 			Announcements: []data.PlannerAnnouncement{},
-			Events:        []Event{},
+			Events:        []data.Event{},
 		})
 
 		if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses) {
@@ -226,18 +226,18 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	defer plainEventRows.Close()
 
 	for plainEventRows.Next() {
-		event := Event{
-			Type: PlainEvent,
+		event := data.Event{
+			Type: data.EventTypePlain,
 		}
-		data := PlainEventData{}
-		recurRule := RecurRule{
+		eventData := data.PlainEventData{}
+		recurRule := data.RecurRule{
 			ID: -1,
 		}
 		plainEventRows.Scan(
-			&event.ID, &event.Name, &event.Start, &event.End, &data.Desc, &event.UserID,
+			&event.ID, &event.Name, &event.Start, &event.End, &eventData.Desc, &event.UserID,
 			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
 		)
-		event.Data = data
+		event.Data = eventData
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
 
@@ -273,13 +273,13 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 	defer hwEventRows.Close()
 
 	for hwEventRows.Next() {
-		event := Event{
-			Type: HomeworkEvent,
+		event := data.Event{
+			Type: data.EventTypeHomework,
 		}
-		data := HomeworkEventData{}
-		hwEventRows.Scan(&event.ID, &data.Homework.ID, &data.Homework.Name, &data.Homework.Due, &data.Homework.Desc, &data.Homework.Complete, &data.Homework.ClassID, &data.Homework.UserID, &event.Start, &event.End, &event.UserID)
-		event.Data = data
-		event.Name = data.Homework.Name
+		eventData := data.HomeworkEventData{}
+		hwEventRows.Scan(&event.ID, &eventData.Homework.ID, &eventData.Homework.Name, &eventData.Homework.Due, &eventData.Homework.Desc, &eventData.Homework.Complete, &eventData.Homework.ClassID, &eventData.Homework.UserID, &event.Start, &event.End, &event.UserID)
+		event.Data = eventData
+		event.Name = eventData.Homework.Name
 
 		eventStartTime := time.Unix(int64(event.Start), 0)
 		dayOffset := int(math.Floor(eventStartTime.Sub(startTime).Hours() / 24))
@@ -304,7 +304,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 
 		// is it candlelighting?
 		if dayTime.Year() == Day_Candlelighting.Year() && dayTime.Month() == Day_Candlelighting.Month() && dayTime.Day() == Day_Candlelighting.Day() {
-			itemsForPeriod := map[string][]Event{}
+			itemsForPeriod := map[string][]data.Event{}
 			seenClassIds := []int{}
 			rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.block IN ('C', 'D', 'H', 'G') GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", userID, day.CurrentTerm.TermID)
 			if err != nil {
@@ -312,20 +312,20 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 			}
 			defer rows.Close()
 			for rows.Next() {
-				event := Event{
-					Type: ScheduleEvent,
+				event := data.Event{
+					Type: data.EventTypeSchedule,
 				}
-				data := ScheduleEventData{}
-				rows.Scan(&event.ID, &data.TermID, &data.ClassID, &event.Name, &data.OwnerID, &data.OwnerName, &data.DayNumber, &data.Block, &data.BuildingName, &data.RoomNumber, &event.Start, &event.End, &event.UserID)
-				event.Data = data
+				eventData := data.ScheduleEventData{}
+				rows.Scan(&event.ID, &eventData.TermID, &eventData.ClassID, &event.Name, &eventData.OwnerID, &eventData.OwnerName, &eventData.DayNumber, &eventData.Block, &eventData.BuildingName, &eventData.RoomNumber, &event.Start, &event.End, &event.UserID)
+				event.Data = eventData
 
-				if !util.IntSliceContains(seenClassIds, data.ClassID) {
-					_, sliceExists := itemsForPeriod[data.Block]
+				if !util.IntSliceContains(seenClassIds, eventData.ClassID) {
+					_, sliceExists := itemsForPeriod[eventData.Block]
 					if !sliceExists {
-						itemsForPeriod[data.Block] = []Event{}
+						itemsForPeriod[eventData.Block] = []data.Event{}
 					}
-					itemsForPeriod[data.Block] = append(itemsForPeriod[data.Block], event)
-					seenClassIds = append(seenClassIds, data.ClassID)
+					itemsForPeriod[eventData.Block] = append(itemsForPeriod[eventData.Block], event)
+					seenClassIds = append(seenClassIds, eventData.ClassID)
 				}
 			}
 
@@ -341,7 +341,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 
 							// remove building + room number because we can't tell which one to use
 							// (in the case of classes where the room changes, like most science classes)
-							eventData := newEvent.Data.(ScheduleEventData)
+							eventData := newEvent.Data.(data.ScheduleEventData)
 							eventData.BuildingName = ""
 							eventData.RoomNumber = ""
 							newEvent.Data = eventData
@@ -354,13 +354,13 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 					}
 				} else {
 					// it's a fixed thing, just add it directly
-					newEvent := Event{
+					newEvent := data.Event{
 						ID:    -1,
 						Name:  specialScheduleItem.Name,
 						Start: dayOffset + specialScheduleItem.Start,
 						End:   dayOffset + specialScheduleItem.End,
-						Type:  ScheduleEvent,
-						Data: ScheduleEventData{
+						Type:  data.EventTypeSchedule,
+						Data: data.ScheduleEventData{
 							TermID:       day.CurrentTerm.TermID,
 							ClassID:      -1,
 							OwnerID:      -1,
@@ -412,12 +412,12 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 		}
 		defer rows.Close()
 		for rows.Next() {
-			event := Event{
-				Type: ScheduleEvent,
+			event := data.Event{
+				Type: data.EventTypeSchedule,
 			}
-			data := ScheduleEventData{}
-			rows.Scan(&event.ID, &data.TermID, &data.ClassID, &event.Name, &data.OwnerID, &data.OwnerName, &data.DayNumber, &data.Block, &data.BuildingName, &data.RoomNumber, &event.Start, &event.End, &event.UserID)
-			event.Data = data
+			eventData := data.ScheduleEventData{}
+			rows.Scan(&event.ID, &eventData.TermID, &eventData.ClassID, &event.Name, &eventData.OwnerID, &eventData.OwnerName, &eventData.DayNumber, &eventData.Block, &eventData.BuildingName, &eventData.RoomNumber, &event.Start, &event.End, &event.UserID)
+			event.Data = eventData
 
 			event.Start += dayOffset
 			event.End += dayOffset
@@ -438,9 +438,9 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 					if !foundType || assemblyType == AssemblyType_Assembly {
 						// set name to assembly and room to Theater
 						view.Days[i].Events[eventIndex].Name = "Assembly"
-						data := view.Days[i].Events[eventIndex].Data.(ScheduleEventData)
-						data.RoomNumber = "Theater"
-						view.Days[i].Events[eventIndex].Data = data
+						eventData := view.Days[i].Events[eventIndex].Data.(data.ScheduleEventData)
+						eventData.RoomNumber = "Theater"
+						view.Days[i].Events[eventIndex].Data = eventData
 					} else if assemblyType == AssemblyType_LongHouse {
 						// set name to long house
 						view.Days[i].Events[eventIndex].Name = "Long House"
@@ -518,8 +518,8 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 				continue
 			}
 
-			event := Event{
-				Type:   ScheduleEvent,
+			event := data.Event{
+				Type:   data.EventTypeSchedule,
 				ID:     -1,
 				Name:   fmt.Sprintf("Final - %s", assessmentForDay.ClassName),
 				Start:  assessmentForDay.Start,
@@ -540,7 +540,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 
 			event.End = int(time.Date(finalDay.Year(), finalDay.Month(), finalDay.Day(), endHour, endMin, 0, 0, location).Unix())
 
-			data := ScheduleEventData{
+			eventData := data.ScheduleEventData{
 				TermID:       -1,
 				ClassID:      -1,
 				OwnerID:      -1,
@@ -550,7 +550,7 @@ func GetView(db *sql.DB, userID int, location *time.Location, grade int, announc
 				BuildingName: "",
 				RoomNumber:   assessmentForDay.RoomNumber,
 			}
-			event.Data = data
+			event.Data = eventData
 
 			view.Days[i].Events = append(view.Days[i].Events, event)
 		}

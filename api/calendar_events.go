@@ -197,41 +197,41 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 			announcements = append(announcements, announcement)
 		}
 		for _, event := range day.Events {
-			if event.Type == calendar.PlainEvent {
-				data := event.Data.(calendar.PlainEventData)
+			if event.Type == data.EventTypePlain {
+				eventData := event.Data.(data.PlainEventData)
 				plainEvent := CalendarEvent{
 					ID:     event.ID,
 					Name:   event.Name,
 					Start:  event.Start,
 					End:    event.End,
-					Desc:   data.Desc,
+					Desc:   eventData.Desc,
 					UserID: event.UserID,
 				}
 				plainEvents = append(plainEvents, plainEvent)
-			} else if event.Type == calendar.HomeworkEvent {
-				data := event.Data.(calendar.HomeworkEventData)
+			} else if event.Type == data.EventTypeHomework {
+				eventData := event.Data.(data.HomeworkEventData)
 				hwEvent := CalendarHWEvent{
 					ID:       event.ID,
-					Homework: data.Homework,
+					Homework: eventData.Homework,
 					Start:    event.Start,
 					End:      event.End,
 					UserID:   event.UserID,
 				}
 				hwEvents = append(hwEvents, hwEvent)
-			} else if event.Type == calendar.ScheduleEvent {
+			} else if event.Type == data.EventTypeSchedule {
 				dayTime, _ := time.Parse("2006-01-02", day.DayString)
-				data := event.Data.(calendar.ScheduleEventData)
+				eventData := event.Data.(data.ScheduleEventData)
 				scheduleEvent := CalendarScheduleItem{
 					ID:           event.ID,
-					TermID:       data.TermID,
-					ClassID:      data.ClassID,
+					TermID:       eventData.TermID,
+					ClassID:      eventData.ClassID,
 					Name:         event.Name,
-					OwnerID:      data.OwnerID,
-					OwnerName:    data.OwnerName,
-					DayNumber:    data.DayNumber,
-					Block:        data.Block,
-					BuildingName: data.BuildingName,
-					RoomNumber:   data.RoomNumber,
+					OwnerID:      eventData.OwnerID,
+					OwnerName:    eventData.OwnerName,
+					DayNumber:    eventData.DayNumber,
+					Block:        eventData.Block,
+					BuildingName: eventData.BuildingName,
+					RoomNumber:   eventData.RoomNumber,
 					Start:        event.Start - int(dayTime.Unix()),
 					End:          event.End - int(dayTime.Unix()),
 					UserID:       event.UserID,
