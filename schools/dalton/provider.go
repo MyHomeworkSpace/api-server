@@ -198,6 +198,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		// get schedule events
 		currentDay := startTime
 		for i := 0; i < dayCount; i++ {
+			if i != 0 {
+				currentDay = currentDay.Add(24 * time.Hour)
+			}
+
 			dayString := currentDay.Format("2006-01-02")
 
 			var currentTerm *Term
@@ -299,8 +303,6 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					}
 				}
 			}
-
-			currentDay = currentDay.Add(24 * time.Hour)
 		}
 	}
 
