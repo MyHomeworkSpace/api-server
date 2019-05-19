@@ -4,6 +4,14 @@ import (
 	"time"
 )
 
+// The available announcement types.
+const (
+	AnnouncementTypeText       = 0 // just informative
+	AnnouncementTypeFullOff    = 1 // no classes at all
+	AnnouncementTypeBreakStart = 2 // start of a break (inclusive of that day!)
+	AnnouncementTypeBreakEnd   = 3 // end of a break (exclusive of that day!)
+)
+
 // A RecurFrequency describes how often an event recurs.
 type RecurFrequency int
 
@@ -57,6 +65,18 @@ type ScheduleEventData struct {
 	Block        string `json:"block"`
 	BuildingName string `json:"buildingName"`
 	RoomNumber   string `json:"roomNumber"`
+}
+
+// An OffBlock is a period of time that's marked off on a calendar, such as a holiday.
+type OffBlock struct {
+	StartID   int       `json:"startId"`
+	EndID     int       `json:"endId"`
+	Start     time.Time `json:"-"`
+	End       time.Time `json:"-"`
+	StartText string    `json:"start"`
+	EndText   string    `json:"end"`
+	Name      string    `json:"name"`
+	Grade     int       `json:"grade"`
 }
 
 // A RecurRule struct contains information about how an event recurs. Inspired by the iCal RRULE system.

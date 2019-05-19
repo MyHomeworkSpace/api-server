@@ -18,13 +18,6 @@ const (
 )
 
 const (
-	AnnouncementType_Text       = 0 // just informative
-	AnnouncementType_FullOff    = 1 // no classes at all
-	AnnouncementType_BreakStart = 2 // start of a break (inclusive of that day!)
-	AnnouncementType_BreakEnd   = 3 // end of a break (exclusive of that day!)
-)
-
-const (
 	BlackbaudLevel_MiddleSchool = 167
 	BlackbaudLevel_HighSchool   = 166
 )

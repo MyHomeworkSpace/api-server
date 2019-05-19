@@ -32,7 +32,6 @@ type CalendarHWEvent struct {
 type CalendarWeekResponse struct {
 	Status         string                     `json:"status"`
 	Announcements  []data.PlannerAnnouncement `json:"announcements"`
-	CurrentTerm    *calendar.Term             `json:"currentTerm"`
 	Events         []CalendarEvent            `json:"events"`
 	HWEvents       []CalendarHWEvent          `json:"hwEvents"`
 	ScheduleEvents [][]CalendarScheduleItem   `json:"scheduleEvents"`
@@ -137,34 +136,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 
-	// get all terms for this user
-	termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", userID)
-	if err != nil {
-		ErrorLog_LogError("getting term information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	defer termRows.Close()
-	availableTerms := []calendar.Term{}
-	for termRows.Next() {
-		term := calendar.Term{}
-		termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
-		availableTerms = append(availableTerms, term)
-	}
-
-	// find the current term
-	// TODO: be better at this and handle mid-week term switches (is that a thing?)
-	var currentTerm *calendar.Term
-	if startDate.Add(time.Second).After(calendar.Day_SchoolStart) && startDate.Before(calendar.Day_SchoolEnd) {
-		if startDate.After(calendar.Day_ExamRelief) {
-			// it's the second term
-			currentTerm = &availableTerms[1]
-		} else {
-			// it's the first term
-			currentTerm = &availableTerms[0]
-		}
-	}
-
 	announcements := []data.PlannerAnnouncement{}
 	plainEvents := []CalendarEvent{}
 	hwEvents := []CalendarHWEvent{}
@@ -224,7 +195,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 	ec.JSON(http.StatusOK, CalendarWeekResponse{
 		Status:         "ok",
 		Announcements:  announcements,
-		CurrentTerm:    currentTerm,
 		Events:         plainEvents,
 		HWEvents:       hwEvents,
 		ScheduleEvents: scheduleEvents,

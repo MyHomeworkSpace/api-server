@@ -53,15 +53,18 @@ type CalendarScheduleItem struct {
 	UserID       int    `json:"userId"`
 }
 
+// don't use me please
+type DumbTerm struct {
+	ID     int    `json:"id"`
+	TermID int    `json:"termId"`
+	Name   string `json:"name"`
+	UserID int    `json:"userId"`
+}
+
 // responses
 type CalendarClassesResponse struct {
 	Status  string          `json:"status"`
 	Classes []CalendarClass `json:"classes"`
-}
-type CalendarScheduleResponse struct {
-	Status string                 `json:"status"`
-	Terms  []calendar.Term        `json:"terms"`
-	Items  []CalendarScheduleItem `json:"items"`
 }
 type CalendarStatusResponse struct {
 	Status    string `json:"status"`
@@ -69,40 +72,6 @@ type CalendarStatusResponse struct {
 }
 
 func InitCalendarAPI(e *echo.Echo) {
-	e.GET("/calendar/getSchedule", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		// get the terms
-		terms := []calendar.Term{}
-		termRows, err := DB.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer termRows.Close()
-		for termRows.Next() {
-			term := calendar.Term{-1, -1, "", -1}
-			termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
-			terms = append(terms, term)
-		}
-
-		// get the periods for each term
-		items := []CalendarScheduleItem{}
-		rows, err := DB.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		for rows.Next() {
-			item := CalendarScheduleItem{}
-			rows.Scan(&item.ID, &item.TermID, &item.ClassID, &item.Name, &item.OwnerID, &item.OwnerName, &item.DayNumber, &item.Start, &item.End, &item.UserID)
-			items = append(items, item)
-		}
-
-		return c.JSON(http.StatusOK, CalendarScheduleResponse{"ok", terms, items})
-	})
-
 	e.GET("/calendar/getClasses", func(c echo.Context) error {
 		if GetSessionUserID(&c) == -1 {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
@@ -322,13 +291,13 @@ func InitCalendarAPI(e *echo.Echo) {
 		}
 
 		totalTermList := response.([]interface{})
-		termMap := map[int]calendar.Term{}
+		termMap := map[int]DumbTerm{}
 		termRequestString := ""
 		for _, term := range totalTermList {
 			termInfo := term.(map[string]interface{})
 			termId := int(termInfo["DurationId"].(float64))
 			if termInfo["OfferingType"].(float64) == 1 {
-				termMap[termId] = calendar.Term{
+				termMap[termId] = DumbTerm{
 					-1,
 					termId,
 					termInfo["DurationDescription"].(string),

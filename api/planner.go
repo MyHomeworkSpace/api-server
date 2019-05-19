@@ -34,6 +34,8 @@ func InitPlannerAPI(e *echo.Echo) {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		}
 
+		// TODO: merge the above into the calendar provider
+
 		grade, err := Data_GetUserGrade(user)
 		if err != nil {
 			ErrorLog_LogError("getting planner week information", err)
@@ -43,41 +45,21 @@ func InitPlannerAPI(e *echo.Echo) {
 		announcementsGroups := Data_GetGradeAnnouncementGroups(grade)
 		announcementsGroupsSQL := Data_GetAnnouncementGroupSQL(announcementsGroups)
 
-		announcementRows, err := DB.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date < ? AND ("+announcementsGroupsSQL+")", startDate.Format("2006-01-02"), endDate.Format("2006-01-02"))
-		if err != nil {
-			ErrorLog_LogError("getting announcement information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer announcementRows.Close()
-		announcements := []data.PlannerAnnouncement{}
-		for announcementRows.Next() {
-			resp := data.PlannerAnnouncement{-1, "", "", -1, -1}
-			announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
-			if resp.Type == AnnouncementType_BreakStart {
-				resp.Text = "Start of " + resp.Text
-			} else if resp.Type == AnnouncementType_BreakEnd {
-				resp.Text = "End of " + resp.Text
-			}
-			announcements = append(announcements, resp)
-		}
-
-		// TODO: merge the above into the calendar provider
-
 		providers := []data.Provider{
 			// TODO: not hardcode this for dalton
 			manager.GetSchoolByID("dalton").CalendarProvider(),
 		}
 
+		announcements := []data.PlannerAnnouncement{}
+
 		for _, provider := range providers {
-			providerData, err := provider.GetData(DB, &user, startDate, endDate, data.ProviderDataAnnouncements)
+			providerData, err := provider.GetData(DB, &user, time.UTC, grade, announcementsGroupsSQL, startDate, endDate, data.ProviderDataAnnouncements)
 			if err != nil {
 				ErrorLog_LogError("getting calendar provider data", err)
 				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			}
 
-			for _, announcement := range providerData.Announcements {
-				announcements = append(announcements, announcement)
-			}
+			announcements = append(announcements, providerData.Announcements...)
 		}
 
 		return c.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
