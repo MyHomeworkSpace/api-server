@@ -27,6 +27,21 @@ type CalendarHWEvent struct {
 	End      int           `json:"end"`
 	UserID   int           `json:"userId"`
 }
+type CalendarScheduleItem struct {
+	ID           int    `json:"id"`
+	TermID       int    `json:"termId"`
+	ClassID      int    `json:"classId"`
+	Name         string `json:"name"`
+	OwnerID      int    `json:"ownerId"`
+	OwnerName    string `json:"ownerName"`
+	DayNumber    int    `json:"dayNumber"`
+	Block        string `json:"block"`
+	BuildingName string `json:"buildingName"`
+	RoomNumber   string `json:"roomNumber"`
+	Start        int    `json:"start"`
+	End          int    `json:"end"`
+	UserID       int    `json:"userId"`
+}
 
 // responses
 type CalendarWeekResponse struct {
@@ -138,41 +153,42 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 			announcements = append(announcements, announcement)
 		}
 		for _, event := range day.Events {
-			if event.Type == data.EventTypePlain {
-				eventData := event.Data.(data.PlainEventData)
+			descriptionInterface, isPlain := event.Tags[data.EventTagDescription]
+			homeworkInterface, isHomework := event.Tags[data.EventTagHomework]
+			_, isSchedule := event.Tags[data.EventTagClassID]
+			if isPlain {
 				plainEvent := CalendarEvent{
 					ID:     event.ID,
 					Name:   event.Name,
 					Start:  event.Start,
 					End:    event.End,
-					Desc:   eventData.Desc,
+					Desc:   descriptionInterface.(string),
 					UserID: event.UserID,
 				}
 				plainEvents = append(plainEvents, plainEvent)
-			} else if event.Type == data.EventTypeHomework {
-				eventData := event.Data.(data.HomeworkEventData)
+			} else if isHomework {
+				homework := homeworkInterface.(data.Homework)
 				hwEvent := CalendarHWEvent{
 					ID:       event.ID,
-					Homework: eventData.Homework,
+					Homework: homework,
 					Start:    event.Start,
 					End:      event.End,
 					UserID:   event.UserID,
 				}
 				hwEvents = append(hwEvents, hwEvent)
-			} else if event.Type == data.EventTypeSchedule {
+			} else if isSchedule {
 				dayTime, _ := time.Parse("2006-01-02", day.DayString)
-				eventData := event.Data.(data.ScheduleEventData)
 				scheduleEvent := CalendarScheduleItem{
 					ID:           event.ID,
-					TermID:       eventData.TermID,
-					ClassID:      eventData.ClassID,
+					TermID:       event.Tags[data.EventTagTermID].(int),
+					ClassID:      event.Tags[data.EventTagClassID].(int),
 					Name:         event.Name,
-					OwnerID:      eventData.OwnerID,
-					OwnerName:    eventData.OwnerName,
-					DayNumber:    eventData.DayNumber,
-					Block:        eventData.Block,
-					BuildingName: eventData.BuildingName,
-					RoomNumber:   eventData.RoomNumber,
+					OwnerID:      event.Tags[data.EventTagOwnerID].(int),
+					OwnerName:    event.Tags[data.EventTagOwnerName].(string),
+					DayNumber:    event.Tags[data.EventTagDayNumber].(int),
+					Block:        event.Tags[data.EventTagBlock].(string),
+					BuildingName: event.Tags[data.EventTagBuildingName].(string),
+					RoomNumber:   event.Tags[data.EventTagRoomNumber].(string),
 					Start:        event.Start - int(dayTime.Unix()),
 					End:          event.End - int(dayTime.Unix()),
 					UserID:       event.UserID,

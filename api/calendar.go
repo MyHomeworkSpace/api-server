@@ -37,21 +37,6 @@ type CalendarPeriod struct {
 	End          int    `json:"end"`
 	UserID       int    `json:"userId"`
 }
-type CalendarScheduleItem struct {
-	ID           int    `json:"id"`
-	TermID       int    `json:"termId"`
-	ClassID      int    `json:"classId"`
-	Name         string `json:"name"`
-	OwnerID      int    `json:"ownerId"`
-	OwnerName    string `json:"ownerName"`
-	DayNumber    int    `json:"dayNumber"`
-	Block        string `json:"block"`
-	BuildingName string `json:"buildingName"`
-	RoomNumber   string `json:"roomNumber"`
-	Start        int    `json:"start"`
-	End          int    `json:"end"`
-	UserID       int    `json:"userId"`
-}
 
 // don't use me please
 type DumbTerm struct {

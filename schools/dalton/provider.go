@@ -264,11 +264,21 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				defer rows.Close()
 				for rows.Next() {
 					event := data.Event{
-						Type: data.EventTypeSchedule,
+						Tags: map[data.EventTagType]interface{}{},
 					}
-					eventData := data.ScheduleEventData{}
-					rows.Scan(&event.ID, &eventData.TermID, &eventData.ClassID, &event.Name, &eventData.OwnerID, &eventData.OwnerName, &eventData.DayNumber, &eventData.Block, &eventData.BuildingName, &eventData.RoomNumber, &event.Start, &event.End, &event.UserID)
-					event.Data = eventData
+
+					termID, classID, ownerID, ownerName, dayNumber, block, buildingName, roomNumber := -1, -1, -1, "", -1, "", "", ""
+
+					rows.Scan(&event.ID, &termID, &classID, &event.Name, &ownerID, &ownerName, &dayNumber, &block, &buildingName, &roomNumber, &event.Start, &event.End, &event.UserID)
+
+					event.Tags[data.EventTagTermID] = termID
+					event.Tags[data.EventTagClassID] = classID
+					event.Tags[data.EventTagOwnerID] = ownerID
+					event.Tags[data.EventTagOwnerName] = ownerName
+					event.Tags[data.EventTagDayNumber] = dayNumber
+					event.Tags[data.EventTagBlock] = block
+					event.Tags[data.EventTagBuildingName] = buildingName
+					event.Tags[data.EventTagRoomNumber] = roomNumber
 
 					event.Start += dayOffset
 					event.End += dayOffset
@@ -289,9 +299,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 							if !foundType || assemblyType == AssemblyType_Assembly {
 								// set name to assembly and room to Theater
 								result.Events[eventIndex].Name = "Assembly"
-								eventData := result.Events[eventIndex].Data.(data.ScheduleEventData)
-								eventData.RoomNumber = "Theater"
-								result.Events[eventIndex].Data = eventData
+								result.Events[eventIndex].Tags[data.EventTagRoomNumber] = "Theater"
 							} else if assemblyType == AssemblyType_LongHouse {
 								// set name to long house
 								result.Events[eventIndex].Name = "Long House"

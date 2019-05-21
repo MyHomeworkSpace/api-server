@@ -66,18 +66,18 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	for plainEventRows.Next() {
 		event := data.Event{
-			Type:   data.EventTypePlain,
+			Tags:   map[data.EventTagType]interface{}{},
 			Source: -1,
 		}
-		eventData := data.PlainEventData{}
+		desc := ""
 		recurRule := data.RecurRule{
 			ID: -1,
 		}
 		plainEventRows.Scan(
-			&event.ID, &event.Name, &event.Start, &event.End, &eventData.Desc, &event.UserID,
+			&event.ID, &event.Name, &event.Start, &event.End, &desc, &event.UserID,
 			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
 		)
-		event.Data = eventData
+		event.Tags[data.EventTagDescription] = desc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
 
@@ -114,13 +114,13 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	for hwEventRows.Next() {
 		event := data.Event{
-			Type:   data.EventTypeHomework,
+			Tags:   map[data.EventTagType]interface{}{},
 			Source: -1,
 		}
-		eventData := data.HomeworkEventData{}
-		hwEventRows.Scan(&event.ID, &eventData.Homework.ID, &eventData.Homework.Name, &eventData.Homework.Due, &eventData.Homework.Desc, &eventData.Homework.Complete, &eventData.Homework.ClassID, &eventData.Homework.UserID, &event.Start, &event.End, &event.UserID)
-		event.Data = eventData
-		event.Name = eventData.Homework.Name
+		homework := data.Homework{}
+		hwEventRows.Scan(&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &event.UserID)
+		event.Tags[data.EventTagHomework] = homework
+		event.Name = homework.Name
 
 		eventStartTime := time.Unix(int64(event.Start), 0)
 		dayOffset := int(math.Floor(eventStartTime.Sub(startTime).Hours() / 24))
