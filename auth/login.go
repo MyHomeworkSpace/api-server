@@ -40,7 +40,7 @@ func DaltonLogin(username string, password string) (map[string]interface{}, stri
 		return nil, "bb_signin_rate_limit", nil
 	}
 
-	if !worked || result == 2 {
+	if !worked || result == 1 || result == 2 {
 		return nil, "dalton_creds_incorrect", nil
 	}
 
