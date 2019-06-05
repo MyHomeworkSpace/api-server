@@ -3,25 +3,19 @@ package api
 import (
 	"net/http"
 
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/labstack/echo"
 )
 
-// structs for data
-type Pref struct {
-	ID    int    `json:"id"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 // responses
 type PrefResponse struct {
-	Status string `json:"status"`
-	Pref   Pref   `json:"pref"`
+	Status string    `json:"status"`
+	Pref   data.Pref `json:"pref"`
 }
 
 type PrefsResponse struct {
-	Status string `json:"status"`
-	Prefs  []Pref `json:"prefs"`
+	Status string      `json:"status"`
+	Prefs  []data.Pref `json:"prefs"`
 }
 
 func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -43,7 +37,7 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 		return
 	}
 
-	resp := Pref{-1, "", ""}
+	resp := data.Pref{-1, "", ""}
 	rows.Scan(&resp.ID, &resp.Key, &resp.Value)
 
 	ec.JSON(http.StatusOK, PrefResponse{"ok", resp})
@@ -63,10 +57,10 @@ func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 	defer rows.Close()
 
-	prefs := []Pref{}
+	prefs := []data.Pref{}
 
 	for rows.Next() {
-		pref := Pref{}
+		pref := data.Pref{}
 		rows.Scan(&pref.ID, &pref.Key, &pref.Value)
 		prefs = append(prefs, pref)
 	}
@@ -127,7 +121,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 }
 
 func InitPrefsAPI(e *echo.Echo) {
-	e.GET("/prefs/get/:key", Route(routePrefsGet))
-	e.GET("/prefs/getAll", Route(routePrefsGetAll))
-	e.POST("/prefs/set", Route(routePrefsSet))
+	e.GET("/prefs/get/:key", route(routePrefsGet))
+	e.GET("/prefs/getAll", route(routePrefsGetAll))
+	e.POST("/prefs/set", route(routePrefsSet))
 }

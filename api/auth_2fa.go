@@ -250,8 +250,8 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func InitAuth2FAAPI(e *echo.Echo) {
-	e.POST("/auth/2fa/beginEnroll", Route(routeAuth2faBeginEnroll))
-	e.POST("/auth/2fa/completeEnroll", Route(routeAuth2faCompleteEnroll))
-	e.GET("/auth/2fa/status", Route(routeAuth2faStatus))
-	e.POST("/auth/2fa/unenroll", Route(routeAuth2faUnenroll))
+	e.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll))
+	e.POST("/auth/2fa/completeEnroll", route(routeAuth2faCompleteEnroll))
+	e.GET("/auth/2fa/status", route(routeAuth2faStatus))
+	e.POST("/auth/2fa/unenroll", route(routeAuth2faUnenroll))
 }

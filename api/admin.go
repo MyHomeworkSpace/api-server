@@ -6,12 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/labstack/echo"
 )
 
 type FeedbacksResponse struct {
-	Status    string     `json:"status"`
-	Feedbacks []Feedback `json:"feedbacks"`
+	Status    string          `json:"status"`
+	Feedbacks []data.Feedback `json:"feedbacks"`
 }
 
 type UserCountResponse struct {
@@ -37,9 +38,9 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 		return
 	}
 
-	feedbacks := []Feedback{}
+	feedbacks := []data.Feedback{}
 	for rows.Next() {
-		resp := Feedback{-1, -1, "", "", "", "", "", false}
+		resp := data.Feedback{-1, -1, "", "", "", "", "", false}
 		var screenshot string
 		rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
 		if screenshot != "" {
@@ -133,7 +134,7 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func InitAdminAPI(e *echo.Echo) {
-	e.GET("/admin/getAllFeedback", Route(routeAdminGetAllFeedback))
-	e.GET("/admin/getFeedbackScreenshot/:id", Route(routeAdminGetFeedbackScreenshot))
-	e.GET("/admin/getUserCount", Route(routeAdminGetUserCount))
+	e.GET("/admin/getAllFeedback", route(routeAdminGetAllFeedback))
+	e.GET("/admin/getFeedbackScreenshot/:id", route(routeAdminGetFeedbackScreenshot))
+	e.GET("/admin/getUserCount", route(routeAdminGetUserCount))
 }

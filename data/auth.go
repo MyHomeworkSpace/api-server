@@ -10,3 +10,11 @@ type User struct {
 	Level              int    `json:"level"`
 	ShowMigrateMessage int    `json:"showMigrateMessage"`
 }
+
+type Tab struct {
+	ID     int    `json:"id"`
+	Slug   string `json:"slug"`
+	Icon   string `json:"icon"`
+	Label  string `json:"label"`
+	Target string `json:"target"`
+}

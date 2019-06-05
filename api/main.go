@@ -10,12 +10,12 @@ import (
 	"gopkg.in/redis.v5"
 )
 
-type RouteFunc func(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext)
-type AuthLevel int
+type routeFunc func(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext)
+type authLevel int
 
 const (
-	AuthLevelNone AuthLevel = iota
-	AuthLevelSignedIn
+	authLevelNone authLevel = iota
+	authLevelLoggedIn
 )
 
 var AuthURLBase string
@@ -36,22 +36,24 @@ type ErrorResponse struct {
 	Error  string `json:"error"`
 }
 
+// A RouteContext contains information relevant to the current route
 type RouteContext struct {
 }
 
-func Route(f RouteFunc) func(ec echo.Context) error {
+func route(f routeFunc) func(ec echo.Context) error {
 	return func(ec echo.Context) error {
 		f(ec.Response(), ec.Request(), ec, RouteContext{})
 		return nil
 	}
 }
 
-func Route_Status(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	ec.String(http.StatusOK, "Alive")
 }
 
+// Init will initialize all available API endpoints
 func Init(e *echo.Echo) {
-	e.GET("/status", Route(Route_Status))
+	e.GET("/status", route(routeStatus))
 
 	InitAdminAPI(e)
 	InitApplicationAPI(e)

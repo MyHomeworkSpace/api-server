@@ -23,17 +23,17 @@ type SessionResponse struct {
 }
 
 type UserResponse struct {
-	Status             string    `json:"status"`
-	User               data.User `json:"user"`
-	Tabs               []Tab     `json:"tabs"`
-	ID                 int       `json:"id"`
-	Name               string    `json:"name"`
-	Username           string    `json:"username"`
-	Email              string    `json:"email"`
-	Type               string    `json:"type"`
-	Features           string    `json:"features"`
-	Level              int       `json:"level"`
-	ShowMigrateMessage int       `json:"showMigrateMessage"`
+	Status             string     `json:"status"`
+	User               data.User  `json:"user"`
+	Tabs               []data.Tab `json:"tabs"`
+	ID                 int        `json:"id"`
+	Name               string     `json:"name"`
+	Username           string     `json:"username"`
+	Email              string     `json:"email"`
+	Type               string     `json:"type"`
+	Features           string     `json:"features"`
+	Level              int        `json:"level"`
+	ShowMigrateMessage int        `json:"showMigrateMessage"`
 }
 
 type TwoFactorEnabled struct {
@@ -224,7 +224,7 @@ func InitAuthAPI(e *echo.Echo) {
 		}
 
 		user, err := Data_GetUserByID(GetSessionUserID(&c))
-		if err == ErrDataNotFound {
+		if err == data.ErrNotFound {
 			return c.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
 		} else if err != nil {
 			ErrorLog_LogError("getting user information", err)

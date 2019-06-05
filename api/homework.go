@@ -104,7 +104,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// look for hidden class pref
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
-		if err != nil && err != ErrDataNotFound {
+		if err != nil && err != data.ErrNotFound {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
@@ -149,7 +149,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// look for hidden class pref
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
-		if err != nil && err != ErrDataNotFound {
+		if err != nil && err != data.ErrNotFound {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)
@@ -483,7 +483,7 @@ func InitHomeworkAPI(e *echo.Echo) {
 		// look for hidden class pref
 		hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&c))
 		hiddenClasses := []int{}
-		if err != nil && err != ErrDataNotFound {
+		if err != nil && err != data.ErrNotFound {
 			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		} else if err == nil {
 			err = json.Unmarshal([]byte(hiddenPref.Value), &hiddenClasses)

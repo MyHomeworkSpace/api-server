@@ -1,64 +1,38 @@
 package api
 
 import (
-	"errors"
-
 	"github.com/MyHomeworkSpace/api-server/data"
 )
 
-var (
-	ErrDataBadUsername = errors.New("data: bad username")
-	ErrDataNotFound    = errors.New("data: not found")
-)
-
-type Feedback struct {
-	ID            int    `json:"id"`
-	UserID        int    `json:"userid"`
-	Type          string `json:"type"`
-	Text          string `json:"text"`
-	Timestamp     string `json:"timestamp"`
-	UserName      string `json:"userName"`
-	UserEmail     string `json:"userEmail"`
-	HasScreenshot bool   `json:"hasScreenshot"`
-}
-
-type Tab struct {
-	ID     int    `json:"id"`
-	Slug   string `json:"slug"`
-	Icon   string `json:"icon"`
-	Label  string `json:"label"`
-	Target string `json:"target"`
-}
-
-func Data_GetPrefForUser(key string, userId int) (Pref, error) {
+func Data_GetPrefForUser(key string, userId int) (data.Pref, error) {
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", userId, key)
 	if err != nil {
-		return Pref{}, err
+		return data.Pref{}, err
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		return Pref{}, ErrDataNotFound
+		return data.Pref{}, data.ErrNotFound
 	}
 
-	pref := Pref{}
+	pref := data.Pref{}
 	err = rows.Scan(&pref.ID, &pref.Key, &pref.Value)
 	if err != nil {
-		return Pref{}, err
+		return data.Pref{}, err
 	}
 
 	return pref, nil
 }
 
-func Data_GetTabsByUserID(userId int) ([]Tab, error) {
+func Data_GetTabsByUserID(userId int) ([]data.Tab, error) {
 	rows, err := DB.Query("SELECT tabs.id, tabs.slug, tabs.icon, tabs.label, tabs.target FROM tabs INNER JOIN tab_permissions ON tab_permissions.tabId = tabs.id WHERE tab_permissions.userId = ?", userId)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	tabs := []Tab{}
+	tabs := []data.Tab{}
 	for rows.Next() {
-		tab := Tab{}
+		tab := data.Tab{}
 		err := rows.Scan(&tab.ID, &tab.Slug, &tab.Icon, &tab.Label, &tab.Target)
 		if err != nil {
 			return nil, err
@@ -82,6 +56,6 @@ func Data_GetUserByID(id int) (data.User, error) {
 		}
 		return user, nil
 	} else {
-		return data.User{}, ErrDataNotFound
+		return data.User{}, data.ErrNotFound
 	}
 }

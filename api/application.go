@@ -413,15 +413,15 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func InitApplicationAPI(e *echo.Echo) {
-	e.POST("/application/completeAuth", Route(routeApplicationCompleteAuth))
-	e.GET("/application/get/:id", Route(routeApplicationGet))
-	e.GET("/application/getAuthorizations", Route(routeApplicationGetAuthorizations))
-	e.GET("/application/requestAuth/:id", Route(routeApplicationRequestAuth))
-	e.POST("/application/revokeAuth", Route(routeApplicationRevokeAuth))
-	e.POST("/application/revokeSelf", Route(routeApplicationRevokeSelf))
+	e.POST("/application/completeAuth", route(routeApplicationCompleteAuth))
+	e.GET("/application/get/:id", route(routeApplicationGet))
+	e.GET("/application/getAuthorizations", route(routeApplicationGetAuthorizations))
+	e.GET("/application/requestAuth/:id", route(routeApplicationRequestAuth))
+	e.POST("/application/revokeAuth", route(routeApplicationRevokeAuth))
+	e.POST("/application/revokeSelf", route(routeApplicationRevokeSelf))
 
-	e.POST("/application/manage/create", Route(routeApplicationManageCreate))
-	e.GET("/application/manage/getAll", Route(routeApplicationManageGetAll))
-	e.POST("/application/manage/update", Route(routeApplicationManageUpdate))
-	e.POST("/application/manage/delete", Route(routeApplicationManageDelete))
+	e.POST("/application/manage/create", route(routeApplicationManageCreate))
+	e.GET("/application/manage/getAll", route(routeApplicationManageGetAll))
+	e.POST("/application/manage/update", route(routeApplicationManageUpdate))
+	e.POST("/application/manage/delete", route(routeApplicationManageDelete))
 }
