@@ -1,10 +1,7 @@
 package api
 
 import (
-	"bufio"
-	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/pquerna/otp/totp"
@@ -130,27 +127,6 @@ func InitAuthAPI(e *echo.Echo) {
 		data, resp, err := auth.DaltonLogin(username, password)
 		if resp != "" || err != nil {
 			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
-		}
-
-		if WhitelistEnabled {
-			file, err := os.Open(WhitelistFile)
-			if err != nil {
-				ErrorLog_LogError("getting whitelist", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-			scanner := bufio.NewScanner(file)
-			found := false
-			for scanner.Scan() {
-				if strings.ToLower(scanner.Text()) == strings.ToLower(c.FormValue("username")) {
-					found = true
-					break
-				}
-			}
-			file.Close()
-			if !found {
-				log.Printf("Blocked signin attempt by %s because they aren't on the whitelist\n", c.FormValue("username"))
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", WhitelistBlockMsg})
-			}
 		}
 
 		rows, err := DB.Query("SELECT id FROM users WHERE username = ?", c.FormValue("username"))

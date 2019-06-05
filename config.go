@@ -10,13 +10,12 @@ import (
 var config Config
 
 type Config struct {
-	Server    ServerConfig
-	Database  DatabaseConfig
-	Email     EmailConfig
-	Redis     RedisConfig
-	CORS      CORSConfig
-	Feedback  FeedbackConfig
-	Whitelist WhitelistConfig
+	Server   ServerConfig
+	Database DatabaseConfig
+	Email    EmailConfig
+	Redis    RedisConfig
+	CORS     CORSConfig
+	Feedback FeedbackConfig
 }
 
 type ServerConfig struct {
@@ -58,12 +57,6 @@ type FeedbackConfig struct {
 	SlackHostName string
 }
 
-type WhitelistConfig struct {
-	Enabled       bool
-	WhitelistFile string
-	BlockMessage  string
-}
-
 func CreateNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -97,12 +90,7 @@ Origins = [ "http://myhomework.space" ]
 [feedback]
 SlackEnabled = false
 SlackURL = ""
-SlackHostName = ""
-
-[whitelist]
-Enabled = false
-WhitelistFile = "whitelist.txt"
-BlockMessage = "You aren't allowed in"`
+SlackHostName = ""`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
