@@ -16,41 +16,47 @@ type PlannerWeekInfoResponse struct {
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
 }
 
+func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	startDate, err := time.Parse("2006-01-02", ec.Param("date"))
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+	endDate := startDate.Add(time.Hour * 24 * 7)
+
+	user, err := Data_GetUserByID(GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting planner week information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	providers := []data.Provider{
+		// TODO: not hardcode this for dalton
+		manager.GetSchoolByID("dalton").CalendarProvider(),
+	}
+
+	announcements := []data.PlannerAnnouncement{}
+
+	for _, provider := range providers {
+		providerData, err := provider.GetData(DB, &user, time.UTC, startDate, endDate, data.ProviderDataAnnouncements)
+		if err != nil {
+			ErrorLog_LogError("getting calendar provider data", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		announcements = append(announcements, providerData.Announcements...)
+	}
+
+	ec.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
+}
+
 func InitPlannerAPI(e *echo.Echo) {
-	e.GET("/planner/getWeekInfo/:date", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		startDate, err := time.Parse("2006-01-02", c.Param("date"))
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-		endDate := startDate.Add(time.Hour * 24 * 7)
-
-		user, err := Data_GetUserByID(GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting planner week information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		providers := []data.Provider{
-			// TODO: not hardcode this for dalton
-			manager.GetSchoolByID("dalton").CalendarProvider(),
-		}
-
-		announcements := []data.PlannerAnnouncement{}
-
-		for _, provider := range providers {
-			providerData, err := provider.GetData(DB, &user, time.UTC, startDate, endDate, data.ProviderDataAnnouncements)
-			if err != nil {
-				ErrorLog_LogError("getting calendar provider data", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			announcements = append(announcements, providerData.Announcements...)
-		}
-
-		return c.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
-	})
+	e.GET("/planner/getWeekInfo/:date", route(routePlannerGetWeekInfo))
 }

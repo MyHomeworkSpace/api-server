@@ -18,75 +18,90 @@ type NotificationsResponse struct {
 	Notifications []Notification `json:"notifications"`
 }
 
+func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
+	if user.Level < 1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
+		return
+	}
+
+	if ec.FormValue("expiry") == "" || ec.FormValue("content") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	_, err := DB.Exec("INSERT INTO notifications (content, expiry) VALUES (?, ?)", ec.FormValue("content"), ec.FormValue("expiry"))
+	if err != nil {
+		ErrorLog_LogError("adding notification", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
+	if user.Level < 1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
+		return
+	}
+
+	idStr := ec.FormValue("id")
+	if idStr == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	_, err = DB.Exec("DELETE FROM notifications WHERE id = ?", id)
+	if err != nil {
+		ErrorLog_LogError("deleting notification", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeNotificationsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	rows, err := DB.Query("SELECT `id`, `content`, `expiry` FROM notifications WHERE expiry > NOW()")
+	if err != nil {
+		ErrorLog_LogError("getting notification", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	notifications := []Notification{}
+	for rows.Next() {
+		resp := Notification{-1, "", ""}
+		rows.Scan(&resp.ID, &resp.Content, &resp.Expiry)
+		notifications = append(notifications, resp)
+	}
+
+	ec.JSON(http.StatusOK, NotificationsResponse{"ok", notifications})
+}
+
 func InitNotificationsAPI(e *echo.Echo) {
-	e.POST("/notifications/add", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		user, _ := Data_GetUserByID(GetSessionUserID(&c))
-		if user.Level < 1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		}
-
-		if c.FormValue("expiry") == "" || c.FormValue("content") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		_, err := DB.Exec("INSERT INTO notifications (content, expiry) VALUES (?, ?)", c.FormValue("content"), c.FormValue("expiry"))
-		if err != nil {
-			ErrorLog_LogError("adding notification", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.POST("/notifications/delete", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		user, _ := Data_GetUserByID(GetSessionUserID(&c))
-		if user.Level < 1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		}
-
-		idStr := c.FormValue("id")
-		if idStr == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-
-		_, err = DB.Exec("DELETE FROM notifications WHERE id = ?", id)
-		if err != nil {
-			ErrorLog_LogError("deleting notification", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.GET("/notifications/get", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		rows, err := DB.Query("SELECT `id`, `content`, `expiry` FROM notifications WHERE expiry > NOW()")
-		if err != nil {
-			ErrorLog_LogError("getting notification", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-
-		notifications := []Notification{}
-		for rows.Next() {
-			resp := Notification{-1, "", ""}
-			rows.Scan(&resp.ID, &resp.Content, &resp.Expiry)
-			notifications = append(notifications, resp)
-		}
-
-		return c.JSON(http.StatusOK, NotificationsResponse{"ok", notifications})
-	})
+	e.POST("/notifications/add", route(routeNotificationsAdd))
+	e.POST("/notifications/delete", route(routeNotificationsDelete))
+	e.GET("/notifications/get", route(routeNotificationsGet))
 }

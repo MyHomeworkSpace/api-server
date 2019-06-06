@@ -137,120 +137,139 @@ type PrefixesResponse struct {
 	FallbackColor      string   `json:"fallbackColor"`
 }
 
+func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	ec.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes, "FFD3BD", "000000"})
+}
+
+func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting custom prefixes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+	prefixes := DefaultPrefixes
+	for rows.Next() {
+		resp := Prefix{-1, "", "", []string{}, false, false}
+
+		timedEventInt := -1
+		wordsListString := ""
+
+		rows.Scan(&resp.ID, &resp.Background, &resp.Color, &wordsListString, &timedEventInt)
+
+		err := json.Unmarshal([]byte(wordsListString), &resp.Words)
+		if err != nil {
+			ErrorLog_LogError("parsing custom prefix words", err)
+		}
+
+		resp.TimedEvent = (timedEventInt == 1)
+
+		prefixes = append(prefixes, resp)
+	}
+	ec.JSON(http.StatusOK, PrefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
+}
+
+func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	if ec.FormValue("id") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting prefixes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
+
+	_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting prefixes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	if ec.FormValue("color") == "" || ec.FormValue("background") == "" || ec.FormValue("words") == "" || ec.FormValue("timedEvent") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	timedEvent, err := strconv.ParseBool(ec.FormValue("timedEvent"))
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	timedEventInt := 0
+	if timedEvent {
+		timedEventInt = 1
+	}
+
+	wordsInputString := ec.FormValue("words")
+	wordsList := []string{}
+	cleanedWordsList := []string{}
+
+	err = json.Unmarshal([]byte(wordsInputString), &wordsList)
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	for _, word := range wordsList {
+		if strings.TrimSpace(word) != "" {
+			cleanedWordsList = append(cleanedWordsList, strings.TrimSpace(word))
+		}
+	}
+
+	if len(cleanedWordsList) == 0 {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	wordsFormatted, err := json.Marshal(cleanedWordsList)
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("adding prefix", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
 func InitPrefixesAPI(e *echo.Echo) {
-	e.GET("/prefixes/getDefaultList", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes, "FFD3BD", "000000"})
-	})
-
-	e.GET("/prefixes/getList", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting custom prefixes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		prefixes := DefaultPrefixes
-		for rows.Next() {
-			resp := Prefix{-1, "", "", []string{}, false, false}
-
-			timedEventInt := -1
-			wordsListString := ""
-
-			rows.Scan(&resp.ID, &resp.Background, &resp.Color, &wordsListString, &timedEventInt)
-
-			err := json.Unmarshal([]byte(wordsListString), &resp.Words)
-			if err != nil {
-				ErrorLog_LogError("parsing custom prefix words", err)
-			}
-
-			resp.TimedEvent = (timedEventInt == 1)
-
-			prefixes = append(prefixes, resp)
-		}
-		return c.JSON(http.StatusOK, PrefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
-	})
-
-	e.POST("/prefixes/delete", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("id") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting prefixes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
-
-		_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting prefixes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.POST("/prefixes/add", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		if c.FormValue("color") == "" || c.FormValue("background") == "" || c.FormValue("words") == "" || c.FormValue("timedEvent") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		timedEvent, err := strconv.ParseBool(c.FormValue("timedEvent"))
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-
-		timedEventInt := 0
-		if timedEvent {
-			timedEventInt = 1
-		}
-
-		wordsInputString := c.FormValue("words")
-		wordsList := []string{}
-		cleanedWordsList := []string{}
-
-		err = json.Unmarshal([]byte(wordsInputString), &wordsList)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-
-		for _, word := range wordsList {
-			if strings.TrimSpace(word) != "" {
-				cleanedWordsList = append(cleanedWordsList, strings.TrimSpace(word))
-			}
-		}
-
-		if len(cleanedWordsList) == 0 {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-
-		wordsFormatted, err := json.Marshal(cleanedWordsList)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
-
-		_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), c.FormValue("color"), c.FormValue("background"), timedEventInt, GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("adding prefix", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	e.GET("/prefixes/getDefaultList", route(routePrefixesGetDefaultList))
+	e.GET("/prefixes/getList", route(routePrefixesGetList))
+	e.POST("/prefixes/delete", route(routePrefixesDelete))
+	e.POST("/prefixes/add", route(routePrefixesAdd))
 }

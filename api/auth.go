@@ -92,183 +92,214 @@ func IsInternalRequest(c *echo.Context) bool {
 	}
 }
 
+/*
+ * routes
+ */
+func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("clearing migration flag", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("clearing migration flag", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	cookie, _ := ec.Cookie("csrfToken")
+	ec.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
+}
+
+func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("username") == "" || ec.FormValue("password") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	username := strings.ToLower(ec.FormValue("username"))
+	password := ec.FormValue("password")
+
+	data, resp, err := auth.DaltonLogin(username, password)
+	if resp != "" || err != nil {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
+		return
+	}
+
+	rows, err := DB.Query("SELECT id FROM users WHERE username = ?", ec.FormValue("username"))
+	if err != nil {
+		ErrorLog_LogError("getting user information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
+
+	session := auth.SessionInfo{
+		UserID: -1,
+	}
+	if rows.Next() {
+		// exists, use it
+		userID := -1
+
+		rows.Scan(&userID)
+
+		enrolled2fa, err := isUser2FAEnrolled(userID)
+		if err != nil {
+			ErrorLog_LogError("getting user enrollment status", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		if enrolled2fa {
+			if ec.FormValue("code") == "" {
+				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
+				return
+			}
+
+			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
+			if err != nil {
+				ErrorLog_LogError("getting user 2fa secret", err)
+				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				return
+			}
+			defer secretRows.Close()
+
+			secret := ""
+
+			secretRows.Next()
+			secretRows.Scan(&secret)
+
+			if !totp.Validate(ec.FormValue("code"), secret) {
+				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
+				return
+			}
+		}
+
+		session = auth.SessionInfo{
+			UserID: userID,
+		}
+	} else {
+		// doesn't exist, insert new record
+		stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
+		if err != nil {
+			ErrorLog_LogError("trying to set user information", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+		res, err := stmt.Exec(data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0])
+		if err != nil {
+			ErrorLog_LogError("trying to set user information", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+		lastID, err := res.LastInsertId()
+		if err != nil {
+			ErrorLog_LogError("trying to set user information", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		// add default classes
+		addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
+		if err != nil {
+			ErrorLog_LogError("trying to add default classes", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
+		if err != nil {
+			ErrorLog_LogError("trying to add default classes", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		session = auth.SessionInfo{
+			UserID: int(lastID),
+		}
+	}
+
+	cookie, _ := ec.Cookie("session")
+	auth.SetSession(cookie.Value, session)
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+
+	user, err := Data_GetUserByID(GetSessionUserID(&ec))
+	if err == data.ErrNotFound {
+		ec.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
+		return
+	} else if err != nil {
+		ErrorLog_LogError("getting user information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	tabs, err := Data_GetTabsByUserID(user.ID)
+	if err != nil {
+		ErrorLog_LogError("getting user information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, UserResponse{
+		Status: "ok",
+		User:   user,
+		Tabs:   tabs,
+
+		// these are set for backwards compatibility
+		ID:                 user.ID,
+		Name:               user.Name,
+		Username:           user.Username,
+		Email:              user.Email,
+		Type:               user.Type,
+		Features:           user.Features,
+		Level:              user.Level,
+		ShowMigrateMessage: user.ShowMigrateMessage,
+	})
+}
+
+func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	cookie, _ := ec.Cookie("session")
+	newSession := auth.SessionInfo{-1}
+	auth.SetSession(cookie.Value, newSession)
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	cookie, err := ec.Cookie("session")
+	if err != nil {
+		ec.JSON(http.StatusOK, SessionResponse{"ok", ""})
+		return
+	}
+	ec.JSON(http.StatusOK, SessionResponse{"ok", cookie.Value})
+}
+
 func InitAuthAPI(e *echo.Echo) {
-	e.POST("/auth/clearMigrateFlag", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("clearing migration flag", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("clearing migration flag", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.GET("/auth/csrf", func(c echo.Context) error {
-		cookie, _ := c.Cookie("csrfToken")
-		return c.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
-	})
-
-	e.POST("/auth/login", func(c echo.Context) error {
-		if c.FormValue("username") == "" || c.FormValue("password") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-
-		username := strings.ToLower(c.FormValue("username"))
-		password := c.FormValue("password")
-
-		data, resp, err := auth.DaltonLogin(username, password)
-		if resp != "" || err != nil {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
-		}
-
-		rows, err := DB.Query("SELECT id FROM users WHERE username = ?", c.FormValue("username"))
-		if err != nil {
-			ErrorLog_LogError("getting user information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-
-		session := auth.SessionInfo{
-			UserID: -1,
-		}
-		if rows.Next() {
-			// exists, use it
-			userID := -1
-
-			rows.Scan(&userID)
-
-			enrolled2fa, err := isUser2FAEnrolled(userID)
-			if err != nil {
-				ErrorLog_LogError("getting user enrollment status", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			if enrolled2fa {
-				if c.FormValue("code") == "" {
-					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
-				}
-
-				secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
-				if err != nil {
-					ErrorLog_LogError("getting user 2fa secret", err)
-					return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-				}
-				defer secretRows.Close()
-
-				secret := ""
-
-				secretRows.Next()
-				secretRows.Scan(&secret)
-
-				if !totp.Validate(c.FormValue("code"), secret) {
-					return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
-				}
-			}
-
-			session = auth.SessionInfo{
-				UserID: userID,
-			}
-		} else {
-			// doesn't exist, insert new record
-			stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
-			if err != nil {
-				ErrorLog_LogError("trying to set user information", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-			res, err := stmt.Exec(data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0])
-			if err != nil {
-				ErrorLog_LogError("trying to set user information", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-			lastID, err := res.LastInsertId()
-			if err != nil {
-				ErrorLog_LogError("trying to set user information", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			// add default classes
-			addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
-			if err != nil {
-				ErrorLog_LogError("trying to add default classes", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
-			if err != nil {
-				ErrorLog_LogError("trying to add default classes", err)
-				return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			}
-
-			session = auth.SessionInfo{
-				UserID: int(lastID),
-			}
-		}
-
-		cookie, _ := c.Cookie("session")
-		auth.SetSession(cookie.Value, session)
-
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.GET("/auth/me", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-
-		user, err := Data_GetUserByID(GetSessionUserID(&c))
-		if err == data.ErrNotFound {
-			return c.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
-		} else if err != nil {
-			ErrorLog_LogError("getting user information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		tabs, err := Data_GetTabsByUserID(user.ID)
-		if err != nil {
-			ErrorLog_LogError("getting user information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-
-		return c.JSON(http.StatusOK, UserResponse{
-			Status: "ok",
-			User:   user,
-			Tabs:   tabs,
-
-			// these are set for backwards compatibility
-			ID:                 user.ID,
-			Name:               user.Name,
-			Username:           user.Username,
-			Email:              user.Email,
-			Type:               user.Type,
-			Features:           user.Features,
-			Level:              user.Level,
-			ShowMigrateMessage: user.ShowMigrateMessage,
-		})
-	})
-
-	e.GET("/auth/logout", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		cookie, _ := c.Cookie("session")
-		newSession := auth.SessionInfo{-1}
-		auth.SetSession(cookie.Value, newSession)
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
-
-	e.GET("/auth/session", func(c echo.Context) error {
-		cookie, err := c.Cookie("session")
-		if err != nil {
-			return c.JSON(http.StatusOK, SessionResponse{"ok", ""})
-		}
-		return c.JSON(http.StatusOK, SessionResponse{"ok", cookie.Value})
-	})
+	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag))
+	e.GET("/auth/csrf", route(routeAuthCsrf))
+	e.POST("/auth/login", route(routeAuthLogin))
+	e.GET("/auth/me", route(routeAuthMe))
+	e.GET("/auth/logout", route(routeAuthLogout))
+	e.GET("/auth/session", route(routeAuthSession))
 }

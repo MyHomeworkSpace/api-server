@@ -45,309 +45,365 @@ type HWInfoResponse struct {
 	HWItems int    `json:"hwItems"`
 }
 
-func InitClassesAPI(e *echo.Echo) {
-	e.GET("/classes/get", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting class information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
+func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting class information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
 
-		classes := []HomeworkClass{}
-		for rows.Next() {
-			resp := HomeworkClass{-1, "", "", "", -1}
-			rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
-			if resp.Color == "" {
-				resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
-			}
-			classes = append(classes, resp)
-		}
-		return c.JSON(http.StatusOK, ClassResponse{"ok", classes})
-	})
-
-	e.GET("/classes/get/:id", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting class information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
-
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	classes := []HomeworkClass{}
+	for rows.Next() {
 		resp := HomeworkClass{-1, "", "", "", -1}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
 		if resp.Color == "" {
 			resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
 		}
-		return c.JSON(http.StatusOK, SingleClassResponse{"ok", resp})
-	})
+		classes = append(classes, resp)
+	}
+	ec.JSON(http.StatusOK, ClassResponse{"ok", classes})
+}
 
-	e.GET("/classes/hwInfo/:id", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", c.Param("id"), GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("getting class information", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer rows.Close()
+func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting class information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
 
-		if !rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
-		resp := -1
-		rows.Scan(&resp)
-		return c.JSON(http.StatusOK, HWInfoResponse{"ok", resp})
-	})
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
+	resp := HomeworkClass{-1, "", "", "", -1}
+	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
+	if resp.Color == "" {
+		resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
+	}
+	ec.JSON(http.StatusOK, SingleClassResponse{"ok", resp})
+}
 
-	e.POST("/classes/add", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		if c.FormValue("name") == "" || c.FormValue("color") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-		if !util.StringSliceContains(DefaultColors, c.FormValue("color")) {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
+func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("getting class information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer rows.Close()
 
-		stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)")
-		if err != nil {
-			ErrorLog_LogError("adding class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), GetSessionUserID(&c))
-		if err != nil {
-			ErrorLog_LogError("adding class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	if !rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
+	resp := -1
+	rows.Scan(&resp)
+	ec.JSON(http.StatusOK, HWInfoResponse{"ok", resp})
+}
 
-	e.POST("/classes/edit", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		if c.FormValue("id") == "" || c.FormValue("name") == "" || c.FormValue("color") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
-		if !util.StringSliceContains(DefaultColors, c.FormValue("color")) {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
-		}
+func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	if ec.FormValue("name") == "" || ec.FormValue("color") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
 
-		// check if you are allowed to edit the given id
-		idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("editing classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer idRows.Close()
-		if !idRows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		ErrorLog_LogError("adding class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), GetSessionUserID(&ec))
+	if err != nil {
+		ErrorLog_LogError("adding class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
 
-		stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("editing class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(c.FormValue("name"), c.FormValue("teacher"), c.FormValue("color"), c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("editing class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("color") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
 
-	e.POST("/classes/delete", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		if c.FormValue("id") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
+	// check if you are allowed to edit the given id
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("editing classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer idRows.Close()
+	if !idRows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		// check if you are allowed to delete the given id
-		idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer idRows.Close()
-		if !idRows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("editing class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("editing class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
 
-		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
-		tx, err := DB.Begin()
+func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	if ec.FormValue("id") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		// delete HW calendar events
-		_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// check if you are allowed to delete the given id
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer idRows.Close()
+	if !idRows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		// delete HW
-		_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
+	tx, err := DB.Begin()
 
-		// delete class
-		_, err = tx.Exec("DELETE FROM classes WHERE id = ?", c.FormValue("id"))
-		if err != nil {
-			ErrorLog_LogError("deleting class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// delete HW calendar events
+	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// go!
-		err = tx.Commit()
-		if err != nil {
-			ErrorLog_LogError("deleting class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// delete HW
+	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	// delete class
+	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", ec.FormValue("id"))
+	if err != nil {
+		ErrorLog_LogError("deleting class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-	e.POST("/classes/swap", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		if c.FormValue("id1") == "" || c.FormValue("id2") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
+	// go!
+	err = tx.Commit()
+	if err != nil {
+		ErrorLog_LogError("deleting class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// check if you are allowed to change id1
-		id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id1"))
-		if err != nil {
-			ErrorLog_LogError("deleting classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer id1Rows.Close()
-		if !id1Rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
 
-		// check if you are allowed to change id2
-		id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&c), c.FormValue("id2"))
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		defer id2Rows.Close()
-		if !id2Rows.Next() {
-			return c.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
-		}
+func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	if ec.FormValue("id1") == "" || ec.FormValue("id2") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		// find the swap id
-		// this is a dumb way of doing this and is kind of a race condition
-		// but mysql has no better way to swap primary keys
-		// hopefully no one adds 100 classes in the time this transaction takes to complete
-		swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		swapId := -1
-		defer swapIdStmt.Close()
-		swapIdStmt.Next()
-		swapIdStmt.Scan(&swapId)
+	// check if you are allowed to change id1
+	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id1"))
+	if err != nil {
+		ErrorLog_LogError("deleting classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer id1Rows.Close()
+	if !id1Rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
-		tx, err := DB.Begin()
+	// check if you are allowed to change id2
+	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id2"))
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer id2Rows.Close()
+	if !id2Rows.Next() {
+		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		return
+	}
 
-		// update class id1 -> tmp
-		class1Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = class1Stmt.Exec(swapId, c.FormValue("id1"))
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// find the swap id
+	// this is a dumb way of doing this and is kind of a race condition
+	// but mysql has no better way to swap primary keys
+	// hopefully no one adds 100 classes in the time this transaction takes to complete
+	swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	swapId := -1
+	defer swapIdStmt.Close()
+	swapIdStmt.Next()
+	swapIdStmt.Scan(&swapId)
 
-		// update class id2 -> id1
-		class2Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = class2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
+	tx, err := DB.Begin()
 
-		// update class tmp -> id2
-		classTmpStmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = classTmpStmt.Exec(c.FormValue("id2"), swapId)
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// update class id1 -> tmp
+	class1Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = class1Stmt.Exec(swapId, ec.FormValue("id1"))
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// update homework id1 -> swp
-		hw1Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = hw1Stmt.Exec(swapId, c.FormValue("id1"))
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// update class id2 -> id1
+	class2Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = class2Stmt.Exec(ec.FormValue("id1"), ec.FormValue("id2"))
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// update homework id2 -> id1
-		hw2Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = hw2Stmt.Exec(c.FormValue("id1"), c.FormValue("id2"))
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// update class tmp -> id2
+	classTmpStmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = classTmpStmt.Exec(ec.FormValue("id2"), swapId)
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// update homework swp -> id2
-		hwSwapStmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = hwSwapStmt.Exec(c.FormValue("id2"), swapId)
-		if err != nil {
-			ErrorLog_LogError("swapping classes", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// update homework id1 -> swp
+	hw1Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = hw1Stmt.Exec(swapId, ec.FormValue("id1"))
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		// go!
-		err = tx.Commit()
-		if err != nil {
-			ErrorLog_LogError("deleting class", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
+	// update homework id2 -> id1
+	hw2Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = hw2Stmt.Exec(ec.FormValue("id1"), ec.FormValue("id2"))
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	// update homework swp -> id2
+	hwSwapStmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = hwSwapStmt.Exec(ec.FormValue("id2"), swapId)
+	if err != nil {
+		ErrorLog_LogError("swapping classes", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// go!
+	err = tx.Commit()
+	if err != nil {
+		ErrorLog_LogError("deleting class", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func InitClassesAPI(e *echo.Echo) {
+	e.GET("/classes/get", route(routeClassesGet))
+	e.GET("/classes/get/:id", route(routeClassesGetID))
+	e.GET("/classes/hwInfo/:id", route(routeClassesHWInfo))
+	e.POST("/classes/add", route(routeClassesAdd))
+	e.POST("/classes/edit", route(routeClassesEdit))
+	e.POST("/classes/delete", route(routeClassesDelete))
+	e.POST("/classes/swap", route(routeClassesSwap))
 }

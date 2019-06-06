@@ -8,93 +8,100 @@ import (
 	"github.com/labstack/echo"
 )
 
-func InitFeedbackAPI(e *echo.Echo) {
-	e.POST("/feedback/add", func(c echo.Context) error {
-		if GetSessionUserID(&c) == -1 {
-			return c.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		}
-		if c.FormValue("type") == "" || c.FormValue("text") == "" {
-			return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		}
+func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if GetSessionUserID(&ec) == -1 {
+		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+		return
+	}
+	if ec.FormValue("type") == "" || ec.FormValue("text") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)")
+	stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		ErrorLog_LogError("adding feedback", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	_, err = stmt.Exec(GetSessionUserID(&ec), ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"))
+	if err != nil {
+		ErrorLog_LogError("adding feedback", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	if FeedbackSlackEnabled {
+		user, err := Data_GetUserByID(GetSessionUserID(&ec))
 		if err != nil {
-			ErrorLog_LogError("adding feedback", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		}
-		_, err = stmt.Exec(GetSessionUserID(&c), c.FormValue("type"), c.FormValue("text"), c.FormValue("screenshot"))
-		if err != nil {
-			ErrorLog_LogError("adding feedback", err)
-			return c.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ErrorLog_LogError("posting feedback to Slack", err)
+			ec.JSON(http.StatusOK, StatusResponse{"ok"})
+			return
 		}
 
-		if FeedbackSlackEnabled {
-			user, err := Data_GetUserByID(GetSessionUserID(&c))
-			if err != nil {
-				ErrorLog_LogError("posting feedback to Slack", err)
-				return c.JSON(http.StatusOK, StatusResponse{"ok"})
-			}
+		screenshotStatement := "No screenshot included."
+		if ec.FormValue("screenshot") != "" {
+			screenshotStatement = "View screenshot on admin console."
+		}
 
-			screenshotStatement := "No screenshot included."
-			if c.FormValue("screenshot") != "" {
-				screenshotStatement = "View screenshot on admin console."
-			}
-
-			err = slack.Post(FeedbackSlackURL, slack.WebhookMessage{
-				Attachments: []slack.WebhookAttachment{
-					slack.WebhookAttachment{
-						Fallback: "New feedback submission",
-						Color:    "good",
-						Title:    "New feedback submission",
-						Text:     c.FormValue("text"),
-						Fields: []slack.WebhookField{
-							slack.WebhookField{
-								Title: "Feedback type",
-								Value: c.FormValue("type"),
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "Host",
-								Value: FeedbackSlackHostName,
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "User (name)",
-								Value: user.Name,
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "User (email)",
-								Value: user.Email,
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "User (username)",
-								Value: user.Username,
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "User (type)",
-								Value: user.Type,
-								Short: true,
-							},
-							slack.WebhookField{
-								Title: "Screenshot",
-								Value: screenshotStatement,
-								Short: true,
-							},
+		err = slack.Post(FeedbackSlackURL, slack.WebhookMessage{
+			Attachments: []slack.WebhookAttachment{
+				slack.WebhookAttachment{
+					Fallback: "New feedback submission",
+					Color:    "good",
+					Title:    "New feedback submission",
+					Text:     ec.FormValue("text"),
+					Fields: []slack.WebhookField{
+						slack.WebhookField{
+							Title: "Feedback type",
+							Value: ec.FormValue("type"),
+							Short: true,
 						},
-						MarkdownIn: []string{
-							"fields",
+						slack.WebhookField{
+							Title: "Host",
+							Value: FeedbackSlackHostName,
+							Short: true,
+						},
+						slack.WebhookField{
+							Title: "User (name)",
+							Value: user.Name,
+							Short: true,
+						},
+						slack.WebhookField{
+							Title: "User (email)",
+							Value: user.Email,
+							Short: true,
+						},
+						slack.WebhookField{
+							Title: "User (username)",
+							Value: user.Username,
+							Short: true,
+						},
+						slack.WebhookField{
+							Title: "User (type)",
+							Value: user.Type,
+							Short: true,
+						},
+						slack.WebhookField{
+							Title: "Screenshot",
+							Value: screenshotStatement,
+							Short: true,
 						},
 					},
+					MarkdownIn: []string{
+						"fields",
+					},
 				},
-			})
-			if err != nil {
-				ErrorLog_LogError("posting feedback to Slack", err)
-			}
+			},
+		})
+		if err != nil {
+			ErrorLog_LogError("posting feedback to Slack", err)
 		}
+	}
 
-		return c.JSON(http.StatusOK, StatusResponse{"ok"})
-	})
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func InitFeedbackAPI(e *echo.Echo) {
+	e.POST("/feedback/add", route(routeFeedbackAdd))
 }
