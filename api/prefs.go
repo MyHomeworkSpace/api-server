@@ -19,7 +19,7 @@ type PrefsResponse struct {
 }
 
 func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&ec), ec.Param("key"))
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.Param("key"))
 	if err != nil {
 		ErrorLog_LogError("getting pref", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -39,7 +39,7 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 }
 
 func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting prefs", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -64,7 +64,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 		return
 	}
 
-	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&ec), ec.FormValue("key"))
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.FormValue("key"))
 	if err != nil {
 		ErrorLog_LogError("setting pref", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -80,7 +80,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
-		_, err = stmt.Exec(GetSessionUserID(&ec), ec.FormValue("key"), ec.FormValue("value"))
+		_, err = stmt.Exec(c.User.ID, ec.FormValue("key"), ec.FormValue("value"))
 		if err != nil {
 			ErrorLog_LogError("inserting pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -94,7 +94,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
-		_, err = stmt.Exec(ec.FormValue("key"), ec.FormValue("value"), GetSessionUserID(&ec), ec.FormValue("key"))
+		_, err = stmt.Exec(ec.FormValue("key"), ec.FormValue("value"), c.User.ID, ec.FormValue("key"))
 		if err != nil {
 			ErrorLog_LogError("updating pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

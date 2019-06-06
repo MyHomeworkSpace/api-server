@@ -20,7 +20,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(GetSessionUserID(&ec), ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"))
+	_, err = stmt.Exec(c.User.ID, ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"))
 	if err != nil {
 		ErrorLog_LogError("adding feedback", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -28,13 +28,6 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	if FeedbackSlackEnabled {
-		user, err := Data_GetUserByID(GetSessionUserID(&ec))
-		if err != nil {
-			ErrorLog_LogError("posting feedback to Slack", err)
-			ec.JSON(http.StatusOK, StatusResponse{"ok"})
-			return
-		}
-
 		screenshotStatement := "No screenshot included."
 		if ec.FormValue("screenshot") != "" {
 			screenshotStatement = "View screenshot on admin console."
@@ -60,22 +53,22 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 						},
 						slack.WebhookField{
 							Title: "User (name)",
-							Value: user.Name,
+							Value: c.User.Name,
 							Short: true,
 						},
 						slack.WebhookField{
 							Title: "User (email)",
-							Value: user.Email,
+							Value: c.User.Email,
 							Short: true,
 						},
 						slack.WebhookField{
 							Title: "User (username)",
-							Value: user.Username,
+							Value: c.User.Username,
 							Short: true,
 						},
 						slack.WebhookField{
 							Title: "User (type)",
-							Value: user.Type,
+							Value: c.User.Type,
 							Short: true,
 						},
 						slack.WebhookField{

@@ -51,7 +51,7 @@ func isUser2FAEnrolled(userID int) (bool, error) {
 
 func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// are they enrolled already?
-	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
+	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("starting TOTP enrollment", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -63,22 +63,14 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 		return
 	}
 
-	// get their email
-	user, err := Data_GetUserByID(GetSessionUserID(&ec))
-	if err != nil {
-		ErrorLog_LogError("starting TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-
 	// generate a new secret, store in redis
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "MyHomeworkSpace",
-		AccountName: user.Email,
+		AccountName: c.User.Email,
 	})
 
 	secret := key.Secret()
-	redisKeyName := fmt.Sprintf("user:%d:totp_tmp", user.ID)
+	redisKeyName := fmt.Sprintf("user:%d:totp_tmp", c.User.ID)
 
 	redisResponse := RedisClient.Set(redisKeyName, secret, time.Hour)
 	if redisResponse.Err() != nil {
@@ -112,8 +104,6 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 }
 
 func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	userID := GetSessionUserID(&ec)
-
 	if ec.FormValue("code") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -122,7 +112,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	code := ec.FormValue("code")
 
 	// are they enrolled already?
-	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
+	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("completing TOTP enrollment", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -135,7 +125,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 
 	// do they have a stored secret in redis?
-	redisKeyName := fmt.Sprintf("user:%d:totp_tmp", userID)
+	redisKeyName := fmt.Sprintf("user:%d:totp_tmp", c.User.ID)
 	secret, err := RedisClient.Get(redisKeyName).Result()
 	if err != nil {
 		ErrorLog_LogError("completing TOTP enrollment", err)
@@ -152,7 +142,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 
 	// store the secret and remove it from redis
-	_, err = DB.Exec("INSERT INTO totp(userId, secret) VALUES(?, ?)", userID, secret)
+	_, err = DB.Exec("INSERT INTO totp(userId, secret) VALUES(?, ?)", c.User.ID, secret)
 	if err != nil {
 		ErrorLog_LogError("starting TOTP enrollment", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -164,7 +154,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 }
 
 func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
+	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting TOTP enrollment status", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -175,7 +165,7 @@ func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	userID := GetSessionUserID(&ec)
+	userID := c.User.ID
 
 	if ec.FormValue("code") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
@@ -185,7 +175,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	code := ec.FormValue("code")
 
 	// are they enrolled already?
-	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
+	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("handling TOTP unenrollment", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

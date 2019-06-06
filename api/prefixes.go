@@ -142,7 +142,7 @@ func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo
 }
 
 func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting custom prefixes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -176,7 +176,7 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		ErrorLog_LogError("deleting prefixes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -242,7 +242,7 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, GetSessionUserID(&ec))
+	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("adding prefix", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

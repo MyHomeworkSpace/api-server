@@ -156,8 +156,8 @@ func Init(e *echo.Echo) {
 	e.POST("/homework/delete", route(routeHomeworkDelete, authLevelLoggedIn))
 	e.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone, authLevelLoggedIn))
 
-	e.POST("/notifications/add", route(routeNotificationsAdd, authLevelLoggedIn))
-	e.POST("/notifications/delete", route(routeNotificationsDelete, authLevelLoggedIn))
+	e.POST("/notifications/add", route(routeNotificationsAdd, authLevelAdmin))
+	e.POST("/notifications/delete", route(routeNotificationsDelete, authLevelAdmin))
 	e.GET("/notifications/get", route(routeNotificationsGet, authLevelLoggedIn))
 
 	e.GET("/planner/getWeekInfo/:date", route(routePlannerGetWeekInfo, authLevelLoggedIn))

@@ -19,12 +19,6 @@ type NotificationsResponse struct {
 }
 
 func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
-	if user.Level < 1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		return
-	}
-
 	if ec.FormValue("expiry") == "" || ec.FormValue("content") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -41,12 +35,6 @@ func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Conte
 }
 
 func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
-	if user.Level < 1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		return
-	}
-
 	idStr := ec.FormValue("id")
 	if idStr == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})

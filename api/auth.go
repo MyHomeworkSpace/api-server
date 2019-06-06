@@ -102,7 +102,7 @@ func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.C
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(GetSessionUserID(&ec))
+	_, err = stmt.Exec(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("clearing migration flag", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -231,17 +231,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 }
 
 func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	user, err := Data_GetUserByID(GetSessionUserID(&ec))
-	if err == data.ErrNotFound {
-		ec.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
-		return
-	} else if err != nil {
-		ErrorLog_LogError("getting user information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	tabs, err := Data_GetTabsByUserID(user.ID)
+	tabs, err := Data_GetTabsByUserID(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting user information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -250,18 +240,18 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 
 	ec.JSON(http.StatusOK, UserResponse{
 		Status: "ok",
-		User:   user,
+		User:   *c.User,
 		Tabs:   tabs,
 
 		// these are set for backwards compatibility
-		ID:                 user.ID,
-		Name:               user.Name,
-		Username:           user.Username,
-		Email:              user.Email,
-		Type:               user.Type,
-		Features:           user.Features,
-		Level:              user.Level,
-		ShowMigrateMessage: user.ShowMigrateMessage,
+		ID:                 c.User.ID,
+		Name:               c.User.Name,
+		Username:           c.User.Username,
+		Email:              c.User.Email,
+		Type:               c.User.Type,
+		Features:           c.User.Features,
+		Level:              c.User.Level,
+		ShowMigrateMessage: c.User.ShowMigrateMessage,
 	})
 }
 

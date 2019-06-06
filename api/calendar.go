@@ -53,7 +53,7 @@ type CalendarStatusResponse struct {
 }
 
 func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT status FROM calendar_status WHERE userId = ?", GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT status FROM calendar_status WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -100,16 +100,7 @@ func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		return
 	}
 
-	userID := GetSessionUserID(&ec)
-
-	user, err := Data_GetUserByID(userID)
-	if err != nil {
-		ErrorLog_LogError("getting calendar view", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	view, err := calendar.GetView(DB, &user, timeZone, startDate, endDate)
+	view, err := calendar.GetView(DB, c.User, timeZone, startDate, endDate)
 	if err != nil {
 		ErrorLog_LogError("getting calendar view", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -125,17 +116,8 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	userId := GetSessionUserID(&ec)
-
-	user, err := Data_GetUserByID(userId)
-	if err != nil {
-		ErrorLog_LogError("importing calendar", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-
 	// test the credentials first so we don't run into blackbaud's rate limiting
-	_, resp, err := auth.DaltonLogin(user.Username, ec.FormValue("password"))
+	_, resp, err := auth.DaltonLogin(c.User.Username, ec.FormValue("password"))
 	if resp != "" || err != nil {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 		return
@@ -161,7 +143,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		"From":            "",
 		"InterfaceSource": "WebApp",
 		"Password":        ec.FormValue("password"),
-		"Username":        user.Username,
+		"Username":        c.User.Username,
 		"remember":        "false",
 	}, jar, ajaxToken)
 
@@ -486,7 +468,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 	defer termDeleteStmt.Close()
-	termDeleteStmt.Exec(userId)
+	termDeleteStmt.Exec(c.User.ID)
 
 	classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
 	if err != nil {
@@ -494,7 +476,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 	defer classDeleteStmt.Close()
-	classDeleteStmt.Exec(userId)
+	classDeleteStmt.Exec(c.User.ID)
 
 	periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
 	if err != nil {
@@ -502,7 +484,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 	defer periodsDeleteStmt.Close()
-	periodsDeleteStmt.Exec(userId)
+	periodsDeleteStmt.Exec(c.User.ID)
 
 	statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
 	if err != nil {
@@ -510,7 +492,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 	defer statusDeleteStmt.Close()
-	statusDeleteStmt.Exec(userId)
+	statusDeleteStmt.Exec(c.User.ID)
 
 	// first add the terms
 	termInsertStmt, err := tx.Prepare("INSERT INTO calendar_terms(termId, name, userId) VALUES(?, ?, ?)")
@@ -520,7 +502,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 	defer termInsertStmt.Close()
 	for _, term := range termMap {
-		_, err = termInsertStmt.Exec(term.TermID, term.Name, userId)
+		_, err = termInsertStmt.Exec(term.TermID, term.Name, c.User.ID)
 		if err != nil {
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
@@ -535,7 +517,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 	defer classInsertStmt.Close()
 	for _, class := range classMap {
-		_, err = classInsertStmt.Exec(class.TermID, class.OwnerID, class.SectionID, class.Name, class.OwnerName, userId)
+		_, err = classInsertStmt.Exec(class.TermID, class.OwnerID, class.SectionID, class.Name, class.OwnerName, c.User.ID)
 		if err != nil {
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
@@ -556,7 +538,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 					// skip inserting it again because house doesn't change ID
 					continue
 				}
-				_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Block, period.BuildingName, period.RoomNumber, period.Start, period.End, userId)
+				_, err = periodsInsertStmt.Exec(period.ClassID, period.DayNumber, period.Block, period.BuildingName, period.RoomNumber, period.Start, period.End, c.User.ID)
 				if err != nil {
 					ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 					return
@@ -571,7 +553,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 	defer statusInsertStmt.Close()
-	_, err = statusInsertStmt.Exec(userId)
+	_, err = statusInsertStmt.Exec(c.User.ID)
 
 	// go!
 	err = tx.Commit()
@@ -585,8 +567,6 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	userId := GetSessionUserID(&ec)
-
 	tx, err := DB.Begin()
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
@@ -602,7 +582,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 	defer termDeleteStmt.Close()
-	termDeleteStmt.Exec(userId)
+	termDeleteStmt.Exec(c.User.ID)
 
 	classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
 	if err != nil {
@@ -611,7 +591,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 	defer classDeleteStmt.Close()
-	classDeleteStmt.Exec(userId)
+	classDeleteStmt.Exec(c.User.ID)
 
 	periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
 	if err != nil {
@@ -620,7 +600,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 	defer periodsDeleteStmt.Close()
-	periodsDeleteStmt.Exec(userId)
+	periodsDeleteStmt.Exec(c.User.ID)
 
 	statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
 	if err != nil {
@@ -629,7 +609,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 	defer statusDeleteStmt.Close()
-	statusDeleteStmt.Exec(userId)
+	statusDeleteStmt.Exec(c.User.ID)
 
 	err = tx.Commit()
 	if err != nil {

@@ -46,7 +46,7 @@ type HWInfoResponse struct {
 }
 
 func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -67,7 +67,7 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 }
 
 func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -88,7 +88,7 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 }
 
 func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
+	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -121,7 +121,7 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), GetSessionUserID(&ec))
+	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("adding class", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -141,7 +141,7 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// check if you are allowed to edit the given id
-	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		ErrorLog_LogError("editing classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -175,7 +175,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// check if you are allowed to delete the given id
-	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		ErrorLog_LogError("deleting classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -232,7 +232,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// check if you are allowed to change id1
-	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id1"))
+	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id1"))
 	if err != nil {
 		ErrorLog_LogError("deleting classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -245,7 +245,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// check if you are allowed to change id2
-	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.FormValue("id2"))
+	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id2"))
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
