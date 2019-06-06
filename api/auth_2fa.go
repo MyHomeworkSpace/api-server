@@ -50,11 +50,6 @@ func isUser2FAEnrolled(userID int) (bool, error) {
  */
 
 func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// are they enrolled already?
 	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
 	if err != nil {
@@ -117,11 +112,6 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 }
 
 func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	userID := GetSessionUserID(&ec)
 
 	if ec.FormValue("code") == "" {
@@ -174,11 +164,6 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 }
 
 func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	enrolled, err := isUser2FAEnrolled(GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting TOTP enrollment status", err)
@@ -190,11 +175,6 @@ func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	userID := GetSessionUserID(&ec)
 
 	if ec.FormValue("code") == "" {

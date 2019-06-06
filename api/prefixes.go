@@ -142,11 +142,6 @@ func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo
 }
 
 func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting custom prefixes", err)
@@ -176,11 +171,6 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -209,11 +199,6 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("color") == "" || ec.FormValue("background") == "" || ec.FormValue("words") == "" || ec.FormValue("timedEvent") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return

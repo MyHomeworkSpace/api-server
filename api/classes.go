@@ -46,10 +46,6 @@ type HWInfoResponse struct {
 }
 
 func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
@@ -71,10 +67,6 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 }
 
 func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
@@ -96,10 +88,6 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 }
 
 func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting class information", err)
@@ -118,10 +106,6 @@ func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("name") == "" || ec.FormValue("color") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -147,10 +131,6 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 }
 
 func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("color") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -189,10 +169,6 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -250,10 +226,6 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id1") == "" || ec.FormValue("id2") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return

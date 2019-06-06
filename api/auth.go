@@ -96,11 +96,6 @@ func IsInternalRequest(c *echo.Context) bool {
  * routes
  */
 func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
 	if err != nil {
 		ErrorLog_LogError("clearing migration flag", err)
@@ -236,11 +231,6 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 }
 
 func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	user, err := Data_GetUserByID(GetSessionUserID(&ec))
 	if err == data.ErrNotFound {
 		ec.JSON(http.StatusOK, ErrorResponse{"error", "user_record_missing"})
@@ -276,10 +266,6 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 }
 
 func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	cookie, _ := ec.Cookie("session")
 	newSession := auth.SessionInfo{-1}
 	auth.SetSession(cookie.Value, newSession)

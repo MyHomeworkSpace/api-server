@@ -19,11 +19,6 @@ type PrefsResponse struct {
 }
 
 func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", GetSessionUserID(&ec), ec.Param("key"))
 	if err != nil {
 		ErrorLog_LogError("getting pref", err)
@@ -44,11 +39,6 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 }
 
 func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting prefs", err)
@@ -69,11 +59,6 @@ func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("key") == "" || ec.FormValue("value") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return

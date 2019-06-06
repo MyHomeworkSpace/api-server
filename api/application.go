@@ -39,11 +39,6 @@ type MultipleApplicationsResponse struct {
 }
 
 func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// get the application
 	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.FormValue("clientId"))
 	if err != nil {
@@ -103,11 +98,6 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.Param("id"))
 	if err != nil {
 		ErrorLog_LogError("getting application information", err)
@@ -128,10 +118,6 @@ func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT application_authorizations.id, applications.id, applications.name, applications.authorName FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting authorizations", err)
@@ -159,11 +145,6 @@ func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo
 }
 
 func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// find the authorization
 	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
@@ -205,11 +186,6 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.
 }
 
 func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if !HasAuthToken(&ec) {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "bad_request"})
 		return
@@ -234,11 +210,6 @@ func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.
 }
 
 func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// generate client id
 	clientId, err := util.GenerateRandomString(42)
 	if err != nil {
@@ -281,11 +252,6 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting user applications", err)
@@ -305,11 +271,6 @@ func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("callbackUrl") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -346,11 +307,6 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return

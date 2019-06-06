@@ -21,16 +21,6 @@ type UserCountResponse struct {
 }
 
 func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
-	if user.Level < 1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 	if err != nil {
 		ErrorLog_LogError("getting all feedback", err)
@@ -53,16 +43,6 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 }
 
 func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
-	if user.Level < 1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		return
-	}
-
 	id, err := strconv.Atoi(ec.Param("id"))
 	if err != nil {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_paramas"})
@@ -109,16 +89,6 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 }
 
 func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
-	if user.Level < 1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT COUNT(*) FROM users")
 	if err != nil {
 		ErrorLog_LogError("getting user count", err)

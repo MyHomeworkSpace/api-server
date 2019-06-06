@@ -19,10 +19,6 @@ type NotificationsResponse struct {
 }
 
 func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
 	if user.Level < 1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
@@ -45,10 +41,6 @@ func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Conte
 }
 
 func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	user, _ := Data_GetUserByID(GetSessionUserID(&ec))
 	if user.Level < 1 {
 		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
@@ -77,11 +69,6 @@ func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Co
 }
 
 func routeNotificationsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT `id`, `content`, `expiry` FROM notifications WHERE expiry > NOW()")
 	if err != nil {
 		ErrorLog_LogError("getting notification", err)

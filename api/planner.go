@@ -17,11 +17,6 @@ type PlannerWeekInfoResponse struct {
 }
 
 func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	startDate, err := time.Parse("2006-01-02", ec.Param("date"))
 	if err != nil {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})

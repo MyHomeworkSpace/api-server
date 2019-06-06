@@ -34,10 +34,6 @@ type SingleHomeworkResponse struct {
 }
 
 func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting homework information", err)
@@ -56,11 +52,6 @@ func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// verify the class exists and the user owns it
 	classIdStr := ec.Param("classId")
 	if classIdStr == "" {
@@ -106,11 +97,6 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 }
 
 func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// look for hidden class pref
 	hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&ec))
 	hiddenClasses := []int{}
@@ -148,11 +134,6 @@ func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	showTodayStr := ec.FormValue("showToday")
 	showToday := false
 
@@ -264,10 +245,6 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", GetSessionUserID(&ec), ec.Param("id"))
 	if err != nil {
 		ErrorLog_LogError("getting homework information", err)
@@ -288,11 +265,6 @@ func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	startDate, err := time.Parse("2006-01-02", ec.Param("monday"))
 	if err != nil {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
@@ -318,11 +290,6 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` DESC", GetSessionUserID(&ec))
 	if err != nil {
 		ErrorLog_LogError("getting homework picker suggestions", err)
@@ -341,11 +308,6 @@ func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, e
 }
 
 func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("q") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -377,11 +339,6 @@ func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("name") == "" || ec.FormValue("due") == "" || ec.FormValue("complete") == "" || ec.FormValue("classId") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -420,11 +377,6 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("due") == "" || ec.FormValue("complete") == "" || ec.FormValue("classId") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -476,10 +428,6 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 }
 
 func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -527,11 +475,6 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	// look for hidden class pref
 	hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", GetSessionUserID(&ec))
 	hiddenClasses := []int{}

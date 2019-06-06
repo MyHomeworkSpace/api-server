@@ -113,11 +113,6 @@ func parseRecurFormInfo(ec echo.Context) (bool, int, int, string, string) {
  */
 
 func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	userID := GetSessionUserID(&ec)
 
 	user, err := Data_GetUserByID(userID)
@@ -208,10 +203,6 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 }
 
 func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("name") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -272,10 +263,6 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -397,10 +384,6 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 }
 
 func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -451,10 +434,6 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 }
 
 func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("homeworkId") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -496,10 +475,6 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Co
 }
 
 func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" || ec.FormValue("homeworkId") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -554,10 +529,6 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 }
 
 func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("id") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return

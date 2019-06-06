@@ -53,11 +53,6 @@ type CalendarStatusResponse struct {
 }
 
 func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	rows, err := DB.Query("SELECT status FROM calendar_status WHERE userId = ?", GetSessionUserID(&ec))
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -76,11 +71,6 @@ func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	if ec.FormValue("start") == "" || ec.FormValue("end") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -130,10 +120,6 @@ func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
 	if ec.FormValue("password") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
@@ -599,11 +585,6 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if GetSessionUserID(&ec) == -1 {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
-		return
-	}
-
 	userId := GetSessionUserID(&ec)
 
 	tx, err := DB.Begin()
