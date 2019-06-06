@@ -101,7 +101,3 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitFeedbackAPI(e *echo.Echo) {
-	e.POST("/feedback/add", route(routeFeedbackAdd))
-}

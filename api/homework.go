@@ -563,18 +563,3 @@ func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, ec ech
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitHomeworkAPI(e *echo.Echo) {
-	e.GET("/homework/get", route(routeHomeworkGet))
-	e.GET("/homework/getForClass/:classId", route(routeHomeworkGetForClass))
-	e.GET("/homework/getHWView", route(routeHomeworkGetHWView))
-	e.GET("/homework/getHWViewSorted", route(routeHomeworkGetHWViewSorted))
-	e.GET("/homework/get/:id", route(routeHomeworkGetID))
-	e.GET("/homework/getWeek/:monday", route(routeHomeworkGetWeek))
-	e.GET("/homework/getPickerSuggestions", route(routeHomeworkGetPickerSuggestions))
-	e.GET("/homework/search", route(routeHomeworkSearch))
-	e.POST("/homework/add", route(routeHomeworkAdd))
-	e.POST("/homework/edit", route(routeHomeworkEdit))
-	e.POST("/homework/delete", route(routeHomeworkDelete))
-	e.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone))
-}

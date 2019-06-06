@@ -266,10 +266,3 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitPrefixesAPI(e *echo.Echo) {
-	e.GET("/prefixes/getDefaultList", route(routePrefixesGetDefaultList))
-	e.GET("/prefixes/getList", route(routePrefixesGetList))
-	e.POST("/prefixes/delete", route(routePrefixesDelete))
-	e.POST("/prefixes/add", route(routePrefixesAdd))
-}

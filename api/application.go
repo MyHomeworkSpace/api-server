@@ -411,17 +411,3 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitApplicationAPI(e *echo.Echo) {
-	e.POST("/application/completeAuth", route(routeApplicationCompleteAuth))
-	e.GET("/application/get/:id", route(routeApplicationGet))
-	e.GET("/application/getAuthorizations", route(routeApplicationGetAuthorizations))
-	e.GET("/application/requestAuth/:id", route(routeApplicationRequestAuth))
-	e.POST("/application/revokeAuth", route(routeApplicationRevokeAuth))
-	e.POST("/application/revokeSelf", route(routeApplicationRevokeSelf))
-
-	e.POST("/application/manage/create", route(routeApplicationManageCreate))
-	e.GET("/application/manage/getAll", route(routeApplicationManageGetAll))
-	e.POST("/application/manage/update", route(routeApplicationManageUpdate))
-	e.POST("/application/manage/delete", route(routeApplicationManageDelete))
-}

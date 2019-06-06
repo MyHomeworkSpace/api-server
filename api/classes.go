@@ -397,13 +397,3 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitClassesAPI(e *echo.Echo) {
-	e.GET("/classes/get", route(routeClassesGet))
-	e.GET("/classes/get/:id", route(routeClassesGetID))
-	e.GET("/classes/hwInfo/:id", route(routeClassesHWInfo))
-	e.POST("/classes/add", route(routeClassesAdd))
-	e.POST("/classes/edit", route(routeClassesEdit))
-	e.POST("/classes/delete", route(routeClassesDelete))
-	e.POST("/classes/swap", route(routeClassesSwap))
-}

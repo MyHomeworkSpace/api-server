@@ -294,12 +294,3 @@ func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 	ec.JSON(http.StatusOK, SessionResponse{"ok", cookie.Value})
 }
-
-func InitAuthAPI(e *echo.Echo) {
-	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag))
-	e.GET("/auth/csrf", route(routeAuthCsrf))
-	e.POST("/auth/login", route(routeAuthLogin))
-	e.GET("/auth/me", route(routeAuthMe))
-	e.GET("/auth/logout", route(routeAuthLogout))
-	e.GET("/auth/session", route(routeAuthSession))
-}

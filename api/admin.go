@@ -132,9 +132,3 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	ec.JSON(http.StatusOK, UserCountResponse{"ok", count})
 }
-
-func InitAdminAPI(e *echo.Echo) {
-	e.GET("/admin/getAllFeedback", route(routeAdminGetAllFeedback))
-	e.GET("/admin/getFeedbackScreenshot/:id", route(routeAdminGetFeedbackScreenshot))
-	e.GET("/admin/getUserCount", route(routeAdminGetUserCount))
-}

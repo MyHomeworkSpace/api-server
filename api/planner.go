@@ -56,7 +56,3 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 
 	ec.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
 }
-
-func InitPlannerAPI(e *echo.Echo) {
-	e.GET("/planner/getWeekInfo/:date", route(routePlannerGetWeekInfo))
-}

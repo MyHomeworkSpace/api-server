@@ -590,17 +590,3 @@ func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo
 	}
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitCalendarEventsAPI(e *echo.Echo) {
-	e.GET("/calendar/events/getWeek/:monday", route(routeCalendarEventsGetWeek))
-
-	// normal events
-	e.POST("/calendar/events/add", route(routeCalendarEventsAdd))
-	e.POST("/calendar/events/edit", route(routeCalendarEventsEdit))
-	e.POST("/calendar/events/delete", route(routeCalendarEventsDelete))
-
-	// homework events
-	e.POST("/calendar/hwEvents/add", route(routeCalendarHWEventsAdd))
-	e.POST("/calendar/hwEvents/edit", route(routeCalendarHWEventsEdit))
-	e.POST("/calendar/hwEvents/delete", route(routeCalendarHWEventsDelete))
-}

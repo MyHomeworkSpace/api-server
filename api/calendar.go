@@ -659,10 +659,3 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitCalendarAPI(e *echo.Echo) {
-	e.GET("/calendar/getStatus", route(routeCalendarGetStatus))
-	e.GET("/calendar/getView", route(routeCalendarGetView))
-	e.POST("/calendar/import", route(routeCalendarImport))
-	e.POST("/calendar/resetSchedule", route(routeCalendarResetSchedule))
-}

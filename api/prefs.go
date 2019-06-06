@@ -119,9 +119,3 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
-
-func InitPrefsAPI(e *echo.Echo) {
-	e.GET("/prefs/get/:key", route(routePrefsGet))
-	e.GET("/prefs/getAll", route(routePrefsGetAll))
-	e.POST("/prefs/set", route(routePrefsSet))
-}

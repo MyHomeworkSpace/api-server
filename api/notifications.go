@@ -99,9 +99,3 @@ func routeNotificationsGet(w http.ResponseWriter, r *http.Request, ec echo.Conte
 
 	ec.JSON(http.StatusOK, NotificationsResponse{"ok", notifications})
 }
-
-func InitNotificationsAPI(e *echo.Echo) {
-	e.POST("/notifications/add", route(routeNotificationsAdd))
-	e.POST("/notifications/delete", route(routeNotificationsDelete))
-	e.GET("/notifications/get", route(routeNotificationsGet))
-}
