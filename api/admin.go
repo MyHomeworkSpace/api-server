@@ -2,11 +2,13 @@ package api
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/email"
 	"github.com/labstack/echo"
 )
 
@@ -101,4 +103,27 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	rows.Scan(&count)
 
 	ec.JSON(http.StatusOK, UserCountResponse{"ok", count})
+}
+
+func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("template") == "" || ec.FormValue("data") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	data := map[string]interface{}{}
+	err := json.Unmarshal([]byte(ec.FormValue("data")), &data)
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	err = email.Send("", c.User, ec.FormValue("template"), data)
+	if err != nil {
+		ErrorLog_LogError("sending email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }

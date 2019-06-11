@@ -87,6 +87,7 @@ func Init(e *echo.Echo) {
 	e.GET("/admin/getAllFeedback", route(routeAdminGetAllFeedback, authLevelAdmin))
 	e.GET("/admin/getFeedbackScreenshot/:id", route(routeAdminGetFeedbackScreenshot, authLevelAdmin))
 	e.GET("/admin/getUserCount", route(routeAdminGetUserCount, authLevelAdmin))
+	e.POST("/admin/sendEmail", route(routeAdminSendEmail, authLevelAdmin))
 
 	e.POST("/application/completeAuth", route(routeApplicationCompleteAuth, authLevelLoggedIn))
 	e.GET("/application/get/:id", route(routeApplicationGet, authLevelLoggedIn))

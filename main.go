@@ -11,6 +11,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/calendar"
 	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/email"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -38,6 +39,8 @@ func main() {
 
 	InitDatabase()
 	InitRedis()
+
+	email.Init()
 
 	calendar.InitCalendar()
 
