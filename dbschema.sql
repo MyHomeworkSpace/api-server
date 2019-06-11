@@ -149,7 +149,7 @@ CREATE TABLE `homework` (
   `name` mediumtext COLLATE utf8mb4_unicode_ci,
   `due` date DEFAULT NULL,
   `desc` mediumtext COLLATE utf8mb4_unicode_ci,
-  `complete` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `complete` tinyint(1) DEFAULT NULL,
   `classId` int(11) DEFAULT NULL,
   `userId` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
