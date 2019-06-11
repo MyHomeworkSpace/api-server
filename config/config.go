@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"io/ioutil"
@@ -57,7 +57,7 @@ type FeedbackConfig struct {
 	SlackHostName string
 }
 
-func CreateNewConfig() {
+func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
 Port = 3000
@@ -97,9 +97,15 @@ SlackHostName = ""`
 	}
 }
 
-func InitConfig() {
+// GetCurrent returns a pointer to the active configuration struct
+func GetCurrent() *Config {
+	return &config
+}
+
+// Init loads the configuration from disk, creating it if needed
+func Init() {
 	if _, err := os.Stat("config.toml"); err != nil {
-		CreateNewConfig() // create new config to be parsed
+		createNewConfig() // create new config to be parsed
 	}
 	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
 		panic(err)

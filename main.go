@@ -10,6 +10,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/calendar"
+	"github.com/MyHomeworkSpace/api-server/config"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -33,20 +34,15 @@ type HelloResponse struct {
 func main() {
 	log.Println("MyHomeworkSpace API Server")
 
-	InitConfig()
+	config.Init()
+
 	InitDatabase()
 	InitRedis()
 
 	calendar.InitCalendar()
 
-	api.AuthURLBase = config.Server.AuthURLBase
 	api.DB = DB
 	api.RedisClient = RedisClient
-	api.ReverseProxyHeader = config.Server.ReverseProxyHeader
-
-	api.FeedbackSlackEnabled = config.Feedback.SlackEnabled
-	api.FeedbackSlackURL = config.Feedback.SlackURL
-	api.FeedbackSlackHostName = config.Feedback.SlackHostName
 
 	auth.DB = DB
 	auth.RedisClient = RedisClient
@@ -63,16 +59,16 @@ func main() {
 				return nil
 			}
 
-			if config.CORS.Enabled && len(config.CORS.Origins) > 0 {
+			if config.GetCurrent().CORS.Enabled && len(config.GetCurrent().CORS.Origins) > 0 {
 				foundOrigin := ""
-				for _, origin := range config.CORS.Origins {
+				for _, origin := range config.GetCurrent().CORS.Origins {
 					if origin == c.Request().Header.Get("Origin") {
 						foundOrigin = origin
 					}
 				}
 
 				if foundOrigin == "" {
-					foundOrigin = config.CORS.Origins[0]
+					foundOrigin = config.GetCurrent().CORS.Origins[0]
 				}
 
 				c.Response().Header().Set("Access-Control-Allow-Origin", foundOrigin)
@@ -186,6 +182,6 @@ func main() {
 
 	api.Init(e) // API init delayed because router must be started first
 
-	log.Printf("Listening on port %d", config.Server.Port)
-	e.Start(fmt.Sprintf(":%d", config.Server.Port))
+	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
+	e.Start(fmt.Sprintf(":%d", config.GetCurrent().Server.Port))
 }

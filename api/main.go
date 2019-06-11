@@ -19,14 +19,8 @@ const (
 	authLevelAdmin
 )
 
-var AuthURLBase string
 var DB *sql.DB
 var RedisClient *redis.Client
-var ReverseProxyHeader string
-
-var FeedbackSlackEnabled bool
-var FeedbackSlackURL string
-var FeedbackSlackHostName string
 
 type StatusResponse struct {
 	Status string `json:"status"`

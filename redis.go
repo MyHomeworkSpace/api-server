@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/MyHomeworkSpace/api-server/config"
+
 	"gopkg.in/redis.v5"
 )
 
@@ -11,7 +13,7 @@ var RedisClient *redis.Client
 func InitRedis() {
 	// TODO: make password and db configurable
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
+		Addr:     fmt.Sprintf("%s:%d", config.GetCurrent().Redis.Host, config.GetCurrent().Redis.Port),
 		Password: "",
 		DB:       0,
 	})

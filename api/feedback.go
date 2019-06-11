@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/slack"
 
 	"github.com/labstack/echo"
@@ -24,13 +25,13 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	if FeedbackSlackEnabled {
+	if config.GetCurrent().Feedback.SlackEnabled {
 		screenshotStatement := "No screenshot included."
 		if ec.FormValue("screenshot") != "" {
 			screenshotStatement = "View screenshot on admin console."
 		}
 
-		err = slack.Post(FeedbackSlackURL, slack.WebhookMessage{
+		err = slack.Post(config.GetCurrent().Feedback.SlackURL, slack.WebhookMessage{
 			Attachments: []slack.WebhookAttachment{
 				slack.WebhookAttachment{
 					Fallback: "New feedback submission",
@@ -45,7 +46,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 						},
 						slack.WebhookField{
 							Title: "Host",
-							Value: FeedbackSlackHostName,
+							Value: config.GetCurrent().Feedback.SlackHostName,
 							Short: true,
 						},
 						slack.WebhookField{

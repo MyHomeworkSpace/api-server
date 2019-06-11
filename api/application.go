@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/labstack/echo"
 )
@@ -132,9 +133,9 @@ func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, e
 func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	state := ec.FormValue("state")
 	if state == "" {
-		ec.Redirect(http.StatusFound, AuthURLBase+"?id="+ec.Param("id"))
+		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AuthURLBase+"?id="+ec.Param("id"))
 	} else {
-		ec.Redirect(http.StatusFound, AuthURLBase+"?id="+ec.Param("id")+"&state="+ec.FormValue("state"))
+		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AuthURLBase+"?id="+ec.Param("id")+"&state="+ec.FormValue("state"))
 	}
 }
 

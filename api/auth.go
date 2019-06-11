@@ -7,6 +7,7 @@ import (
 	"github.com/pquerna/otp/totp"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 
 	"github.com/labstack/echo"
@@ -78,9 +79,9 @@ func GetSessionInfo(c *echo.Context) auth.SessionInfo {
 
 func IsInternalRequest(c *echo.Context) bool {
 	remoteAddr := (*c).Request().RemoteAddr
-	if ReverseProxyHeader != "" {
-		if (*c).Request().Header.Get(ReverseProxyHeader) != "" {
-			header := strings.Split((*c).Request().Header.Get(ReverseProxyHeader), ",")
+	if config.GetCurrent().Server.ReverseProxyHeader != "" {
+		if (*c).Request().Header.Get(config.GetCurrent().Server.ReverseProxyHeader) != "" {
+			header := strings.Split((*c).Request().Header.Get(config.GetCurrent().Server.ReverseProxyHeader), ",")
 			remoteAddr = strings.TrimSpace(header[len(header)-1])
 		}
 	}
