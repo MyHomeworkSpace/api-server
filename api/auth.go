@@ -77,7 +77,7 @@ func GetSessionInfo(c *echo.Context) auth.SessionInfo {
 	}
 }
 
-func IsInternalRequest(c *echo.Context) bool {
+func isInternalRequest(c *echo.Context) bool {
 	remoteAddr := (*c).Request().RemoteAddr
 	if config.GetCurrent().Server.ReverseProxyHeader != "" {
 		if (*c).Request().Header.Get(config.GetCurrent().Server.ReverseProxyHeader) != "" {

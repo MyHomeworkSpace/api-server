@@ -561,7 +561,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 
 	if ec.FormValue("userID") != "" {
 		// want to target a user, can they?
-		if strings.Split(r.RemoteAddr, ":")[0] == "127.0.0.1" || strings.HasPrefix(r.RemoteAddr, "[::1]") {
+		if isInternalRequest(&ec) {
 			// yes
 			var err error
 			userID, err = strconv.Atoi(ec.FormValue("userID"))
