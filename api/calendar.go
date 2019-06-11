@@ -559,6 +559,23 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	userID := c.User.ID
 
+	if ec.FormValue("userID") != "" {
+		// want to target a user, can they?
+		if strings.Split(r.RemoteAddr, ":")[0] == "127.0.0.1" || strings.HasPrefix(r.RemoteAddr, "[::1]") {
+			// yes
+			var err error
+			userID, err = strconv.Atoi(ec.FormValue("userID"))
+			if err != nil {
+				ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+				return
+			}
+		} else {
+			// nope
+			ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+			return
+		}
+	}
+
 	tx, err := DB.Begin()
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
