@@ -31,7 +31,7 @@ func DaltonLogin(username string, password string) (map[string]interface{}, stri
 	}, jar, ajaxToken)
 
 	if err != nil {
-		return nil, "dalton_creds_incorrect", nil
+		return nil, "creds_incorrect", nil
 	}
 
 	result, worked := (response.(map[string]interface{}))["AuthenticationResult"].(float64)
@@ -41,7 +41,7 @@ func DaltonLogin(username string, password string) (map[string]interface{}, stri
 	}
 
 	if !worked || result == 1 || result == 2 {
-		return nil, "dalton_creds_incorrect", nil
+		return nil, "creds_incorrect", nil
 	}
 
 	// get user id
