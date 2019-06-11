@@ -214,13 +214,10 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	}
 
 	// insert the event
-	stmt, err := DB.Prepare("INSERT INTO calendar_events(name, `start`, `end`, `desc`, userId) VALUES(?, ?, ?, ?, ?)")
-	if err != nil {
-		ErrorLog_LogError("adding calendar event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	insertResult, err := stmt.Exec(ec.FormValue("name"), start, end, ec.FormValue("desc"), c.User.ID)
+	insertResult, err := DB.Exec(
+		"INSERT INTO calendar_events(name, `start`, `end`, `desc`, userId) VALUES(?, ?, ?, ?, ?)",
+		ec.FormValue("name"), start, end, ec.FormValue("desc"), c.User.ID,
+	)
 	if err != nil {
 		ErrorLog_LogError("adding calendar event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -236,13 +233,10 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	// insert the recur rule if needed
 	if recur {
-		insertStmt, err := DB.Prepare("INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)")
-		if err != nil {
-			ErrorLog_LogError("adding calendar event", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-		_, err = insertStmt.Exec(eventID, recurFrequency, recurInterval, recurUntil)
+		_, err = DB.Exec(
+			"INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)",
+			eventID, recurFrequency, recurInterval, recurUntil,
+		)
 		if err != nil {
 			ErrorLog_LogError("adding calendar event", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -287,13 +281,10 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 	}
 
 	// update the event
-	stmt, err := DB.Prepare("UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("editing calendar event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = stmt.Exec(ec.FormValue("name"), start, end, ec.FormValue("desc"), ec.FormValue("id"))
+	_, err = DB.Exec(
+		"UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?",
+		ec.FormValue("name"), start, end, ec.FormValue("desc"), ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("editing calendar event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -323,13 +314,10 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 		// want recurrence
 		if recurRuleExists {
 			// we have a rule -> update it
-			insertStmt, err := DB.Prepare("UPDATE calendar_event_rules SET `frequency` = ?, `interval` = ?, `until` = ? WHERE eventId = ?")
-			if err != nil {
-				ErrorLog_LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-				return
-			}
-			_, err = insertStmt.Exec(recurFrequency, recurInterval, recurUntil, ec.FormValue("id"))
+			_, err = DB.Exec(
+				"UPDATE calendar_event_rules SET `frequency` = ?, `interval` = ?, `until` = ? WHERE eventId = ?",
+				recurFrequency, recurInterval, recurUntil, ec.FormValue("id"),
+			)
 			if err != nil {
 				ErrorLog_LogError("editing calendar event", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -337,13 +325,10 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 			}
 		} else {
 			// no rule -> insert it
-			insertStmt, err := DB.Prepare("INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)")
-			if err != nil {
-				ErrorLog_LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-				return
-			}
-			_, err = insertStmt.Exec(ec.FormValue("id"), recurFrequency, recurInterval, recurUntil)
+			_, err = DB.Exec(
+				"INSERT INTO calendar_event_rules(eventId, `frequency`, `interval`, byDay, byMonthDay, byMonth, `until`) VALUES(?, ?, ?, '', 0, 0, ?)",
+				ec.FormValue("id"), recurFrequency, recurInterval, recurUntil,
+			)
 			if err != nil {
 				ErrorLog_LogError("editing calendar event", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -354,13 +339,10 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 		// don't want recurrence
 		if recurRuleExists {
 			// we have a rule -> delete it
-			insertStmt, err := DB.Prepare("DELETE FROM calendar_event_rules WHERE eventId = ?")
-			if err != nil {
-				ErrorLog_LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-				return
-			}
-			_, err = insertStmt.Exec(ec.FormValue("id"))
+			_, err = DB.Exec(
+				"DELETE FROM calendar_event_rules WHERE eventId = ?",
+				ec.FormValue("id"),
+			)
 			if err != nil {
 				ErrorLog_LogError("editing calendar event", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -394,13 +376,10 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	}
 
 	// delete the event
-	stmt, err := DB.Prepare("DELETE FROM calendar_events WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("deleting calendar event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = stmt.Exec(ec.FormValue("id"))
+	_, err = DB.Exec(
+		"DELETE FROM calendar_events WHERE id = ?",
+		ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("deleting calendar event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -408,13 +387,10 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	}
 
 	// delete any recur rules associated with the event
-	rulesStmt, err := DB.Prepare("DELETE FROM calendar_event_rules WHERE eventId = ?")
-	if err != nil {
-		ErrorLog_LogError("deleting calendar event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = rulesStmt.Exec(ec.FormValue("id"))
+	_, err = DB.Exec(
+		"DELETE FROM calendar_event_rules WHERE eventId = ?",
+		ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("deleting calendar event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -450,18 +426,16 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Co
 		return
 	}
 
-	stmt, err := DB.Prepare("INSERT INTO calendar_hwevents(homeworkId, `start`, `end`, userId) VALUES(?, ?, ?, ?)")
+	_, err = DB.Exec(
+		"INSERT INTO calendar_hwevents(homeworkId, `start`, `end`, userId) VALUES(?, ?, ?, ?)",
+		ec.FormValue("homeworkId"), start, end, c.User.ID,
+	)
 	if err != nil {
 		ErrorLog_LogError("adding calendar homework event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("homeworkId"), start, end, c.User.ID)
-	if err != nil {
-		ErrorLog_LogError("adding calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
@@ -504,18 +478,16 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 		return
 	}
 
-	stmt, err := DB.Prepare("UPDATE calendar_hwevents SET homeworkId = ?, `start` = ?, `end` = ? WHERE id = ?")
+	_, err = DB.Exec(
+		"UPDATE calendar_hwevents SET homeworkId = ?, `start` = ?, `end` = ? WHERE id = ?",
+		ec.FormValue("homeworkId"), start, end, ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("editing calendar homework event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("homeworkId"), start, end, ec.FormValue("id"))
-	if err != nil {
-		ErrorLog_LogError("editing calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
@@ -538,17 +510,12 @@ func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo
 		return
 	}
 
-	stmt, err := DB.Prepare("DELETE FROM calendar_hwevents WHERE id = ?")
+	_, err = DB.Exec("DELETE FROM calendar_hwevents WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
 		ErrorLog_LogError("deleting calendar homework event", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("id"))
-	if err != nil {
-		ErrorLog_LogError("deleting calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }

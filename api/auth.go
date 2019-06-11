@@ -96,13 +96,7 @@ func IsInternalRequest(c *echo.Context) bool {
  * routes
  */
 func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	stmt, err := DB.Prepare("UPDATE users SET showMigrateMessage = 0 WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("clearing migration flag", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = stmt.Exec(c.User.ID)
+	_, err := DB.Exec("UPDATE users SET showMigrateMessage = 0 WHERE id = ?", c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("clearing migration flag", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -185,13 +179,10 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		}
 	} else {
 		// doesn't exist, insert new record
-		stmt, err := DB.Prepare("INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)")
-		if err != nil {
-			ErrorLog_LogError("trying to set user information", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-		res, err := stmt.Exec(data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0])
+		res, err := DB.Exec(
+			"INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)",
+			data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0],
+		)
 		if err != nil {
 			ErrorLog_LogError("trying to set user information", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -205,14 +196,10 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		}
 
 		// add default classes
-		addClassesStmt, err := DB.Prepare("INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)")
-		if err != nil {
-			ErrorLog_LogError("trying to add default classes", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-
-		_, err = addClassesStmt.Exec(int(lastID), int(lastID), int(lastID), int(lastID), int(lastID))
+		_, err = DB.Exec(
+			"INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)",
+			int(lastID), int(lastID), int(lastID), int(lastID), int(lastID),
+		)
 		if err != nil {
 			ErrorLog_LogError("trying to add default classes", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

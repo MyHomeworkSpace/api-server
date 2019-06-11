@@ -462,37 +462,29 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	tx, err := DB.Begin()
 
 	// clear away anything that is in the db
-	termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_terms WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer termDeleteStmt.Close()
-	termDeleteStmt.Exec(c.User.ID)
 
-	classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_classes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer classDeleteStmt.Close()
-	classDeleteStmt.Exec(c.User.ID)
 
-	periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_periods WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer periodsDeleteStmt.Close()
-	periodsDeleteStmt.Exec(c.User.ID)
 
-	statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_status WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer statusDeleteStmt.Close()
-	statusDeleteStmt.Exec(c.User.ID)
 
 	// first add the terms
 	termInsertStmt, err := tx.Prepare("INSERT INTO calendar_terms(termId, name, userId) VALUES(?, ?, ?)")
@@ -547,13 +539,11 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		}
 	}
 
-	statusInsertStmt, err := tx.Prepare("INSERT INTO calendar_status(status, userId) VALUES(1, ?)")
+	_, err = tx.Exec("INSERT INTO calendar_status(status, userId) VALUES(1, ?)", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer statusInsertStmt.Close()
-	_, err = statusInsertStmt.Exec(c.User.ID)
 
 	// go!
 	err = tx.Commit()
@@ -567,6 +557,8 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	userID := c.User.ID
+
 	tx, err := DB.Begin()
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
@@ -575,41 +567,33 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 
 	// clear away anything that is in the db
-	termDeleteStmt, err := tx.Prepare("DELETE FROM calendar_terms WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_terms WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer termDeleteStmt.Close()
-	termDeleteStmt.Exec(c.User.ID)
 
-	classDeleteStmt, err := tx.Prepare("DELETE FROM calendar_classes WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_classes WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer classDeleteStmt.Close()
-	classDeleteStmt.Exec(c.User.ID)
 
-	periodsDeleteStmt, err := tx.Prepare("DELETE FROM calendar_periods WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_periods WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer periodsDeleteStmt.Close()
-	periodsDeleteStmt.Exec(c.User.ID)
 
-	statusDeleteStmt, err := tx.Prepare("DELETE FROM calendar_status WHERE userId = ?")
+	_, err = tx.Exec("DELETE FROM calendar_status WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer statusDeleteStmt.Close()
-	statusDeleteStmt.Exec(c.User.ID)
 
 	err = tx.Commit()
 	if err != nil {

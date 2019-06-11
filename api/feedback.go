@@ -14,13 +14,10 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	stmt, err := DB.Prepare("INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)")
-	if err != nil {
-		ErrorLog_LogError("adding feedback", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = stmt.Exec(c.User.ID, ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"))
+	_, err := DB.Exec(
+		"INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)",
+		c.User.ID, ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"),
+	)
 	if err != nil {
 		ErrorLog_LogError("adding feedback", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

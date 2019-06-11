@@ -115,18 +115,16 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 		return
 	}
 
-	stmt, err := DB.Prepare("INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)")
+	_, err := DB.Exec(
+		"INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)",
+		ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), c.User.ID,
+	)
 	if err != nil {
 		ErrorLog_LogError("adding class", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), c.User.ID)
-	if err != nil {
-		ErrorLog_LogError("adding class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
@@ -153,18 +151,16 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	stmt, err := DB.Prepare("UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?")
+	_, err = DB.Exec(
+		"UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?",
+		ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("editing class", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), ec.FormValue("id"))
-	if err != nil {
-		ErrorLog_LogError("editing class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
@@ -276,13 +272,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	tx, err := DB.Begin()
 
 	// update class id1 -> tmp
-	class1Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = class1Stmt.Exec(swapId, ec.FormValue("id1"))
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", swapId, ec.FormValue("id1"))
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -290,13 +280,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update class id2 -> id1
-	class2Stmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = class2Stmt.Exec(ec.FormValue("id1"), ec.FormValue("id2"))
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id1"), ec.FormValue("id2"))
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -304,13 +288,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update class tmp -> id2
-	classTmpStmt, err := tx.Prepare("UPDATE classes SET id = ? WHERE id = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = classTmpStmt.Exec(ec.FormValue("id2"), swapId)
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id2"), swapId)
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -318,13 +296,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework id1 -> swp
-	hw1Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = hw1Stmt.Exec(swapId, ec.FormValue("id1"))
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", swapId, ec.FormValue("id1"))
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -332,13 +304,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework id2 -> id1
-	hw2Stmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = hw2Stmt.Exec(ec.FormValue("id1"), ec.FormValue("id2"))
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id1"), ec.FormValue("id2"))
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -346,13 +312,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework swp -> id2
-	hwSwapStmt, err := tx.Prepare("UPDATE homework SET classId = ? WHERE classId = ?")
-	if err != nil {
-		ErrorLog_LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	_, err = hwSwapStmt.Exec(ec.FormValue("id2"), swapId)
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id2"), swapId)
 	if err != nil {
 		ErrorLog_LogError("swapping classes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

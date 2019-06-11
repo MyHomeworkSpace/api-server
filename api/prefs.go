@@ -74,13 +74,10 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 
 	if !rows.Next() {
 		// doesn't exist, add it
-		stmt, err := DB.Prepare("INSERT INTO prefs(userId, `key`, `value`) VALUES(?, ?, ?)")
-		if err != nil {
-			ErrorLog_LogError("inserting pref", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-		_, err = stmt.Exec(c.User.ID, ec.FormValue("key"), ec.FormValue("value"))
+		_, err = DB.Exec(
+			"INSERT INTO prefs(userId, `key`, `value`) VALUES(?, ?, ?)",
+			c.User.ID, ec.FormValue("key"), ec.FormValue("value"),
+		)
 		if err != nil {
 			ErrorLog_LogError("inserting pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -88,13 +85,10 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 		}
 	} else {
 		// exists already, update it
-		stmt, err := DB.Prepare("UPDATE prefs SET `key` = ?, `value` = ? WHERE userId = ? AND `key` = ?")
-		if err != nil {
-			ErrorLog_LogError("updating pref", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-		_, err = stmt.Exec(ec.FormValue("key"), ec.FormValue("value"), c.User.ID, ec.FormValue("key"))
+		_, err = DB.Exec(
+			"UPDATE prefs SET `key` = ?, `value` = ? WHERE userId = ? AND `key` = ?",
+			ec.FormValue("key"), ec.FormValue("value"), c.User.ID, ec.FormValue("key"),
+		)
 		if err != nil {
 			ErrorLog_LogError("updating pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

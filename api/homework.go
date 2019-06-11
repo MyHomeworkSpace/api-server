@@ -361,18 +361,16 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	stmt, err := DB.Prepare("INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)")
+	_, err = DB.Exec(
+		"INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)",
+		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), c.User.ID,
+	)
 	if err != nil {
 		ErrorLog_LogError("adding homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), c.User.ID)
-	if err != nil {
-		ErrorLog_LogError("adding homework", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
@@ -412,18 +410,16 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 		return
 	}
 
-	stmt, err := DB.Prepare("UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?")
+	_, err = DB.Exec(
+		"UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?",
+		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), ec.FormValue("id"),
+	)
 	if err != nil {
 		ErrorLog_LogError("editing homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
-	_, err = stmt.Exec(ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), ec.FormValue("id"))
-	if err != nil {
-		ErrorLog_LogError("editing homework", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
+
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
