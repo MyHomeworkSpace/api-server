@@ -233,7 +233,6 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 		// these are set for backwards compatibility
 		ID:                 c.User.ID,
 		Name:               c.User.Name,
-		Username:           c.User.Username,
 		Email:              c.User.Email,
 		Type:               c.User.Type,
 		Features:           c.User.Features,

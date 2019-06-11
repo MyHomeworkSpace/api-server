@@ -3,7 +3,7 @@ package data
 type User struct {
 	ID                 int    `json:"id"`
 	Name               string `json:"name"`
-	Username           string `json:"username"`
+	Username           string `json:"-"`
 	Email              string `json:"email"`
 	Type               string `json:"type"`
 	Features           string `json:"features"`
