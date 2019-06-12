@@ -98,7 +98,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 
 func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// look for hidden class pref
-	hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", c.User.ID)
+	hiddenPref, err := data.GetPrefForUser("homeworkHiddenClasses", c.User.ID)
 	hiddenClasses := []int{}
 	if err != nil && err != data.ErrNotFound {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -142,7 +142,7 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 	}
 
 	// look for hidden class pref
-	hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", c.User.ID)
+	hiddenPref, err := data.GetPrefForUser("homeworkHiddenClasses", c.User.ID)
 	hiddenClasses := []int{}
 	if err != nil && err != data.ErrNotFound {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -472,7 +472,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// look for hidden class pref
-	hiddenPref, err := Data_GetPrefForUser("homeworkHiddenClasses", c.User.ID)
+	hiddenPref, err := data.GetPrefForUser("homeworkHiddenClasses", c.User.ID)
 	hiddenClasses := []int{}
 	if err != nil && err != data.ErrNotFound {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

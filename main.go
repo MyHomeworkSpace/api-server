@@ -11,6 +11,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/calendar"
 	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
 
 	"github.com/labstack/echo"
@@ -49,6 +50,8 @@ func main() {
 
 	auth.DB = DB
 	auth.RedisClient = RedisClient
+
+	data.DB = DB
 
 	e := echo.New()
 	e.Pre(middleware.RemoveTrailingSlash())

@@ -219,7 +219,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 }
 
 func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	tabs, err := Data_GetTabsByUserID(c.User.ID)
+	tabs, err := data.GetTabsByUserID(c.User.ID)
 	if err != nil {
 		ErrorLog_LogError("getting user information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

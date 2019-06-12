@@ -46,7 +46,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 
 		if sessionUserID != -1 {
 			context.LoggedIn = true
-			user, err := Data_GetUserByID(sessionUserID)
+			user, err := data.GetUserByID(sessionUserID)
 			if err != nil {
 				return err
 			}
