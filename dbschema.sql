@@ -37,18 +37,6 @@ CREATE TABLE `application_authorizations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE `calendar_classes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `termId` int(11) DEFAULT NULL,
-  `ownerId` int(11) DEFAULT NULL,
-  `sectionId` int(11) DEFAULT NULL,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `ownerName` mediumtext COLLATE utf8mb4_unicode_ci,
-  `userId` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 CREATE TABLE `calendar_events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` mediumtext COLLATE utf8mb4_unicode_ci,
@@ -83,7 +71,37 @@ CREATE TABLE `calendar_hwevents` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE `calendar_periods` (
+CREATE TABLE `calendar_status` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `userId` int(11) DEFAULT NULL,
+  `status` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `classes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` mediumtext COLLATE utf8mb4_unicode_ci,
+  `teacher` mediumtext COLLATE utf8mb4_unicode_ci,
+  `color` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `userId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `dalton_classes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `termId` int(11) DEFAULT NULL,
+  `ownerId` int(11) DEFAULT NULL,
+  `sectionId` int(11) DEFAULT NULL,
+  `name` mediumtext COLLATE utf8mb4_unicode_ci,
+  `ownerName` mediumtext COLLATE utf8mb4_unicode_ci,
+  `userId` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `dalton_periods` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `classId` int(11) DEFAULT NULL,
   `dayNumber` int(11) DEFAULT NULL,
@@ -97,28 +115,10 @@ CREATE TABLE `calendar_periods` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE `calendar_status` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `status` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-CREATE TABLE `calendar_terms` (
+CREATE TABLE `dalton_terms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `termId` int(11) DEFAULT NULL,
   `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `userId` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-CREATE TABLE `classes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `teacher` mediumtext COLLATE utf8mb4_unicode_ci,
-  `color` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `userId` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

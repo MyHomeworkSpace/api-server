@@ -462,19 +462,19 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	tx, err := DB.Begin()
 
 	// clear away anything that is in the db
-	_, err = tx.Exec("DELETE FROM calendar_terms WHERE userId = ?", c.User.ID)
+	_, err = tx.Exec("DELETE FROM dalton_terms WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_classes WHERE userId = ?", c.User.ID)
+	_, err = tx.Exec("DELETE FROM dalton_classes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_periods WHERE userId = ?", c.User.ID)
+	_, err = tx.Exec("DELETE FROM dalton_periods WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -487,7 +487,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	// first add the terms
-	termInsertStmt, err := tx.Prepare("INSERT INTO calendar_terms(termId, name, userId) VALUES(?, ?, ?)")
+	termInsertStmt, err := tx.Prepare("INSERT INTO dalton_terms(termId, name, userId) VALUES(?, ?, ?)")
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -502,7 +502,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	// then the classes
-	classInsertStmt, err := tx.Prepare("INSERT INTO calendar_classes(termId, ownerId, sectionId, name, ownerName, userId) VALUES(?, ?, ?, ?, ?, ?)")
+	classInsertStmt, err := tx.Prepare("INSERT INTO dalton_classes(termId, ownerId, sectionId, name, ownerName, userId) VALUES(?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -517,7 +517,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	// and finally the periods
-	periodsInsertStmt, err := tx.Prepare("INSERT INTO calendar_periods(classId, dayNumber, block, buildingName, roomNumber, start, end, userId) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
+	periodsInsertStmt, err := tx.Prepare("INSERT INTO dalton_periods(classId, dayNumber, block, buildingName, roomNumber, start, end, userId) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -584,21 +584,21 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 
 	// clear away anything that is in the db
-	_, err = tx.Exec("DELETE FROM calendar_terms WHERE userId = ?", userID)
+	_, err = tx.Exec("DELETE FROM dalton_terms WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_classes WHERE userId = ?", userID)
+	_, err = tx.Exec("DELETE FROM dalton_classes WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_periods WHERE userId = ?", userID)
+	_, err = tx.Exec("DELETE FROM dalton_periods WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

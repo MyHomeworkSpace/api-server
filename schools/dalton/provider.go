@@ -177,7 +177,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		result.Events = []data.Event{}
 
 		// get terms for user
-		termRows, err := db.Query("SELECT id, termId, name, userId FROM calendar_terms WHERE userId = ? ORDER BY name ASC", user.ID)
+		termRows, err := db.Query("SELECT id, termId, name, userId FROM dalton_terms WHERE userId = ? ORDER BY name ASC", user.ID)
 		if err != nil {
 			return data.ProviderData{}, err
 		}
@@ -257,7 +257,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					continue
 				}
 
-				rows, err := db.Query("SELECT calendar_periods.id, calendar_classes.termId, calendar_classes.sectionId, calendar_classes.`name`, calendar_classes.ownerId, calendar_classes.ownerName, calendar_periods.dayNumber, calendar_periods.block, calendar_periods.buildingName, calendar_periods.roomNumber, calendar_periods.`start`, calendar_periods.`end`, calendar_periods.userId FROM calendar_periods INNER JOIN calendar_classes ON calendar_periods.classId = calendar_classes.sectionId WHERE calendar_periods.userId = ? AND (calendar_classes.termId = ? OR calendar_classes.termId = -1) AND calendar_periods.dayNumber = ? GROUP BY calendar_periods.id, calendar_classes.termId, calendar_classes.name, calendar_classes.ownerId, calendar_classes.ownerName", user.ID, currentTerm.TermID, dayNumber)
+				rows, err := db.Query("SELECT dalton_periods.id, dalton_classes.termId, dalton_classes.sectionId, dalton_classes.`name`, dalton_classes.ownerId, dalton_classes.ownerName, dalton_periods.dayNumber, dalton_periods.block, dalton_periods.buildingName, dalton_periods.roomNumber, dalton_periods.`start`, dalton_periods.`end`, dalton_periods.userId FROM dalton_periods INNER JOIN dalton_classes ON dalton_periods.classId = dalton_classes.sectionId WHERE dalton_periods.userId = ? AND (dalton_classes.termId = ? OR dalton_classes.termId = -1) AND dalton_periods.dayNumber = ? GROUP BY dalton_periods.id, dalton_classes.termId, dalton_classes.name, dalton_classes.ownerId, dalton_classes.ownerName", user.ID, currentTerm.TermID, dayNumber)
 				if err != nil {
 					return data.ProviderData{}, err
 				}
