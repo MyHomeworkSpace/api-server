@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/schools"
+
+	"github.com/MyHomeworkSpace/api-server/schools/dalton"
+
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/calendar"
@@ -52,6 +56,8 @@ func main() {
 	auth.RedisClient = RedisClient
 
 	data.DB = DB
+
+	schools.MainRegistry.Register(dalton.CreateSchool())
 
 	e := echo.New()
 	e.Pre(middleware.RemoveTrailingSlash())

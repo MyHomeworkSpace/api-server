@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
-	"github.com/MyHomeworkSpace/api-server/schools/manager"
+	"github.com/MyHomeworkSpace/api-server/schools"
 
 	"github.com/labstack/echo"
 )
@@ -24,9 +24,11 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
 
-	providers := []data.Provider{
-		// TODO: not hardcode this for dalton
-		manager.GetSchoolByID("dalton").CalendarProvider(),
+	providers, err := data.GetProvidersForUser(schools.MainRegistry, c.User.ID)
+	if err != nil {
+		ErrorLog_LogError("getting calendar providers", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
 	}
 
 	announcements := []data.PlannerAnnouncement{}
