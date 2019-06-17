@@ -1,14 +1,15 @@
 package data
 
 type User struct {
-	ID                 int    `json:"id"`
-	Name               string `json:"name"`
-	Username           string `json:"-"`
-	Email              string `json:"email"`
-	Type               string `json:"type"`
-	Features           string `json:"features"`
-	Level              int    `json:"level"`
-	ShowMigrateMessage int    `json:"showMigrateMessage"`
+	ID                 int          `json:"id"`
+	Name               string       `json:"name"`
+	Username           string       `json:"-"`
+	Email              string       `json:"email"`
+	Type               string       `json:"type"`
+	Features           string       `json:"features"`
+	Level              int          `json:"level"`
+	ShowMigrateMessage int          `json:"showMigrateMessage"`
+	Schools            []SchoolInfo `json:"schools"`
 }
 
 type Tab struct {
@@ -47,10 +48,22 @@ func GetUserByID(id int) (User, error) {
 	defer rows.Close()
 	if rows.Next() {
 		user := User{}
+
 		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
 		if err != nil {
 			return User{}, err
 		}
+
+		user.Schools = []SchoolInfo{}
+
+		// TODO: not hardcode this for dalton
+		dalton, err := MainRegistry.GetSchoolByID("dalton")
+		if err != nil {
+			return User{}, err
+		}
+
+		user.Schools = append(user.Schools, SchoolInfo{"dalton", "The Dalton School", dalton})
+
 		return user, nil
 	} else {
 		return User{}, ErrNotFound

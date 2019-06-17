@@ -56,6 +56,7 @@ func main() {
 	auth.RedisClient = RedisClient
 
 	data.DB = DB
+	data.MainRegistry = schools.MainRegistry
 
 	schools.MainRegistry.Register(dalton.CreateSchool())
 

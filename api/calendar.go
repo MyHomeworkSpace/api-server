@@ -53,7 +53,7 @@ type CalendarStatusResponse struct {
 }
 
 func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT status FROM calendar_status WHERE userId = ?", c.User.ID)
+	rows, err := DB.Query("SELECT status FROM dalton_status WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -480,7 +480,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_status WHERE userId = ?", c.User.ID)
+	_, err = tx.Exec("DELETE FROM dalton_status WHERE userId = ?", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -539,7 +539,7 @@ func routeCalendarImport(w http.ResponseWriter, r *http.Request, ec echo.Context
 		}
 	}
 
-	_, err = tx.Exec("INSERT INTO calendar_status(status, userId) VALUES(1, ?)", c.User.ID)
+	_, err = tx.Exec("INSERT INTO dalton_status(status, userId) VALUES(1, ?)", c.User.ID)
 	if err != nil {
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
@@ -605,7 +605,7 @@ func routeCalendarResetSchedule(w http.ResponseWriter, r *http.Request, ec echo.
 		return
 	}
 
-	_, err = tx.Exec("DELETE FROM calendar_status WHERE userId = ?", userID)
+	_, err = tx.Exec("DELETE FROM dalton_status WHERE userId = ?", userID)
 	if err != nil {
 		ErrorLog_LogError("clearing schedule from DB", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})

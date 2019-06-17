@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
-	"github.com/MyHomeworkSpace/api-server/schools"
 )
 
 // A ViewDay represents a day in a View.
@@ -34,7 +33,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		Days:      []ViewDay{},
 	}
 
-	providers, err := data.GetProvidersForUser(schools.MainRegistry, user.ID)
+	providers, err := data.GetProvidersForUser(user)
 	if err != nil {
 		return View{}, err
 	}

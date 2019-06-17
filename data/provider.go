@@ -27,9 +27,9 @@ type ProviderData struct {
 	Events        []Event               `json:"events"`
 }
 
-// GetProvidersForUser returns a list of calendar providers associated with the given user ID
-func GetProvidersForUser(r SchoolRegistry, userID int) ([]Provider, error) {
-	schools, err := GetSchoolsForUser(r, userID)
+// GetProvidersForUser returns a list of calendar providers associated with the given user
+func GetProvidersForUser(user *User) ([]Provider, error) {
+	schools, err := GetSchoolsForUser(user)
 	if err != nil {
 		return nil, err
 	}
