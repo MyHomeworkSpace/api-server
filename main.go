@@ -195,5 +195,8 @@ func main() {
 	api.Init(e) // API init delayed because router must be started first
 
 	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
-	e.Start(fmt.Sprintf(":%d", config.GetCurrent().Server.Port))
+	err := e.Start(fmt.Sprintf(":%d", config.GetCurrent().Server.Port))
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
