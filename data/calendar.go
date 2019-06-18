@@ -102,8 +102,8 @@ func (e *Event) CalculateTimes(until time.Time) []time.Time {
 				days = 7
 			} else if e.RecurRule.Frequency == RecurFrequencyMonthly {
 				months = 1
-			} else if e.RecurRule.Frequency == RecurFrequencyYearly {
-				years = 0
+			} else { // if e.RecurRule.Frequency == RecurFrequencyYearly {
+				years = 1
 			}
 
 			years *= e.RecurRule.Interval
