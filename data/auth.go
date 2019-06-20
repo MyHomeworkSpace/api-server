@@ -1,5 +1,7 @@
 package data
 
+import "encoding/json"
+
 type User struct {
 	ID                 int          `json:"id"`
 	Name               string       `json:"name"`
@@ -45,7 +47,7 @@ func GetUserByID(id int) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	defer rows.Close()
+
 	if rows.Next() {
 		user := User{}
 
@@ -54,18 +56,50 @@ func GetUserByID(id int) (User, error) {
 			return User{}, err
 		}
 
+		rows.Close()
+
 		user.Schools = []SchoolInfo{}
 
-		// TODO: not hardcode this for dalton
-		dalton, err := MainRegistry.GetSchoolByID("dalton")
+		schoolRows, err := DB.Query("SELECT id, schoolId, data, userId FROM schools WHERE userId = ?", user.ID)
 		if err != nil {
 			return User{}, err
 		}
 
-		user.Schools = append(user.Schools, SchoolInfo{"dalton", "The Dalton School", dalton})
+		for schoolRows.Next() {
+			info := SchoolInfo{}
+			dataString := ""
+
+			schoolRows.Scan(&info.EnrollmentID, &info.SchoolID, &dataString, &info.UserID)
+
+			// parse JSON data
+			data := map[string]interface{}{}
+
+			err := json.Unmarshal([]byte(dataString), &data)
+			if err != nil {
+				return User{}, err
+			}
+
+			// get school and hydrate it
+			school, err := MainRegistry.GetSchoolByID(info.SchoolID)
+			if err != nil {
+				return User{}, err
+			}
+
+			school.Hydrate(data)
+
+			// set SchoolInfo
+			info.DisplayName = school.Name()
+			info.UserDetails = school.UserDetails()
+			info.School = school
+
+			user.Schools = append(user.Schools, info)
+		}
+
+		schoolRows.Close()
 
 		return user, nil
 	} else {
+		rows.Close()
 		return User{}, ErrNotFound
 	}
 }

@@ -50,6 +50,7 @@ func main() {
 	calendar.InitCalendar()
 
 	api.DB = DB
+	api.MainRegistry = schools.MainRegistry
 	api.RedisClient = RedisClient
 
 	auth.DB = DB

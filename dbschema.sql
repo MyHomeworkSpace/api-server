@@ -107,14 +107,6 @@ CREATE TABLE `dalton_periods` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-CREATE TABLE `dalton_status` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `status` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 CREATE TABLE `dalton_terms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `termId` int(11) DEFAULT NULL,
@@ -180,6 +172,15 @@ CREATE TABLE `prefs` (
   `userId` int(11) DEFAULT NULL,
   `key` mediumtext COLLATE utf8mb4_unicode_ci,
   `value` mediumtext COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `schools` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `schoolId` varchar(10) NOT NULL,
+  `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `userId` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

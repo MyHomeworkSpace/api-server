@@ -30,6 +30,15 @@ const (
 	AssemblyType_Lab
 )
 
+// An ImportStatus describes the status of a user's imported data
+type ImportStatus int
+
+const (
+	ImportStatusNone   ImportStatus = 0
+	ImportStatusOK     ImportStatus = 1
+	ImportStatusUpdate ImportStatus = 2
+)
+
 // these change every year
 var (
 	// the grade that someone in the class of 2019 is in for this year
