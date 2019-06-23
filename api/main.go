@@ -115,8 +115,6 @@ func Init(e *echo.Echo) {
 
 	e.GET("/calendar/getStatus", route(routeCalendarGetStatus, authLevelLoggedIn))
 	e.GET("/calendar/getView", route(routeCalendarGetView, authLevelLoggedIn))
-	e.POST("/calendar/import", route(routeCalendarImport, authLevelLoggedIn))
-	e.POST("/calendar/resetSchedule", route(routeCalendarResetSchedule, authLevelLoggedIn))
 
 	e.GET("/calendar/events/getWeek/:monday", route(routeCalendarEventsGetWeek, authLevelLoggedIn))
 
@@ -166,5 +164,7 @@ func Init(e *echo.Echo) {
 	e.GET("/prefs/getAll", route(routePrefsGetAll, authLevelLoggedIn))
 	e.POST("/prefs/set", route(routePrefsSet, authLevelLoggedIn))
 
+	e.POST("/schools/enroll", route(routeSchoolsEnroll, authLevelLoggedIn))
 	e.GET("/schools/lookup", route(routeSchoolsLookup, authLevelLoggedIn))
+	e.POST("/schools/unenroll", route(routeSchoolsUnenroll, authLevelLoggedIn))
 }
