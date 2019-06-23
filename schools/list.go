@@ -14,6 +14,16 @@ var MainRegistry = &Registry{
 	[]data.School{},
 }
 
+// GetSchoolByEmailDomain returns the school associated with the given email domain, or nil if it doesn't exist.
+func (r *Registry) GetSchoolByEmailDomain(domain string) (data.School, error) {
+	for _, school := range r.schoolList {
+		if school.EmailDomain() == domain {
+			return school, nil
+		}
+	}
+	return nil, data.ErrNotFound
+}
+
 // GetSchoolByID returns the school associated with the given ID, or nil if it doesn't exist.
 func (r *Registry) GetSchoolByID(id string) (data.School, error) {
 	for _, school := range r.schoolList {

@@ -165,4 +165,6 @@ func Init(e *echo.Echo) {
 	e.GET("/prefs/get/:key", route(routePrefsGet, authLevelLoggedIn))
 	e.GET("/prefs/getAll", route(routePrefsGetAll, authLevelLoggedIn))
 	e.POST("/prefs/set", route(routePrefsSet, authLevelLoggedIn))
+
+	e.GET("/schools/lookup", route(routeSchoolsLookup, authLevelLoggedIn))
 }

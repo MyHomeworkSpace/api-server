@@ -38,8 +38,15 @@ type SchoolInfo struct {
 	UserID       int    `json:"userID"`
 }
 
+// SchoolResult is a struct that holds information about a school that was searched for. (e.g. by email domain) It's used to hold data in a format that the JSON package can then marshal out to the client.
+type SchoolResult struct {
+	SchoolID    string `json:"schoolID"`
+	DisplayName string `json:"displayName"`
+}
+
 // SchoolRegistry is an interface implemented by the central registry in the schools package
 type SchoolRegistry interface {
+	GetSchoolByEmailDomain(domain string) (School, error)
 	GetSchoolByID(id string) (School, error)
 	Register(school School)
 }
