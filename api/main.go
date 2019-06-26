@@ -102,11 +102,14 @@ func Init(e *echo.Echo) {
 	e.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
 
 	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
+	e.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
+	e.POST("/auth/completeEmail", route(routeAuthCompleteEmail, authLevelNone))
 	e.POST("/auth/createAccount", route(routeAuthCreateAccount, authLevelNone))
 	e.GET("/auth/csrf", route(routeAuthCsrf, authLevelNone))
 	e.POST("/auth/login", route(routeAuthLogin, authLevelNone))
 	e.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
 	e.GET("/auth/logout", route(routeAuthLogout, authLevelLoggedIn))
+	e.POST("/auth/resetPassword", route(routeAuthResetPassword, authLevelNone))
 	e.GET("/auth/session", route(routeAuthSession, authLevelNone))
 
 	e.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll, authLevelLoggedIn))

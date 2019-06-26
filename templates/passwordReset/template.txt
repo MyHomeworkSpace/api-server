@@ -1,0 +1,9 @@
+Hi {{.User.Name | fname}},
+
+You're getting this email because you recently requested a password reset for your MyHomeworkSpace account.
+
+To finish resetting your password, visit the following link: {{.Data.url}}
+
+If this was not you, you can safely ignore this email.
+
+Thanks for using MyHomeworkSpace!

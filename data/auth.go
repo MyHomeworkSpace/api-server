@@ -1,6 +1,30 @@
 package data
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+	"time"
+
+	"gopkg.in/redis.v5"
+)
+
+// An EmailTokenType describes different types of email token
+type EmailTokenType int
+
+// Define the default EmailTokenType.
+const (
+	EmailTokenNone EmailTokenType = iota
+	EmailTokenResetPassword
+	EmailTokenChangeEmail
+)
+
+// An EmailToken is used for situations like an email change or a password reset, where a confirmation email must be sent.
+type EmailToken struct {
+	Token    string         `json:"token"`
+	Type     EmailTokenType `json:"type"`
+	Metadata string         `json:"metadata"`
+	UserID   int            `json:"userID"`
+}
 
 type User struct {
 	ID                 int          `json:"id"`
@@ -21,6 +45,35 @@ type Tab struct {
 	Icon   string `json:"icon"`
 	Label  string `json:"label"`
 	Target string `json:"target"`
+}
+
+// GetEmailToken fetches the given email token.
+func GetEmailToken(token string) (EmailToken, error) {
+	storedToken, err := RedisClient.HGetAll("token:" + token).Result()
+	if err == redis.Nil {
+		return EmailToken{}, ErrNotFound
+	} else if err != nil {
+		return EmailToken{}, err
+	}
+
+	tokenType, err := strconv.Atoi(storedToken["type"])
+	if err != nil {
+		return EmailToken{}, err
+	}
+
+	userID, err := strconv.Atoi(storedToken["userID"])
+	if err != nil {
+		return EmailToken{}, err
+	}
+
+	response := EmailToken{
+		Token:    token,
+		Type:     EmailTokenType(tokenType),
+		Metadata: storedToken["metadata"],
+		UserID:   userID,
+	}
+
+	return response, nil
 }
 
 // GetTabsByUserID fetches all tabs that the given user has access to.
@@ -103,4 +156,24 @@ func GetUserByID(id int) (User, error) {
 		rows.Close()
 		return User{}, ErrNotFound
 	}
+}
+
+// DeleteEmailToken deletes the given email token.
+func DeleteEmailToken(token EmailToken) error {
+	return RedisClient.Del("token:" + token.Token).Err()
+}
+
+// SaveEmailToken saves the given email token with a default expiry.
+func SaveEmailToken(token EmailToken) error {
+	err := RedisClient.HMSet("token:"+token.Token, map[string]string{
+		"type":     strconv.Itoa(int(token.Type)),
+		"metadata": token.Metadata,
+		"userID":   strconv.Itoa(token.UserID),
+	}).Err()
+
+	if err != nil {
+		return err
+	}
+
+	return RedisClient.Expire("token:"+token.Token, 1*time.Hour).Err()
 }

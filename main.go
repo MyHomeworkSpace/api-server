@@ -58,6 +58,7 @@ func main() {
 
 	data.DB = DB
 	data.MainRegistry = schools.MainRegistry
+	data.RedisClient = RedisClient
 
 	schools.MainRegistry.Register(dalton.CreateSchool())
 
@@ -92,6 +93,9 @@ func main() {
 				return next(c)
 			}
 			if strings.HasPrefix(c.Request().URL.Path, "/application/requestAuth") {
+				return next(c)
+			}
+			if strings.HasPrefix(c.Request().URL.Path, "/auth/completeEmailStart") {
 				return next(c)
 			}
 			_, err := c.Cookie("session")

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/MyHomeworkSpace/api-server/util"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/pquerna/otp/totp"
@@ -11,6 +13,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/email"
 
 	"github.com/labstack/echo"
 )
@@ -23,6 +26,12 @@ type CSRFResponse struct {
 type SessionResponse struct {
 	Status  string `json:"status"`
 	Session string `json:"session"`
+}
+
+type TokenResponse struct {
+	Status       string          `json:"status"`
+	Token        data.EmailToken `json:"token"`
+	InfoRequired bool            `json:"infoRequired"`
 }
 
 type UserResponse struct {
@@ -95,6 +104,10 @@ func isInternalRequest(c *echo.Context) bool {
 	}
 }
 
+func validatePassword(password string) bool {
+	return true
+}
+
 /*
  * routes
  */
@@ -106,6 +119,70 @@ func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.C
 		return
 	}
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"completeEmail:"+ec.Param("token"))
+}
+
+func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("token") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	token, err := data.GetEmailToken(ec.FormValue("token"))
+	if err == data.ErrNotFound {
+		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		return
+	} else if err != nil {
+		ErrorLog_LogError("completing email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	if token.Type == data.EmailTokenResetPassword {
+		if ec.FormValue("password") == "" {
+			ec.JSON(http.StatusOK, TokenResponse{"ok", token, true})
+			return
+		}
+
+		password := ec.FormValue("password")
+
+		if !validatePassword(password) {
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			return
+		}
+
+		// generate their hash
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			ErrorLog_LogError("converting Dalton user", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		// save their hash
+		_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), token.UserID)
+		if err != nil {
+			ErrorLog_LogError("converting Dalton user", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+	} else if token.Type == data.EmailTokenChangeEmail {
+		// TODO: do it
+		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+	} else {
+		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		return
+	}
+
+	err = data.DeleteEmailToken(token)
+	if err != nil {
+		ErrorLog_LogError("completing email", err)
+	}
 }
 
 func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -312,6 +389,73 @@ func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	newSession := auth.SessionInfo{-1}
 	auth.SetSession(cookie.Value, newSession)
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("email") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	emailAddress := ec.FormValue("email")
+
+	// we check if they're already in our db
+	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", emailAddress)
+	if err != nil {
+		ErrorLog_LogError("password reset", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer userRows.Close()
+	if userRows.Next() {
+		// email is registered
+
+		userID := -1
+		userRows.Scan(&userID)
+
+		user, err := data.GetUserByID(userID)
+		if err == data.ErrNotFound {
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
+			return
+		} else if err != nil {
+			ErrorLog_LogError("password reset", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		tokenString, err := util.GenerateRandomString(64)
+		if err != nil {
+			ErrorLog_LogError("password reset", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		err = data.SaveEmailToken(data.EmailToken{
+			Token:    tokenString,
+			Type:     data.EmailTokenResetPassword,
+			Metadata: "",
+			UserID:   user.ID,
+		})
+		if err != nil {
+			ErrorLog_LogError("password reset", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		err = email.Send("", &user, "passwordReset", map[string]interface{}{
+			"url": config.GetCurrent().Server.APIURLBase + "auth/completeEmailStart/" + tokenString,
+		})
+		if err != nil {
+			ErrorLog_LogError("password reset", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	} else {
+		// email is not registered, bye
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "no_account"})
+	}
 }
 
 func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {

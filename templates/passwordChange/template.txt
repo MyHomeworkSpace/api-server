@@ -1,0 +1,7 @@
+Hi {{.User.Name | fname}},
+
+You're getting this email because you recently changed the password for your MyHomeworkSpace account.
+
+If this was not you, contact us immediately at hello@myhomework.space.
+
+Thanks for using MyHomeworkSpace!
