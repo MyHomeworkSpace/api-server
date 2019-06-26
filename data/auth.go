@@ -7,6 +7,7 @@ type User struct {
 	Name               string       `json:"name"`
 	Username           string       `json:"-"`
 	Email              string       `json:"email"`
+	PasswordHash       string       `json:"-"`
 	Type               string       `json:"type"`
 	Features           string       `json:"features"`
 	Level              int          `json:"level"`
@@ -43,7 +44,7 @@ func GetTabsByUserID(userID int) ([]Tab, error) {
 
 // GetUserByID fetches data for the given user ID.
 func GetUserByID(id int) (User, error) {
-	rows, err := DB.Query("SELECT id, name, username, email, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
+	rows, err := DB.Query("SELECT id, name, username, email, password, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
 	if err != nil {
 		return User{}, err
 	}
@@ -51,7 +52,7 @@ func GetUserByID(id int) (User, error) {
 	if rows.Next() {
 		user := User{}
 
-		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
+		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
 		if err != nil {
 			return User{}, err
 		}

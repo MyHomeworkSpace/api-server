@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/pquerna/otp/totp"
 
 	"github.com/MyHomeworkSpace/api-server/auth"
@@ -106,79 +108,8 @@ func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.C
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
-func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	cookie, _ := ec.Cookie("csrfToken")
-	ec.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
-}
-
-func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("username") == "" || ec.FormValue("password") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
-		return
-	}
-
-	username := strings.ToLower(ec.FormValue("username"))
-	password := ec.FormValue("password")
-
-	data, resp, err := auth.DaltonLogin(username, password)
-	if resp != "" || err != nil {
-		ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
-		return
-	}
-
-	rows, err := DB.Query("SELECT id FROM users WHERE username = ?", ec.FormValue("username"))
-	if err != nil {
-		ErrorLog_LogError("getting user information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-		return
-	}
-	defer rows.Close()
-
-	session := auth.SessionInfo{
-		UserID: -1,
-	}
-	if rows.Next() {
-		// exists, use it
-		userID := -1
-
-		rows.Scan(&userID)
-
-		enrolled2fa, err := isUser2FAEnrolled(userID)
-		if err != nil {
-			ErrorLog_LogError("getting user enrollment status", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-
-		if enrolled2fa {
-			if ec.FormValue("code") == "" {
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
-				return
-			}
-
-			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
-			if err != nil {
-				ErrorLog_LogError("getting user 2fa secret", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-				return
-			}
-			defer secretRows.Close()
-
-			secret := ""
-
-			secretRows.Next()
-			secretRows.Scan(&secret)
-
-			if !totp.Validate(ec.FormValue("code"), secret) {
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
-				return
-			}
-		}
-
-		session = auth.SessionInfo{
-			UserID: userID,
-		}
-	} else {
+func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	/*
 		// doesn't exist, insert new record
 		res, err := DB.Exec(
 			"INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)",
@@ -210,12 +141,146 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		session = auth.SessionInfo{
 			UserID: int(lastID),
 		}
+	*/
+}
+
+func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	cookie, _ := ec.Cookie("csrfToken")
+	ec.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
+}
+
+func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("email") == "" || ec.FormValue("password") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
 	}
 
-	cookie, _ := ec.Cookie("session")
-	auth.SetSession(cookie.Value, session)
+	email := ec.FormValue("email")
+	password := ec.FormValue("password")
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	// we check if they're already in our db
+	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", email)
+	if err != nil {
+		ErrorLog_LogError("getting user information", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer userRows.Close()
+	if userRows.Next() {
+		// email is registered
+		// this is the fun part
+
+		userID := -1
+		userRows.Scan(&userID)
+
+		user, err := data.GetUserByID(userID)
+		if err == data.ErrNotFound {
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
+			return
+		} else if err != nil {
+			ErrorLog_LogError("getting user information", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		needsConversion := false
+		// first we check for the easy path: they have a hash stored with us
+		if user.PasswordHash != "" {
+			// they do
+			err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+			if err == bcrypt.ErrMismatchedHashAndPassword {
+				// bye
+				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "creds_incorrect"})
+				return
+			} else if err != nil {
+				ErrorLog_LogError("user login", err)
+				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				return
+			}
+
+			// if we got here, no error -> password correct
+		} else {
+			// they do not, are they a dalton member? (that is, do they have a username?)
+			if user.Username != "" {
+				// they are
+				// this means we must authenticate with dalton
+				_, resp, err := auth.DaltonLogin(user.Username, password)
+				if resp != "" || err != nil {
+					ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
+					return
+				}
+
+				// the sign-in worked
+				// flag the account for conversion after passing 2fa
+				needsConversion = true
+			}
+		}
+
+		// now we check for totp
+		enrolled2fa, err := isUser2FAEnrolled(userID)
+		if err != nil {
+			ErrorLog_LogError("getting user 2fa enrollment status", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		if enrolled2fa {
+			if ec.FormValue("code") == "" {
+				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
+				return
+			}
+
+			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
+			if err != nil {
+				ErrorLog_LogError("getting user 2fa secret", err)
+				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				return
+			}
+			defer secretRows.Close()
+
+			secret := ""
+
+			secretRows.Next()
+			secretRows.Scan(&secret)
+
+			if !totp.Validate(ec.FormValue("code"), secret) {
+				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
+				return
+			}
+		}
+
+		if needsConversion {
+			// if we got here, they signed in with dalton
+
+			// generate their hash
+			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+			if err != nil {
+				ErrorLog_LogError("converting Dalton user", err)
+				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				return
+			}
+
+			// save their hash
+			_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), userID)
+			if err != nil {
+				ErrorLog_LogError("converting Dalton user", err)
+				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				return
+			}
+		}
+
+		// if we've made it this far, they're signed in
+		session := auth.SessionInfo{
+			UserID: userID,
+		}
+		cookie, _ := ec.Cookie("session")
+		auth.SetSession(cookie.Value, session)
+
+		ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	} else {
+		// email is not registered, bye
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "no_account"})
+	}
 }
 
 func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {

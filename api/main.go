@@ -102,6 +102,7 @@ func Init(e *echo.Echo) {
 	e.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
 
 	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
+	e.POST("/auth/createAccount", route(routeAuthCreateAccount, authLevelNone))
 	e.GET("/auth/csrf", route(routeAuthCsrf, authLevelNone))
 	e.POST("/auth/login", route(routeAuthLogin, authLevelNone))
 	e.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
