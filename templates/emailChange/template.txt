@@ -1,0 +1,9 @@
+Hi {{.User.Name | fname}},
+
+You're getting this email because you recently requested to change the email address for your MyHomeworkSpace account.
+
+To finish changing your email address, visit the following link: {{.Data.url}}
+
+If this was not you, you can safely ignore this email.
+
+Thanks for using MyHomeworkSpace!

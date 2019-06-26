@@ -56,6 +56,10 @@ func GetEmailToken(token string) (EmailToken, error) {
 		return EmailToken{}, err
 	}
 
+	if storedToken["type"] == "" {
+		return EmailToken{}, ErrNotFound
+	}
+
 	tokenType, err := strconv.Atoi(storedToken["type"])
 	if err != nil {
 		return EmailToken{}, err

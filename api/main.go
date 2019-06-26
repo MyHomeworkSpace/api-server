@@ -101,6 +101,8 @@ func Init(e *echo.Echo) {
 	e.POST("/application/manage/update", route(routeApplicationManageUpdate, authLevelLoggedIn))
 	e.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
 
+	e.POST("/auth/changeEmail", route(routeAuthChangeEmail, authLevelLoggedIn))
+	e.POST("/auth/changePassword", route(routeAuthChangePassword, authLevelLoggedIn))
 	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
 	e.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
 	e.POST("/auth/completeEmail", route(routeAuthCompleteEmail, authLevelNone))

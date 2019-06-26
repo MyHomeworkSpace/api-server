@@ -108,9 +108,103 @@ func validatePassword(password string) bool {
 	return true
 }
 
+func handlePasswordChange(user *data.User) error {
+	return email.Send("", user, "passwordChange", map[string]interface{}{})
+}
+
 /*
  * routes
  */
+func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("new") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	new := ec.FormValue("new")
+
+	if !util.EmailIsValid(new) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	tokenString, err := util.GenerateRandomString(64)
+	if err != nil {
+		ErrorLog_LogError("changing email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = data.SaveEmailToken(data.EmailToken{
+		Token:    tokenString,
+		Type:     data.EmailTokenChangeEmail,
+		Metadata: new,
+		UserID:   c.User.ID,
+	})
+	if err != nil {
+		ErrorLog_LogError("changing email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = email.Send(new, c.User, "emailChange", map[string]interface{}{
+		"url": config.GetCurrent().Server.APIURLBase + "auth/completeEmailStart/" + tokenString,
+	})
+	if err != nil {
+		ErrorLog_LogError("changing email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("current") == "" || ec.FormValue("new") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	current := ec.FormValue("current")
+	new := ec.FormValue("new")
+
+	// first verify if the current password was correct
+	err := bcrypt.CompareHashAndPassword([]byte(c.User.PasswordHash), []byte(current))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "creds_incorrect"})
+		return
+	} else if err != nil {
+		ErrorLog_LogError("changing password", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// generate their hash
+	hash, err := bcrypt.GenerateFromPassword([]byte(new), bcrypt.DefaultCost)
+	if err != nil {
+		ErrorLog_LogError("changing password", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// save their hash
+	_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), c.User.ID)
+	if err != nil {
+		ErrorLog_LogError("changing password", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = handlePasswordChange(c.User)
+	if err != nil {
+		ErrorLog_LogError("changing password", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
 func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	_, err := DB.Exec("UPDATE users SET showMigrateMessage = 0 WHERE id = ?", c.User.ID)
 	if err != nil {
@@ -157,7 +251,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		// generate their hash
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			ErrorLog_LogError("converting Dalton user", err)
+			ErrorLog_LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -165,14 +259,34 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		// save their hash
 		_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), token.UserID)
 		if err != nil {
-			ErrorLog_LogError("converting Dalton user", err)
+			ErrorLog_LogError("completing email", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		user, err := data.GetUserByID(token.UserID)
+		if err != nil {
+			ErrorLog_LogError("completing email", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		err = handlePasswordChange(&user)
+		if err != nil {
+			ErrorLog_LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
 	} else if token.Type == data.EmailTokenChangeEmail {
-		// TODO: do it
+		_, err = DB.Exec("UPDATE users SET email = ? WHERE id = ?", token.Metadata, token.UserID)
+		if err != nil {
+			ErrorLog_LogError("completing email", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
 		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
 	} else {
 		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
