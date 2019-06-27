@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"mime/quotedprintable"
 	"net/smtp"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -56,7 +55,7 @@ func Init() {
 }
 
 func renderTextTemplate(filePath string, data templateData) (string, error) {
-	tpl := textTpl.Must(textTpl.New(path.Base(filePath)).Funcs(textFuncs).ParseFiles(filePath))
+	tpl := textTpl.Must(textTpl.New(filepath.Base(filePath)).Funcs(textFuncs).ParseFiles(filePath))
 	var outBuffer bytes.Buffer
 	err := tpl.Execute(&outBuffer, data)
 	if err != nil {
@@ -66,7 +65,7 @@ func renderTextTemplate(filePath string, data templateData) (string, error) {
 }
 
 func renderHTMLTemplate(basePath string, filePath string, data templateData) (string, error) {
-	tpl := htmlTpl.Must(htmlTpl.New(path.Base(filePath)).Funcs(htmlFuncs).ParseFiles(filePath, basePath))
+	tpl := htmlTpl.Must(htmlTpl.New(filepath.Base(filePath)).Funcs(htmlFuncs).ParseFiles(filePath, basePath))
 	var outBuffer bytes.Buffer
 	err := tpl.Execute(&outBuffer, data)
 	if err != nil {
