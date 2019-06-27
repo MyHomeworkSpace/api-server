@@ -1,6 +1,32 @@
-{{define "header"}}<!DOCTYPE html><html><head><title>MyHomeworkSpace</title><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"></head><body style="font-family:Arial,sans-serif;font-size:14px;padding:20px;"><div style="margin-bottom: 10px"><img src="https://myhomework.space/img/icon128.png" width="48px"></div><div class="body" style="font-family: sans-serif">
-{{end}}
+{{define "header"}}
+<!DOCTYPE html>
+<html>
 
-{{define "footer"}}
-</div><div class="footer" style="color:#444;font-size:12px;margin-top:10px;">You received this email because you have a MyHomeworkSpace account. You can control what emails you receive from <a href="https://myhomework.space/app.html#!settings">your account settings page</a>.</div></div></body></html>
+<head>
+    <title>MyHomeworkSpace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+</head>
+
+<body style="font-family:Arial,sans-serif;font-size:14px;padding:10px;margin-bottom: 20px;">
+    <div
+        style="margin-bottom: 10px;background-color:#343a40; text-align: center; padding: 30px;background-image: url(http://myhomework.invalid/img/backgrounds/bg1.jpg);background-position: center;">
+        <p style="font-size: 45px; color: white;margin-top: 0;margin-bottom: 0;"><img
+                src="https://myhomework.space/img/icon128.png" width="48px">
+            MyHomeworkSpace</p>
+    </div>
+    </div>
+    <div class="body">
+        {{end}}
+
+        {{define "footer"}}
+    </div>
+    <div class="footer" style="color:#444;font-size:12px;margin-top:20px;">
+        <hr />
+        You received this email because you have a
+        MyHomeworkSpace account. You can control what emails you receive from <a
+            href="https://myhomework.space/app.html#!settings">your account settings page</a>.</div>
+    </div>
+</body>
+
+</html>
 {{end}}
