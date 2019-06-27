@@ -116,6 +116,11 @@ func Send(recipient string, user *data.User, templateName string, data map[strin
 	}
 
 	// encode as quotedprintable
+	textEncodedBuf := bytes.NewBufferString("")
+	textEncodedWriter := quotedprintable.NewWriter(textEncodedBuf)
+	textEncodedWriter.Write([]byte(textMessage))
+	textEncodedWriter.Close()
+
 	htmlEncodedBuf := bytes.NewBufferString("")
 	htmlEncodedWriter := quotedprintable.NewWriter(htmlEncodedBuf)
 	htmlEncodedWriter.Write([]byte(htmlMessage))
@@ -135,8 +140,9 @@ func Send(recipient string, user *data.User, templateName string, data map[strin
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: multipart/alternative; boundary=\"mimeboundary\"\r\n\r\n" +
 			"--mimeboundary\r\n" +
-			"Content-Type: text/plain\r\n\r\n" +
-			textMessage + "\r\n" +
+			"Content-Type: text/plain; charset=\"UTF-8\"\r\n" +
+			"Content-Transfer-Encoding: quoted-printable\r\n\r\n" +
+			textEncodedBuf.String() + "\r\n" +
 			"--mimeboundary\r\n" +
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n" +
 			"Content-Transfer-Encoding: quoted-printable\r\n\r\n" +
