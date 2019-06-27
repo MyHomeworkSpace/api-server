@@ -105,7 +105,7 @@ func isInternalRequest(c *echo.Context) bool {
 }
 
 func validatePassword(password string) bool {
-	return true
+	return strings.ContainsAny(password, "abcdefghijklmnopqrstuvwxyz") && strings.ContainsAny(password, "0123456789") && len(password) > 8
 }
 
 func handlePasswordChange(user *data.User) error {
@@ -162,6 +162,11 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("current") == "" || ec.FormValue("new") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
+
+	if !validatePassword(ec.FormValue("new")) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "insecure_password"})
 		return
 	}
 
@@ -244,7 +249,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		password := ec.FormValue("password")
 
 		if !validatePassword(password) {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "insecure_password"})
 			return
 		}
 
