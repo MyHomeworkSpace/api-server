@@ -35,7 +35,8 @@ type DatabaseConfig struct {
 
 type EmailConfig struct {
 	Enabled      bool
-	From         string
+	FromAddress  string
+	FromDisplay  string
 	SMTPHost     string
 	SMTPPort     int
 	SMTPSecure   bool

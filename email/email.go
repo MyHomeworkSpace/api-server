@@ -126,10 +126,10 @@ func Send(recipient string, user *data.User, templateName string, data map[strin
 	messageIDDomain := strings.Split(emailConfig.SMTPUsername, "@")[1]
 
 	rawMessage := []byte(
-		"From: " + emailConfig.From + "\r\n" +
+		"From: " + emailConfig.FromDisplay + "\r\n" +
 			"To: " + toFull + "\r\n" +
 			"Subject: " + subject + "\r\n" +
-			"Sender: " + emailConfig.From + "\r\n" +
+			"Sender: " + emailConfig.FromDisplay + "\r\n" +
 			"Message-ID: <" + messageIDFirst + "@" + messageIDDomain + ">\r\n" +
 			"Date: " + time.Now().Format("Mon, 02 Jan 2006 15:04:05 -0700") + "\r\n" +
 			"MIME-Version: 1.0\r\n" +
@@ -145,7 +145,7 @@ func Send(recipient string, user *data.User, templateName string, data map[strin
 
 	auth := smtp.PlainAuth("", emailConfig.SMTPUsername, emailConfig.SMTPPassword, emailConfig.SMTPHost)
 
-	err = smtp.SendMail(emailConfig.SMTPHost+":"+strconv.Itoa(emailConfig.SMTPPort), auth, emailConfig.From, []string{toAddress}, rawMessage)
+	err = smtp.SendMail(emailConfig.SMTPHost+":"+strconv.Itoa(emailConfig.SMTPPort), auth, emailConfig.FromAddress, []string{toAddress}, rawMessage)
 	if err != nil {
 		return err
 	}
