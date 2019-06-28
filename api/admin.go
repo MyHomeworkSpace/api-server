@@ -111,6 +111,28 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
+	user := c.User
+
+	if ec.FormValue("userID") != "" {
+		userID, err := strconv.Atoi(ec.FormValue("userID"))
+		if err != nil {
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			return
+		}
+
+		userStruct, err := data.GetUserByID(userID)
+		if err == data.ErrNotFound {
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			return
+		} else if err != nil {
+			ErrorLog_LogError("sending email", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		user = &userStruct
+	}
+
 	data := map[string]interface{}{}
 	err := json.Unmarshal([]byte(ec.FormValue("data")), &data)
 	if err != nil {
@@ -118,7 +140,7 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	err = email.Send("", c.User, ec.FormValue("template"), data)
+	err = email.Send("", user, ec.FormValue("template"), data)
 	if err != nil {
 		ErrorLog_LogError("sending email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
