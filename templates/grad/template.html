@@ -1,16 +1,17 @@
 {{template "header"}}
 Hi {{.User.Name | fname}},<br />
 <br />
-You're getting this email because you recently graduated from Dalton, and your Dalton account is going away soon. If you'd like to continue using MyHomeworkSpace in college, we've made a new MyHomeworkSpace account for you. (don't worry, all of your data is still there!)<br />
+You're getting this email because you recently graduated from Dalton, and your Dalton account is going away soon. If you'd like to continue using MyHomeworkSpace in the future, we've made a new MyHomeworkSpace account for you. (don't worry, all of your data is still there!)<br />
 <br />
 You can sign in to MyHomeworkSpace, just like you normally would, with the following credentials:<br />
 <br />
-Email: {{.User.Email}}<br />
+Email: {{.User.Email}} (don't forget the @dalton.org!)<br />
 Password is the same you'd use for FirstClass, Classes, etc<br />
+<a href="https://myhomework.space/app.html">Log in now</a><br />
 <br />
-Once you've logged in, you can visit the Settings page, where you can change your email address and password. <strong>We recommend doing this as soon as you can&mdash;otherwise, we'll have no way of contacting you!</strong><br />
+Once you've logged in, you can visit the Settings page, where you can change your email address and password. <strong>We recommend updating your email as soon as you can&mdash;otherwise, we'll have no way of contacting you!</strong><br />
 <br />
-If you need any help, or have any questions, you can email us at hello@myhomework.space.<br />
+If you need any help, or have any questions, you can email us at <a href="mailto:hello@myhomework.space">hello@myhomework.space</a>.<br />
 <br />
 Thanks!<br />
 {{template "footer"}}
