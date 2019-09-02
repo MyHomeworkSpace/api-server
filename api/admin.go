@@ -9,6 +9,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
@@ -25,7 +26,7 @@ type UserCountResponse struct {
 func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 	if err != nil {
-		ErrorLog_LogError("getting all feedback", err)
+		errorlog.LogError("getting all feedback", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -53,7 +54,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 
 	rows, err := DB.Query("SELECT screenshot FROM feedback WHERE id = ?", id)
 	if err != nil {
-		ErrorLog_LogError("getting screenshot", err)
+		errorlog.LogError("getting screenshot", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -66,7 +67,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 	var screenshot64 string
 	err = rows.Scan(&screenshot64)
 	if err != nil {
-		ErrorLog_LogError("getting screenshot", err)
+		errorlog.LogError("getting screenshot", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -82,7 +83,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 
 	screenshot, err := base64.StdEncoding.DecodeString(screenshot64)
 	if err != nil {
-		ErrorLog_LogError("getting screenshot", err)
+		errorlog.LogError("getting screenshot", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -93,7 +94,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT COUNT(*) FROM users")
 	if err != nil {
-		ErrorLog_LogError("getting user count", err)
+		errorlog.LogError("getting user count", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -125,7 +126,7 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 			return
 		} else if err != nil {
-			ErrorLog_LogError("sending email", err)
+			errorlog.LogError("sending email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -142,7 +143,7 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 	err = email.Send("", user, ec.FormValue("template"), data)
 	if err != nil {
-		ErrorLog_LogError("sending email", err)
+		errorlog.LogError("sending email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

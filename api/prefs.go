@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
@@ -21,7 +22,7 @@ type PrefsResponse struct {
 func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.Param("key"))
 	if err != nil {
-		ErrorLog_LogError("getting pref", err)
+		errorlog.LogError("getting pref", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -41,7 +42,7 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting prefs", err)
+		errorlog.LogError("getting prefs", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -66,7 +67,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.FormValue("key"))
 	if err != nil {
-		ErrorLog_LogError("setting pref", err)
+		errorlog.LogError("setting pref", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -79,7 +80,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 			c.User.ID, ec.FormValue("key"), ec.FormValue("value"),
 		)
 		if err != nil {
-			ErrorLog_LogError("inserting pref", err)
+			errorlog.LogError("inserting pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -90,7 +91,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 			ec.FormValue("key"), ec.FormValue("value"), c.User.ID, ec.FormValue("key"),
 		)
 		if err != nil {
-			ErrorLog_LogError("updating pref", err)
+			errorlog.LogError("updating pref", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}

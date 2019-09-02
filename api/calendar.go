@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 
 	"github.com/MyHomeworkSpace/api-server/calendar"
 
@@ -26,14 +27,14 @@ func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	schools, err := data.GetSchoolsForUser(c.User)
 	if err != nil {
-		ErrorLog_LogError("getting calendar status", err)
+		errorlog.LogError("getting calendar status", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	needsUpdate, err := schools[0].NeedsUpdate(DB)
 	if err != nil {
-		ErrorLog_LogError("getting calendar status", err)
+		errorlog.LogError("getting calendar status", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -55,7 +56,7 @@ func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	timeZone, err := time.LoadLocation("America/New_York")
 	if err != nil {
-		ErrorLog_LogError("timezone info", err)
+		errorlog.LogError("timezone info", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -79,7 +80,7 @@ func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	view, err := calendar.GetView(DB, c.User, timeZone, startDate, endDate)
 	if err != nil {
-		ErrorLog_LogError("getting calendar view", err)
+		errorlog.LogError("getting calendar view", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

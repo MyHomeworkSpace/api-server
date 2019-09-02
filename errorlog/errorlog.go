@@ -1,11 +1,12 @@
-package api
+package errorlog
 
 import (
 	"log"
 	"runtime"
 )
 
-func ErrorLog_LogError(desc string, err error) {
+// LogError logs the given error to the default logger and any configured services.
+func LogError(desc string, err error) {
 	buf := make([]byte, 1<<16)
 	stackSize := runtime.Stack(buf, false)
 	stackTrace := string(buf[0:stackSize])

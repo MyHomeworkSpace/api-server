@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/slack"
 
 	"github.com/labstack/echo"
@@ -20,7 +21,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		c.User.ID, ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"),
 	)
 	if err != nil {
-		ErrorLog_LogError("adding feedback", err)
+		errorlog.LogError("adding feedback", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -82,7 +83,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 			},
 		})
 		if err != nil {
-			ErrorLog_LogError("posting feedback to Slack", err)
+			errorlog.LogError("posting feedback to Slack", err)
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
@@ -144,7 +145,7 @@ func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo
 func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting custom prefixes", err)
+		errorlog.LogError("getting custom prefixes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -160,7 +161,7 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 		err := json.Unmarshal([]byte(wordsListString), &resp.Words)
 		if err != nil {
-			ErrorLog_LogError("parsing custom prefix words", err)
+			errorlog.LogError("parsing custom prefix words", err)
 		}
 
 		resp.TimedEvent = (timedEventInt == 1)
@@ -178,7 +179,7 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting prefixes", err)
+		errorlog.LogError("deleting prefixes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -190,7 +191,7 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 	_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting prefixes", err)
+		errorlog.LogError("deleting prefixes", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -244,7 +245,7 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("adding prefix", err)
+		errorlog.LogError("adding prefix", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

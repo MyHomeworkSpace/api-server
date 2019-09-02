@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
@@ -26,7 +27,7 @@ func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Conte
 
 	_, err := DB.Exec("INSERT INTO notifications (content, expiry) VALUES (?, ?)", ec.FormValue("content"), ec.FormValue("expiry"))
 	if err != nil {
-		ErrorLog_LogError("adding notification", err)
+		errorlog.LogError("adding notification", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -48,7 +49,7 @@ func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Co
 
 	_, err = DB.Exec("DELETE FROM notifications WHERE id = ?", id)
 	if err != nil {
-		ErrorLog_LogError("deleting notification", err)
+		errorlog.LogError("deleting notification", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -59,7 +60,7 @@ func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Co
 func routeNotificationsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `content`, `expiry` FROM notifications WHERE expiry > NOW()")
 	if err != nil {
-		ErrorLog_LogError("getting notification", err)
+		errorlog.LogError("getting notification", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

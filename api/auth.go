@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 
 	"golang.org/x/crypto/bcrypt"
@@ -130,7 +131,7 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	tokenString, err := util.GenerateRandomString(64)
 	if err != nil {
-		ErrorLog_LogError("changing email", err)
+		errorlog.LogError("changing email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -142,7 +143,7 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		UserID:   c.User.ID,
 	})
 	if err != nil {
-		ErrorLog_LogError("changing email", err)
+		errorlog.LogError("changing email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -151,7 +152,7 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		"url": config.GetCurrent().Server.APIURLBase + "auth/completeEmailStart/" + tokenString,
 	})
 	if err != nil {
-		ErrorLog_LogError("changing email", err)
+		errorlog.LogError("changing email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -179,7 +180,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "creds_incorrect"})
 		return
 	} else if err != nil {
-		ErrorLog_LogError("changing password", err)
+		errorlog.LogError("changing password", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -187,7 +188,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	// generate their hash
 	hash, err := bcrypt.GenerateFromPassword([]byte(new), bcrypt.DefaultCost)
 	if err != nil {
-		ErrorLog_LogError("changing password", err)
+		errorlog.LogError("changing password", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -195,14 +196,14 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	// save their hash
 	_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("changing password", err)
+		errorlog.LogError("changing password", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = handlePasswordChange(c.User)
 	if err != nil {
-		ErrorLog_LogError("changing password", err)
+		errorlog.LogError("changing password", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -213,7 +214,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	_, err := DB.Exec("UPDATE users SET showMigrateMessage = 0 WHERE id = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("clearing migration flag", err)
+		errorlog.LogError("clearing migration flag", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -235,7 +236,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
 		return
 	} else if err != nil {
-		ErrorLog_LogError("completing email", err)
+		errorlog.LogError("completing email", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -256,7 +257,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		// generate their hash
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			ErrorLog_LogError("completing email", err)
+			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -264,21 +265,21 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		// save their hash
 		_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), token.UserID)
 		if err != nil {
-			ErrorLog_LogError("completing email", err)
+			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		user, err := data.GetUserByID(token.UserID)
 		if err != nil {
-			ErrorLog_LogError("completing email", err)
+			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		err = handlePasswordChange(&user)
 		if err != nil {
-			ErrorLog_LogError("completing email", err)
+			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -287,7 +288,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	} else if token.Type == data.EmailTokenChangeEmail {
 		_, err = DB.Exec("UPDATE users SET email = ? WHERE id = ?", token.Metadata, token.UserID)
 		if err != nil {
-			ErrorLog_LogError("completing email", err)
+			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -300,7 +301,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	err = data.DeleteEmailToken(token)
 	if err != nil {
-		ErrorLog_LogError("completing email", err)
+		errorlog.LogError("completing email", err)
 	}
 }
 
@@ -312,13 +313,13 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 			data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0],
 		)
 		if err != nil {
-			ErrorLog_LogError("trying to set user information", err)
+			errorlog.LogError("trying to set user information", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
 		lastID, err := res.LastInsertId()
 		if err != nil {
-			ErrorLog_LogError("trying to set user information", err)
+			errorlog.LogError("trying to set user information", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -329,7 +330,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 			int(lastID), int(lastID), int(lastID), int(lastID), int(lastID),
 		)
 		if err != nil {
-			ErrorLog_LogError("trying to add default classes", err)
+			errorlog.LogError("trying to add default classes", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -357,7 +358,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 	// we check if they're already in our db
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", email)
 	if err != nil {
-		ErrorLog_LogError("getting user information", err)
+		errorlog.LogError("getting user information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -374,7 +375,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
 			return
 		} else if err != nil {
-			ErrorLog_LogError("getting user information", err)
+			errorlog.LogError("getting user information", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -389,7 +390,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "creds_incorrect"})
 				return
 			} else if err != nil {
-				ErrorLog_LogError("user login", err)
+				errorlog.LogError("user login", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				return
 			}
@@ -415,7 +416,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		// now we check for totp
 		enrolled2fa, err := isUser2FAEnrolled(userID)
 		if err != nil {
-			ErrorLog_LogError("getting user 2fa enrollment status", err)
+			errorlog.LogError("getting user 2fa enrollment status", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -428,7 +429,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 
 			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
 			if err != nil {
-				ErrorLog_LogError("getting user 2fa secret", err)
+				errorlog.LogError("getting user 2fa secret", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				return
 			}
@@ -451,7 +452,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			// generate their hash
 			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			if err != nil {
-				ErrorLog_LogError("converting Dalton user", err)
+				errorlog.LogError("converting Dalton user", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				return
 			}
@@ -459,7 +460,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			// save their hash
 			_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), userID)
 			if err != nil {
-				ErrorLog_LogError("converting Dalton user", err)
+				errorlog.LogError("converting Dalton user", err)
 				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 				return
 			}
@@ -482,7 +483,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	tabs, err := data.GetTabsByUserID(c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting user information", err)
+		errorlog.LogError("getting user information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -521,7 +522,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	// we check if they're already in our db
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", emailAddress)
 	if err != nil {
-		ErrorLog_LogError("password reset", err)
+		errorlog.LogError("password reset", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -537,14 +538,14 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
 			return
 		} else if err != nil {
-			ErrorLog_LogError("password reset", err)
+			errorlog.LogError("password reset", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		tokenString, err := util.GenerateRandomString(64)
 		if err != nil {
-			ErrorLog_LogError("password reset", err)
+			errorlog.LogError("password reset", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -556,7 +557,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 			UserID:   user.ID,
 		})
 		if err != nil {
-			ErrorLog_LogError("password reset", err)
+			errorlog.LogError("password reset", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -565,7 +566,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 			"url": config.GetCurrent().Server.APIURLBase + "auth/completeEmailStart/" + tokenString,
 		})
 		if err != nil {
-			ErrorLog_LogError("password reset", err)
+			errorlog.LogError("password reset", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}

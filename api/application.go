@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/labstack/echo"
 )
@@ -43,7 +44,7 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 	// get the application
 	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.FormValue("clientId"))
 	if err != nil {
-		ErrorLog_LogError("completing application auth", err)
+		errorlog.LogError("completing application auth", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -60,7 +61,7 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 	// check if we've already authorized this application
 	tokenCheckRows, err := DB.Query("SELECT token FROM application_authorizations WHERE applicationId = ? AND userId = ?", application.ID, c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("completing application auth", err)
+		errorlog.LogError("completing application auth", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -77,14 +78,14 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 	// add the new authorization
 	token, err := util.GenerateRandomString(56)
 	if err != nil {
-		ErrorLog_LogError("generating application token", err)
+		errorlog.LogError("generating application token", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	_, err = DB.Exec("INSERT INTO application_authorizations(applicationId, userId, token) VALUES(?, ?, ?)", application.ID, c.User.ID, token)
 	if err != nil {
-		ErrorLog_LogError("authorizing application", err)
+		errorlog.LogError("authorizing application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -95,7 +96,7 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.Param("id"))
 	if err != nil {
-		ErrorLog_LogError("getting application information", err)
+		errorlog.LogError("getting application information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -115,7 +116,7 @@ func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context
 func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT application_authorizations.id, applications.id, applications.name, applications.authorName FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.userId = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting authorizations", err)
+		errorlog.LogError("getting authorizations", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -143,7 +144,7 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.
 	// find the authorization
 	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("revoking authorization", err)
+		errorlog.LogError("revoking authorization", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -165,7 +166,7 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.
 	// delete the authorization
 	_, err = DB.Exec("DELETE FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("revoking authorization", err)
+		errorlog.LogError("revoking authorization", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -182,7 +183,7 @@ func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.
 	// delete the authorization
 	_, err := DB.Exec("DELETE FROM application_authorizations WHERE token = ?", GetAuthToken(&ec))
 	if err != nil {
-		ErrorLog_LogError("revoking authorization", err)
+		errorlog.LogError("revoking authorization", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -194,7 +195,7 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 	// generate client id
 	clientId, err := util.GenerateRandomString(42)
 	if err != nil {
-		ErrorLog_LogError("creating application", err)
+		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -202,13 +203,13 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 	// get author name
 	rows, err := DB.Query("SELECT name FROM users WHERE id = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("creating application", err)
+		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		ErrorLog_LogError("creating application", err)
+		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -218,7 +219,7 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 	// actually create the application
 	_, err = DB.Exec("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')", c.User.ID, authorName, clientId)
 	if err != nil {
-		ErrorLog_LogError("creating application", err)
+		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -229,7 +230,7 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting user applications", err)
+		errorlog.LogError("getting user applications", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -254,7 +255,7 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 	// check that you can actually edit the application
 	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("updating application", err)
+		errorlog.LogError("updating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -267,7 +268,7 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 	// update the application
 	_, err = DB.Exec("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?", ec.FormValue("name"), ec.FormValue("callbackUrl"), ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("updating application", err)
+		errorlog.LogError("updating application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -284,7 +285,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	// check that you can actually edit the application
 	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting application", err)
+		errorlog.LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -299,7 +300,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	// delete authorizations
 	_, err = tx.Exec("DELETE FROM application_authorizations WHERE applicationId = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting application", err)
+		errorlog.LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -307,7 +308,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	// delete applications
 	_, err = tx.Exec("DELETE FROM applications WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting application", err)
+		errorlog.LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -315,7 +316,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	// go!
 	err = tx.Commit()
 	if err != nil {
-		ErrorLog_LogError("deleting application", err)
+		errorlog.LogError("deleting application", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 
 	"github.com/labstack/echo"
 )
@@ -25,7 +26,7 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 
 	providers, err := data.GetProvidersForUser(c.User)
 	if err != nil {
-		ErrorLog_LogError("getting calendar providers", err)
+		errorlog.LogError("getting calendar providers", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -35,7 +36,7 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 	for _, provider := range providers {
 		providerData, err := provider.GetData(DB, c.User, time.UTC, startDate, endDate, data.ProviderDataAnnouncements)
 		if err != nil {
-			ErrorLog_LogError("getting calendar provider data", err)
+			errorlog.LogError("getting calendar provider data", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}

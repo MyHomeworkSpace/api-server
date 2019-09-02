@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 
 	"github.com/labstack/echo"
@@ -36,7 +37,7 @@ type SingleHomeworkResponse struct {
 func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework information", err)
+		errorlog.LogError("getting homework information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -67,7 +68,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 
 	classRows, err := DB.Query("SELECT id FROM classes WHERE id = ? AND userId = ?", classId, c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework for class", err)
+		errorlog.LogError("getting homework for class", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -81,7 +82,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 	// actually get the homework
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classId, c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework for class", err)
+		errorlog.LogError("getting homework for class", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -113,7 +114,7 @@ func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 2 DAY) OR `complete` != '1') ORDER BY `due` ASC", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework information", err)
+		errorlog.LogError("getting homework information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -157,7 +158,7 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`due` > (NOW() - INTERVAL 3 DAY) OR `complete` != '1') ORDER BY `due` ASC", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework view", err)
+		errorlog.LogError("getting homework view", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -193,7 +194,7 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		dueDate, err := time.ParseInLocation("2006-01-02", resp.Due, location)
 		if err != nil {
-			ErrorLog_LogError("getting homework view", err)
+			errorlog.LogError("getting homework view", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 			return
 		}
@@ -247,7 +248,7 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.Param("id"))
 	if err != nil {
-		ErrorLog_LogError("getting homework information", err)
+		errorlog.LogError("getting homework information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -274,7 +275,7 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (due >= ? and due < ?)", c.User.ID, startDate, endDate)
 	if err != nil {
-		ErrorLog_LogError("getting homework information", err)
+		errorlog.LogError("getting homework information", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -292,7 +293,7 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Contex
 func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` DESC", c.User.ID)
 	if err != nil {
-		ErrorLog_LogError("getting homework picker suggestions", err)
+		errorlog.LogError("getting homework picker suggestions", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -323,7 +324,7 @@ func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND (`name` LIKE ? OR `desc` LIKE ?) ORDER BY `due` DESC", c.User.ID, query, query)
 	if err != nil {
-		ErrorLog_LogError("getting homework search results", err)
+		errorlog.LogError("getting homework search results", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -351,7 +352,7 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	// check if you are allowed to add to the given classId
 	rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("classId"))
 	if err != nil {
-		ErrorLog_LogError("adding homework", err)
+		errorlog.LogError("adding homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -366,7 +367,7 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), c.User.ID,
 	)
 	if err != nil {
-		ErrorLog_LogError("adding homework", err)
+		errorlog.LogError("adding homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -387,7 +388,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	// check if you are allowed to edit the given id
 	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("editing homework", err)
+		errorlog.LogError("editing homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -400,7 +401,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	// check if you are allowed to add to the given classId
 	classRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("classId"))
 	if err != nil {
-		ErrorLog_LogError("editing homework", err)
+		errorlog.LogError("editing homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -415,7 +416,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), ec.FormValue("id"),
 	)
 	if err != nil {
-		ErrorLog_LogError("editing homework", err)
+		errorlog.LogError("editing homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -432,7 +433,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	// check if you are allowed to edit the given id
 	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting homework", err)
+		errorlog.LogError("deleting homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -447,7 +448,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	// delete the homework records
 	_, err = deleteTx.Exec("DELETE FROM homework WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting homework", err)
+		errorlog.LogError("deleting homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -455,14 +456,14 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	// delete any associated calendar events
 	_, err = deleteTx.Exec("DELETE FROM calendar_hwevents WHERE homeworkId = ?", ec.FormValue("id"))
 	if err != nil {
-		ErrorLog_LogError("deleting homework", err)
+		errorlog.LogError("deleting homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = deleteTx.Commit()
 	if err != nil {
-		ErrorLog_LogError("deleting homework", err)
+		errorlog.LogError("deleting homework", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -495,7 +496,7 @@ func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, ec ech
 
 	_, err = DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ? AND FIND_IN_SET(classId, ?) = 0", c.User.ID, hiddenClassesSet)
 	if err != nil {
-		ErrorLog_LogError("marking overdue homework as done", err)
+		errorlog.LogError("marking overdue homework as done", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}

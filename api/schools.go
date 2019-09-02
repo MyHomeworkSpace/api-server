@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
@@ -28,7 +29,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -57,7 +58,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	// new transaction
 	tx, err := DB.Begin()
 	if err != nil {
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -67,7 +68,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	if err != nil {
 		tx.Rollback()
 
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -85,7 +86,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		}
 
 		// server error
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -94,7 +95,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	if err != nil {
 		tx.Rollback()
 
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -106,7 +107,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	if err != nil {
 		tx.Rollback()
 
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -114,7 +115,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	// go!
 	err = tx.Commit()
 	if err != nil {
-		ErrorLog_LogError("enrolling in school", err)
+		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -145,7 +146,7 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		ec.JSON(http.StatusOK, SchoolResultResponse{"ok", nil})
 		return
 	} else if err != nil {
-		ErrorLog_LogError("looking up school by email domain", err)
+		errorlog.LogError("looking up school by email domain", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -170,7 +171,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		ErrorLog_LogError("unenrolling from school", err)
+		errorlog.LogError("unenrolling from school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -194,7 +195,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	// remove it
 	tx, err := DB.Begin()
 	if err != nil {
-		ErrorLog_LogError("unenrolling from school", err)
+		errorlog.LogError("unenrolling from school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -203,7 +204,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	if err != nil {
 		tx.Rollback()
 
-		ErrorLog_LogError("unenrolling from school", err)
+		errorlog.LogError("unenrolling from school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -212,14 +213,14 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	if err != nil {
 		tx.Rollback()
 
-		ErrorLog_LogError("unenrolling from school", err)
+		errorlog.LogError("unenrolling from school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		ErrorLog_LogError("unenrolling from school", err)
+		errorlog.LogError("unenrolling from school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
