@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -149,4 +150,9 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
+func routeAdminTriggerError(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	errorlog.LogError("intentionally triggered error", errors.New("api: intentionally triggered error"))
+	ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 }
