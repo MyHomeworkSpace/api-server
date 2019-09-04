@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/config"
@@ -134,9 +135,9 @@ func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, e
 func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	state := ec.FormValue("state")
 	if state == "" {
-		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AuthURLBase+"?id="+ec.Param("id"))
+		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id"))
 	} else {
-		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AuthURLBase+"?id="+ec.Param("id")+"&state="+ec.FormValue("state"))
+		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id")+":"+base64.URLEncoding.EncodeToString([]byte(ec.FormValue("state"))))
 	}
 }
 

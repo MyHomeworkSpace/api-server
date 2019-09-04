@@ -21,7 +21,6 @@ type Config struct {
 
 type ServerConfig struct {
 	Port               int
-	AuthURLBase        string
 	APIURLBase         string
 	AppURLBase         string
 	ReverseProxyHeader string
@@ -65,7 +64,6 @@ func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
 Port = 3000
-AuthURLBase = "http://myhomework.space/applicationAuth.html"
 APIURLBase = "http://api-v2.myhomework.space/"
 AppURLBase = "http://myhomework.space/app.html#!"
 ReverseProxyHeader = ""
