@@ -8,7 +8,7 @@ import (
 )
 
 type school struct {
-	importStatus ImportStatus
+	importStatus schools.ImportStatus
 	name         string
 	username     string
 }
@@ -30,7 +30,7 @@ func (s *school) EmailDomain() string {
 }
 
 func (s *school) Hydrate(data map[string]interface{}) error {
-	s.importStatus = ImportStatus(data["status"].(float64))
+	s.importStatus = schools.ImportStatus(data["status"].(float64))
 	s.name = data["name"].(string)
 	s.username = data["username"].(string)
 	return nil
@@ -44,6 +44,7 @@ func (s *school) CalendarProvider() data.Provider {
 	}
 }
 
+// CreateSchool returns a new instance of the school.
 func CreateSchool() *school {
 	return &school{}
 }

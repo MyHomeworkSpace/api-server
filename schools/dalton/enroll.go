@@ -12,6 +12,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/blackbaud"
 	"github.com/MyHomeworkSpace/api-server/calendar"
 	"github.com/MyHomeworkSpace/api-server/data"
+	"github.com/MyHomeworkSpace/api-server/schools"
 )
 
 type calendarClass struct {
@@ -476,5 +477,5 @@ func (s *school) Unenroll(tx *sql.Tx, user *data.User) error {
 }
 
 func (s *school) NeedsUpdate(db *sql.DB) (bool, error) {
-	return (s.importStatus != ImportStatusOK), nil
+	return (s.importStatus != schools.ImportStatusOK), nil
 }

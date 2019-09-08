@@ -11,7 +11,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/schools"
 )
 
-type Term struct {
+type term struct {
 	ID     int    `json:"id"`
 	TermID int    `json:"termId"`
 	Name   string `json:"name"`
@@ -182,9 +182,9 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			return data.ProviderData{}, err
 		}
 		defer termRows.Close()
-		availableTerms := []Term{}
+		availableTerms := []term{}
 		for termRows.Next() {
-			term := Term{}
+			term := term{}
 			termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
 			availableTerms = append(availableTerms, term)
 		}
@@ -204,7 +204,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			dayString := currentDay.Format("2006-01-02")
 
-			var currentTerm *Term
+			var currentTerm *term
 
 			if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses) {
 				if currentDay.After(Day_ExamRelief) {
