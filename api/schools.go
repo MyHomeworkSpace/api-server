@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/MyHomeworkSpace/api-server/data"
@@ -29,6 +30,16 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		return
 	}
 
+	var err error
+	reenroll := false
+	if ec.FormValue("reenroll") != "" {
+		reenroll, err = strconv.ParseBool(ec.FormValue("reenroll"))
+		if err != nil {
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			return
+		}
+	}
+
 	// find school
 	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
 	if err == data.ErrNotFound {
@@ -41,9 +52,21 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// check we're not already enrolled
+	enrolled := false
 	for _, userSchool := range c.User.Schools {
 		if userSchool.SchoolID == school.ID() {
 			// we are
+			enrolled = true
+		}
+	}
+
+	if reenroll {
+		if !enrolled {
+			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "not_enrolled"})
+			return
+		}
+	} else {
+		if enrolled {
 			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "already_enrolled"})
 			return
 		}
@@ -77,6 +100,17 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		errorlog.LogError("enrolling in school", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
+	}
+
+	if reenroll {
+		err := school.Unenroll(tx, c.User)
+		if err != nil {
+			tx.Rollback()
+
+			errorlog.LogError("enrolling in school - unenrolling before enroll", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
 	}
 
 	// enroll
