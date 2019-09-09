@@ -8,8 +8,8 @@ import (
 var (
 	// import ranges
 	// these should be ranges with 4 fridays in a row and the first week having no off days
-	Term1_Import_Start = time.Date(2020, time.September, 9, 0, 0, 0, 0, time.UTC)
-	Term1_Import_End   = time.Date(2020, time.October, 4, 0, 0, 0, 0, time.UTC)
+	Term1_Import_Start = time.Date(2019, time.September, 9, 0, 0, 0, 0, time.UTC)
+	Term1_Import_End   = time.Date(2019, time.October, 4, 0, 0, 0, 0, time.UTC)
 
 	Term1_Import_DayOffset_Friday1 = 4
 	Term1_Import_DayOffset_Friday2 = ((7 * 1) + 4)
