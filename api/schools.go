@@ -12,6 +12,12 @@ import (
 
 var MainRegistry data.SchoolRegistry
 
+type DetailedSchoolErrorResponse struct {
+	Status  string                 `json:"status"`
+	Error   string                 `json:"error"`
+	Details map[string]interface{} `json:"details"`
+}
+
 type SchoolResultResponse struct {
 	Status string             `json:"status"`
 	School *data.SchoolResult `json:"school"`
@@ -77,6 +83,13 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	result, err := school.Enroll(tx, c.User, enrollData)
 	if err != nil {
 		tx.Rollback()
+
+		detailedSchoolError, ok := err.(data.DetailedSchoolError)
+		if ok {
+			// it wants to report something
+			ec.JSON(http.StatusOK, DetailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
+			return
+		}
 
 		schoolError, ok := err.(data.SchoolError)
 		if ok {

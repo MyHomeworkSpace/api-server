@@ -28,6 +28,16 @@ func (e SchoolError) Error() string {
 	return "school: " + e.Code
 }
 
+// DetailedSchoolError is a type of Error that occurs when a school provider wants to communicate data back to the client along with an error. This is useful for multi-step enrollments, where more information is required from the user.
+type DetailedSchoolError struct {
+	Code    string
+	Details map[string]interface{}
+}
+
+func (e DetailedSchoolError) Error() string {
+	return "school: " + e.Code
+}
+
 // SchoolInfo is a struct that holds information about a school. It's used to hold data in a format that the JSON package can then marshal out to the client.
 type SchoolInfo struct {
 	EnrollmentID int    `json:"enrollmentID"`
