@@ -96,7 +96,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	bbUserID := int(bbUserInfo["UserId"].(float64))
 	bbUserDisplayName := bbUserInfo["StudentDisplay"].(string)
-	bbUserUsername := bbUserInfo["UserName"].(string)
+	bbUserUsername := strings.Replace(bbUserInfo["UserName"].(string), "@dalton.org", "", -1)
 
 	foundHouseGroup := false
 	houseSectionID := 0
