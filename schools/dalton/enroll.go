@@ -2,7 +2,6 @@ package dalton
 
 import (
 	"database/sql"
-	"net/http/cookiejar"
 	"net/url"
 	"strconv"
 	"strings"
@@ -80,49 +79,15 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	}
 
 	// test the credentials first so we don't run into blackbaud's rate limiting
-	_, resp, err := auth.DaltonLogin(username, password)
+	_, resp, ajaxToken, jar, err := auth.DaltonLogin(username, password)
 	if resp != "" || err != nil {
 		return nil, data.SchoolError{Code: resp}
 	}
 
 	schoolSlug := "dalton"
 
-	// set up ajax token and stuff
-	ajaxToken, err := blackbaud.GetAjaxToken(schoolSlug)
-	if err != nil {
-		return nil, err
-	}
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// sign in to blackbaud
-	response, err := blackbaud.Request(schoolSlug, "POST", "SignIn", url.Values{}, map[string]interface{}{
-		"From":            "",
-		"InterfaceSource": "WebApp",
-		"Password":        password,
-		"Username":        username,
-		"remember":        "false",
-	}, jar, ajaxToken)
-
-	if err != nil {
-		return nil, data.SchoolError{Code: "bb_signin_error"}
-	}
-
-	result, worked := (response.(map[string]interface{}))["AuthenticationResult"].(float64)
-
-	if worked && result == 5 {
-		return nil, data.SchoolError{Code: "bb_signin_rate_limit"}
-	}
-
-	if !worked || result == 2 {
-		return nil, data.SchoolError{Code: "bb_signin_error"}
-	}
-
 	// get user id
-	response, err = blackbaud.Request(schoolSlug, "GET", "webapp/context", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
+	response, err := blackbaud.Request(schoolSlug, "GET", "webapp/context", url.Values{}, map[string]interface{}{}, jar, ajaxToken, "")
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +125,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	}
 
 	// get list of grades
-	response, err = blackbaud.Request(schoolSlug, "GET", "datadirect/StudentGradeLevelList", url.Values{}, map[string]interface{}{}, jar, ajaxToken)
+	response, err = blackbaud.Request(schoolSlug, "GET", "datadirect/StudentGradeLevelList", url.Values{}, map[string]interface{}{}, jar, ajaxToken, "")
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +150,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		"studentUserId":   {strconv.Itoa(bbUserID)},
 		"schoolYearLabel": {schoolYearLabel},
 		"personaId":       {"2"},
-	}, map[string]interface{}{}, jar, ajaxToken)
+	}, map[string]interface{}{}, jar, ajaxToken, "")
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +183,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		"persona":         {"2"},
 		"durationList":    {termRequestString},
 		"markingPeriodId": {""},
-	}, map[string]interface{}{}, jar, ajaxToken)
+	}, map[string]interface{}{}, jar, ajaxToken, "")
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +236,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			"viewerPersonaId": {"2"},
 			"start":           {strconv.FormatInt(startDate.Unix(), 10)},
 			"end":             {strconv.FormatInt(endDate.Unix(), 10)},
-		}, map[string]interface{}{}, jar, ajaxToken)
+		}, map[string]interface{}{}, jar, ajaxToken, "")
 		if err != nil {
 			return nil, err
 		}
@@ -385,7 +350,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			scheduleInfo, err := blackbaud.Request(schoolSlug, "GET", "schedule/MyDayCalendarStudentList", url.Values{
 				"scheduleDate": {date.Format("1/2/2006")},
 				"personaId":    {"2"},
-			}, map[string]interface{}{}, jar, ajaxToken)
+			}, map[string]interface{}{}, jar, ajaxToken, "")
 			if err != nil {
 				return nil, err
 			}

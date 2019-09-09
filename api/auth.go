@@ -401,7 +401,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			if user.Username != "" {
 				// they are
 				// this means we must authenticate with dalton
-				_, resp, err := auth.DaltonLogin(user.Username, password)
+				_, resp, _, _, err := auth.DaltonLogin(user.Username, password)
 				if resp != "" || err != nil {
 					ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
 					return
