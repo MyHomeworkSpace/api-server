@@ -9,7 +9,9 @@ type School interface {
 	ID() string
 	Name() string
 	UserDetails() string
+	EmailAddress() string
 	EmailDomain() string
+
 	CalendarProvider() Provider
 
 	Hydrate(data map[string]interface{}) error
@@ -44,6 +46,7 @@ type SchoolInfo struct {
 	SchoolID     string `json:"schoolID"`
 	DisplayName  string `json:"displayName"`
 	UserDetails  string `json:"userDetails"`
+	EmailAddress string `json:"emailAddress"`
 	School       School `json:"-"`
 	UserID       int    `json:"userID"`
 }
