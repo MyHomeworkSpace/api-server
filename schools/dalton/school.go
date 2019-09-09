@@ -25,6 +25,10 @@ func (s *school) UserDetails() string {
 	return fmt.Sprintf("Signed in as %s (%s)", s.name, s.username)
 }
 
+func (s *school) EmailAddress() string {
+	return s.username + "@dalton.org"
+}
+
 func (s *school) EmailDomain() string {
 	return "dalton.org"
 }

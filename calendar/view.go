@@ -17,8 +17,9 @@ type ViewDay struct {
 
 // A View represents a view of a user's calendar over a certain period of time.
 type View struct {
-	Providers []ProviderInfo `json:"providers"`
-	Days      []ViewDay      `json:"days"`
+	Providers       []ProviderInfo    `json:"providers"`
+	SchoolsToUpdate []data.SchoolInfo `json:"schoolsToUpdate"`
+	Days            []ViewDay         `json:"days"`
 }
 
 // A ProviderInfo struct represents information about an active calendar providers.
@@ -29,13 +30,25 @@ type ProviderInfo struct {
 // GetView retrieves a CalendarView for the given user with the given parameters.
 func GetView(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
-		Providers: []ProviderInfo{},
-		Days:      []ViewDay{},
+		Providers:       []ProviderInfo{},
+		SchoolsToUpdate: []data.SchoolInfo{},
+		Days:            []ViewDay{},
 	}
 
 	providers, err := data.GetProvidersForUser(user)
 	if err != nil {
 		return View{}, err
+	}
+
+	for _, schoolInfo := range user.Schools {
+		needsUpdate, err := schoolInfo.School.NeedsUpdate(db)
+		if err != nil {
+			return View{}, err
+		}
+
+		if needsUpdate {
+			view.SchoolsToUpdate = append(view.SchoolsToUpdate, schoolInfo)
+		}
 	}
 
 	// create days in array
