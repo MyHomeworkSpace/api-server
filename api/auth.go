@@ -386,13 +386,32 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		return
 	}
 
+	// check if there's a school they can enroll in
+	var schoolResult *data.SchoolResult
+	emailParts := strings.Split(email, "@")
+	domain := strings.ToLower(strings.TrimSpace(emailParts[1]))
+	school, err := MainRegistry.GetSchoolByEmailDomain(domain)
+	if err == data.ErrNotFound {
+		schoolResult = nil
+	} else if err != nil {
+		errorlog.LogError("looking up school by email domain", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	} else {
+		schoolResult = &data.SchoolResult{
+			SchoolID:    school.ID(),
+			DisplayName: school.Name(),
+		}
+	}
+
+	// sign them in
 	session := auth.SessionInfo{
 		UserID: int(userID),
 	}
 	cookie, _ := ec.Cookie("session")
 	auth.SetSession(cookie.Value, session)
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, SchoolResultResponse{"ok", schoolResult})
 }
 
 func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
