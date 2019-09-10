@@ -306,39 +306,93 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	/*
-		// doesn't exist, insert new record
-		res, err := DB.Exec(
-			"INSERT INTO users(name, username, email, type, showMigrateMessage) VALUES(?, ?, ?, ?, 0)",
-			data["fullname"], username, username+"@dalton.org", data["roles"].([]string)[0],
-		)
-		if err != nil {
-			errorlog.LogError("trying to set user information", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
-		lastID, err := res.LastInsertId()
-		if err != nil {
-			errorlog.LogError("trying to set user information", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
+	if r.FormValue("email") == "" || r.FormValue("password") == "" {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		return
+	}
 
-		// add default classes
-		_, err = DB.Exec(
-			"INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)",
-			int(lastID), int(lastID), int(lastID), int(lastID), int(lastID),
-		)
-		if err != nil {
-			errorlog.LogError("trying to add default classes", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
-			return
-		}
+	name := r.FormValue("name")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
 
-		session = auth.SessionInfo{
-			UserID: int(lastID),
-		}
-	*/
+	if !util.EmailIsValid(email) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	if !validatePassword(password) {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	// check they don't already exist
+	emailExists, _, err := data.UserExistsWithEmail(email)
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	if emailExists {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "email_exists"})
+		return
+	}
+
+	tx, err := DB.Begin()
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// doesn't exist, insert new record
+	res, err := tx.Exec(
+		"INSERT INTO users(name, username, email, password, type, emailVerified, showMigrateMessage) VALUES(?, '', ?, ?, 'mhs', 0, 0)",
+		name, email, string(passwordHash),
+	)
+	if err != nil {
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	userID, err := res.LastInsertId()
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// add default classes
+	_, err = tx.Exec(
+		"INSERT INTO `classes` (`name`, `userId`) VALUES ('Math', ?), ('History', ?), ('English', ?), ('Language', ?), ('Science', ?)",
+		int(userID), int(userID), int(userID), int(userID), int(userID),
+	)
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	session := auth.SessionInfo{
+		UserID: int(userID),
+	}
+	cookie, _ := ec.Cookie("session")
+	auth.SetSession(cookie.Value, session)
+
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
 func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {

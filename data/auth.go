@@ -99,6 +99,27 @@ func GetTabsByUserID(userID int) ([]Tab, error) {
 	return tabs, nil
 }
 
+// UserExistsWithEmail checks for a user with the given email address. If one exists, it returns the ID of that user.
+func UserExistsWithEmail(email string) (bool, int, error) {
+	rows, err := DB.Query("SELECT id FROM users WHERE email = ?", email)
+	if err != nil {
+		return false, -1, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		id := -1
+		err = rows.Scan(&id)
+		if err != nil {
+			return false, -1, err
+		}
+		return true, id, nil
+	}
+
+	return false, -1, nil
+}
+
 // GetUserByID fetches data for the given user ID.
 func GetUserByID(id int) (User, error) {
 	rows, err := DB.Query("SELECT id, name, username, email, password, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
