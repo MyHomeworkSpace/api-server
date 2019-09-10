@@ -36,6 +36,7 @@ type User struct {
 	Type               string       `json:"type"`
 	Features           string       `json:"features"`
 	Level              int          `json:"level"`
+	EmailVerified      bool         `json:"emailVerified"`
 	ShowMigrateMessage int          `json:"showMigrateMessage"`
 	Schools            []SchoolInfo `json:"schools"`
 }
@@ -123,17 +124,22 @@ func UserExistsWithEmail(email string) (bool, int, error) {
 
 // GetUserByID fetches data for the given user ID.
 func GetUserByID(id int) (User, error) {
-	rows, err := DB.Query("SELECT id, name, username, email, password, type, features, level, showMigrateMessage FROM users WHERE id = ?", id)
+	rows, err := DB.Query("SELECT id, name, username, email, password, type, features, emailVerified, level, showMigrateMessage FROM users WHERE id = ?", id)
 	if err != nil {
 		return User{}, err
 	}
 
 	if rows.Next() {
 		user := User{}
+		emailVerified := 0
 
-		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &user.Level, &user.ShowMigrateMessage)
+		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &emailVerified, &user.Level, &user.ShowMigrateMessage)
 		if err != nil {
 			return User{}, err
+		}
+
+		if emailVerified == 1 {
+			user.EmailVerified = true
 		}
 
 		rows.Close()

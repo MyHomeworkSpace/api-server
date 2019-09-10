@@ -646,6 +646,21 @@ func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	ec.JSON(http.StatusOK, StatusResponse{"ok"})
 }
 
+func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if c.User.EmailVerified {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "already_verified"})
+		return
+	}
+
+	err := sendVerificationEmail(c.User)
+	if err != nil {
+		errorlog.LogError("resending verification email", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+}
+
 func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("email") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})

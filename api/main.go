@@ -113,6 +113,7 @@ func Init(e *echo.Echo) {
 	e.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
 	e.GET("/auth/logout", route(routeAuthLogout, authLevelLoggedIn))
 	e.POST("/auth/resetPassword", route(routeAuthResetPassword, authLevelNone))
+	e.POST("/auth/resendVerificationEmail", route(routeAuthResendVerificationEmail, authLevelNone))
 	e.GET("/auth/session", route(routeAuthSession, authLevelNone))
 
 	e.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll, authLevelLoggedIn))
