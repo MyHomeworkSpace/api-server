@@ -217,6 +217,7 @@ CREATE TABLE `users` (
   `email` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `type` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `features` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '[]',
+  `emailVerified` tinyint(1) NOT NULL,
   `level` tinyint(1) NOT NULL DEFAULT '0',
   `canFeedback` tinyint(1) NOT NULL DEFAULT '0',
   `canAnnouncements` tinyint(1) NOT NULL DEFAULT '0',
