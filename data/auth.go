@@ -16,6 +16,7 @@ const (
 	EmailTokenNone EmailTokenType = iota
 	EmailTokenResetPassword
 	EmailTokenChangeEmail
+	EmailTokenVerifyEmail
 )
 
 // An EmailToken is used for situations like an email change or a password reset, where a confirmation email must be sent.

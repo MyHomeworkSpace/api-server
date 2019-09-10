@@ -55,6 +55,32 @@ type TwoFactorEnabled struct {
 	ImageURL string `json:"qr"`
 }
 
+func sendVerificationEmail(user *data.User) error {
+	tokenString, err := util.GenerateRandomString(64)
+	if err != nil {
+		return err
+	}
+
+	err = data.SaveEmailToken(data.EmailToken{
+		Token:    tokenString,
+		Type:     data.EmailTokenVerifyEmail,
+		Metadata: "",
+		UserID:   user.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = email.Send("", user, "verifyEmail", map[string]interface{}{
+		"url": config.GetCurrent().Server.APIURLBase + "auth/completeEmailStart/" + tokenString,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func HasAuthToken(c *echo.Context) bool {
 	return (*c).Request().Header.Get("Authorization") != ""
 }
@@ -126,6 +152,18 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	if !util.EmailIsValid(new) {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		return
+	}
+
+	emailExists, _, err := data.UserExistsWithEmail(new)
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	if emailExists {
+		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "email_exists"})
 		return
 	}
 
@@ -286,7 +324,16 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
 	} else if token.Type == data.EmailTokenChangeEmail {
-		_, err = DB.Exec("UPDATE users SET email = ? WHERE id = ?", token.Metadata, token.UserID)
+		_, err = DB.Exec("UPDATE users SET email = ?, emailVerified = 1 WHERE id = ?", token.Metadata, token.UserID)
+		if err != nil {
+			errorlog.LogError("completing email", err)
+			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+	} else if token.Type == data.EmailTokenVerifyEmail {
+		_, err = DB.Exec("UPDATE users SET emailVerified = 1 WHERE id = ?", token.UserID)
 		if err != nil {
 			errorlog.LogError("completing email", err)
 			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
@@ -410,6 +457,21 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	}
 	cookie, _ := ec.Cookie("session")
 	auth.SetSession(cookie.Value, session)
+
+	// send a verification email
+	user, err := data.GetUserByID(int(userID))
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = sendVerificationEmail(&user)
+	if err != nil {
+		errorlog.LogError("creating account", err)
+		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		return
+	}
 
 	ec.JSON(http.StatusOK, SchoolResultResponse{"ok", schoolResult})
 }
