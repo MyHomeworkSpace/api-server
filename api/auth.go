@@ -306,7 +306,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if r.FormValue("email") == "" || r.FormValue("password") == "" {
+	if r.FormValue("name") == "" || r.FormValue("email") == "" || r.FormValue("password") == "" {
 		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
 		return
 	}
