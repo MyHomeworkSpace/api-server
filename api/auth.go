@@ -405,6 +405,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		name, email, string(passwordHash),
 	)
 	if err != nil {
+		errorlog.LogError("creating account", err)
 		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
 		return
 	}
