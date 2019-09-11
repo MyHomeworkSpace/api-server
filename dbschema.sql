@@ -215,6 +215,7 @@ CREATE TABLE `users` (
   `name` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `username` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `type` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `features` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '[]',
   `emailVerified` tinyint(1) NOT NULL,
