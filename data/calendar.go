@@ -110,7 +110,13 @@ func (e *Event) CalculateTimes(until time.Time) []time.Time {
 			months *= e.RecurRule.Interval
 			days *= e.RecurRule.Interval
 
+			previousTime := currentTime
 			currentTime = currentTime.AddDate(years, months, days)
+
+			if previousTime == currentTime {
+				// we're not making progress, escape
+				break
+			}
 
 			if e.RecurRule.UntilString != "" {
 				ruleUntil := e.RecurRule.Until

@@ -103,6 +103,10 @@ func parseRecurFormInfo(ec echo.Context) (bool, int, int, string, string) {
 			return false, 0, 0, "", "invalid_params"
 		}
 
+		if recurInterval < 1 {
+			return false, 0, 0, "", "invalid_params"
+		}
+
 		return true, recurFrequency, recurInterval, recurUntil, ""
 	}
 
