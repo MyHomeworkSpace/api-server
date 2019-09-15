@@ -76,7 +76,8 @@ Database = "myhomeworkspace"
 
 [email]
 Enabled = false
-From = "Misconfigured MyHomeworkSpace <misconfigured@misconfigured.invalid>"
+FromAddress = "misconfigured@misconfigured.invalid"
+FromDisplay = "Misconfigured MyHomeworkSpace <misconfigured@misconfigured.invalid>"
 SMTPHost = "localhost"
 SMTPPort = 465
 SMTPSecure = true
