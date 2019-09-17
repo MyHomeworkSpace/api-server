@@ -449,6 +449,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		schoolResult = &data.SchoolResult{
 			SchoolID:    school.ID(),
 			DisplayName: school.Name(),
+			ShortName:   school.ShortName(),
 		}
 	}
 

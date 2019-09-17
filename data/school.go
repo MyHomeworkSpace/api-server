@@ -8,6 +8,7 @@ var MainRegistry SchoolRegistry
 type School interface {
 	ID() string
 	Name() string
+	ShortName() string
 	UserDetails() string
 	EmailAddress() string
 	EmailDomain() string
@@ -45,6 +46,7 @@ type SchoolInfo struct {
 	EnrollmentID int    `json:"enrollmentID"`
 	SchoolID     string `json:"schoolID"`
 	DisplayName  string `json:"displayName"`
+	ShortName    string `json:"shortName"`
 	UserDetails  string `json:"userDetails"`
 	EmailAddress string `json:"emailAddress"`
 	School       School `json:"-"`
@@ -55,6 +57,7 @@ type SchoolInfo struct {
 type SchoolResult struct {
 	SchoolID    string `json:"schoolID"`
 	DisplayName string `json:"displayName"`
+	ShortName   string `json:"shortName"`
 }
 
 // SchoolRegistry is an interface implemented by the central registry in the schools package

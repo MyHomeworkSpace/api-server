@@ -21,6 +21,10 @@ func (s *school) Name() string {
 	return "The Dalton School"
 }
 
+func (s *school) ShortName() string {
+	return "Dalton"
+}
+
 func (s *school) UserDetails() string {
 	return fmt.Sprintf("Signed in as %s (%s)", s.name, s.username)
 }

@@ -175,6 +175,7 @@ func GetUserByID(id int) (User, error) {
 
 			// set SchoolInfo
 			info.DisplayName = school.Name()
+			info.ShortName = school.ShortName()
 			info.UserDetails = school.UserDetails()
 			info.EmailAddress = school.EmailAddress()
 			info.School = school

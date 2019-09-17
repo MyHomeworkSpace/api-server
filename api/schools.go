@@ -201,6 +201,7 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	schoolResult := data.SchoolResult{
 		SchoolID:    school.ID(),
 		DisplayName: school.Name(),
+		ShortName:   school.ShortName(),
 	}
 
 	ec.JSON(http.StatusOK, SchoolResultResponse{"ok", &schoolResult})
