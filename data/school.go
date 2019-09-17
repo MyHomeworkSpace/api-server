@@ -12,6 +12,7 @@ type School interface {
 	UserDetails() string
 	EmailAddress() string
 	EmailDomain() string
+	Prefixes() []Prefix
 
 	CalendarProvider() Provider
 
@@ -62,6 +63,7 @@ type SchoolResult struct {
 
 // SchoolRegistry is an interface implemented by the central registry in the schools package
 type SchoolRegistry interface {
+	GetAllSchools() []School
 	GetSchoolByEmailDomain(domain string) (School, error)
 	GetSchoolByID(id string) (School, error)
 	Register(school School)

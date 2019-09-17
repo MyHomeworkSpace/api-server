@@ -14,6 +14,11 @@ var MainRegistry = &Registry{
 	[]data.School{},
 }
 
+// GetAllSchools returns a list of all schools in the registry. It should not be directly modified.
+func (r *Registry) GetAllSchools() []data.School {
+	return r.schoolList
+}
+
 // GetSchoolByEmailDomain returns the school associated with the given email domain, or nil if it doesn't exist.
 func (r *Registry) GetSchoolByEmailDomain(domain string) (data.School, error) {
 	for _, school := range r.schoolList {

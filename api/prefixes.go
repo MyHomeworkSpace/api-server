@@ -6,99 +6,91 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/labstack/echo"
 )
 
-type Prefix struct {
-	ID         int      `json:"id"`
-	Background string   `json:"background"`
-	Color      string   `json:"color"`
-	Words      []string `json:"words"`
-	TimedEvent bool     `json:"timedEvent"`
-	Default    bool     `json:"default"`
-}
-
-var DefaultPrefixes = []Prefix{
-	Prefix{
+var DefaultPrefixes = []data.Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "4C6C9B",
 		Color:      "FFFFFF",
 		Words:      []string{"HW", "Read", "Reading"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "9ACD32",
 		Color:      "FFFFFF",
 		Words:      []string{"Project"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "C3A528",
 		Color:      "FFFFFF",
 		Words:      []string{"Report", "Essay", "Paper", "Write"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "FFA500",
 		Color:      "FFFFFF",
 		Words:      []string{"Quiz", "PopQuiz", "GradedHW", "GradedHomework"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "DC143C",
 		Color:      "FFFFFF",
 		Words:      []string{"Test", "Final", "Exam", "Midterm", "Ahh"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "2AC0F1",
 		Color:      "FFFFFF",
 		Words:      []string{"ICA", "FieldTrip", "Thingy"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "2AF15E",
 		Color:      "FFFFFF",
-		Words:      []string{"Lab", "BookALab", "BookLab", "Study", "Memorize"},
+		Words:      []string{"Study", "Memorize"},
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "003DAD",
 		Color:      "FFFFFF",
 		Words:      []string{"DocID"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "000000",
 		Color:      "00FF00",
 		Words:      []string{"Trojun", "Hex"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "5000BC",
 		Color:      "FFFFFF",
 		Words:      []string{"OptionalHW", "Challenge"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "000099",
 		Color:      "FFFFFF",
 		Words:      []string{"Presentation", "Prez"},
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "123456",
 		Color:      "FFFFFF",
@@ -106,7 +98,7 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "5A1B87",
 		Color:      "FFFFFF",
@@ -114,7 +106,7 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "01B501",
 		Color:      "FFFFFF",
@@ -122,7 +114,7 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	data.Prefix{
 		ID:         -1,
 		Background: "E34000",
 		Color:      "FFFFFF",
@@ -132,17 +124,50 @@ var DefaultPrefixes = []Prefix{
 }
 
 type PrefixesResponse struct {
-	Status             string   `json:"status"`
-	Prefixes           []Prefix `json:"prefixes"`
-	FallbackBackground string   `json:"fallbackBackground"`
-	FallbackColor      string   `json:"fallbackColor"`
+	Status             string        `json:"status"`
+	Prefixes           []data.Prefix `json:"prefixes"`
+	FallbackBackground string        `json:"fallbackBackground"`
+	FallbackColor      string        `json:"fallbackColor"`
+}
+
+type schoolPrefixInfo struct {
+	School   data.SchoolResult `json:"school"`
+	Prefixes []data.Prefix     `json:"prefixes"`
+}
+
+type DefaultPrefixesResponse struct {
+	Status             string             `json:"status"`
+	Prefixes           []data.Prefix      `json:"prefixes"`
+	SchoolPrefixes     []schoolPrefixInfo `json:"schoolPrefixes"`
+	FallbackBackground string             `json:"fallbackBackground"`
+	FallbackColor      string             `json:"fallbackColor"`
 }
 
 func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	ec.JSON(http.StatusOK, PrefixesResponse{"ok", DefaultPrefixes, "FFD3BD", "000000"})
+	info := []schoolPrefixInfo{}
+	schools := MainRegistry.GetAllSchools()
+	for _, school := range schools {
+		info = append(info, schoolPrefixInfo{
+			School: data.SchoolResult{
+				SchoolID:    school.ID(),
+				DisplayName: school.Name(),
+				ShortName:   school.ShortName(),
+			},
+			Prefixes: school.Prefixes(),
+		})
+	}
+	ec.JSON(http.StatusOK, DefaultPrefixesResponse{"ok", DefaultPrefixes, info, "FFD3BD", "000000"})
 }
 
 func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	prefixes := DefaultPrefixes
+
+	// check for school prefixes we want to add
+	for _, school := range c.User.Schools {
+		prefixes = append(prefixes, school.School.Prefixes()...)
+	}
+
+	// load user settings
 	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting custom prefixes", err)
@@ -150,9 +175,9 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		return
 	}
 	defer rows.Close()
-	prefixes := DefaultPrefixes
+
 	for rows.Next() {
-		resp := Prefix{-1, "", "", []string{}, false, false}
+		resp := data.Prefix{}
 
 		timedEventInt := -1
 		wordsListString := ""
@@ -168,6 +193,7 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 		prefixes = append(prefixes, resp)
 	}
+
 	ec.JSON(http.StatusOK, PrefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
 }
 

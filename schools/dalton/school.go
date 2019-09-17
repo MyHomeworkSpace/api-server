@@ -37,6 +37,19 @@ func (s *school) EmailDomain() string {
 	return "dalton.org"
 }
 
+func (s *school) Prefixes() []data.Prefix {
+	return []data.Prefix{
+		data.Prefix{
+			ID:         -1,
+			Background: "2AF15E",
+			Color:      "FFFFFF",
+			Words:      []string{"Lab", "BookALab", "BookLab"},
+			TimedEvent: true,
+			Default:    true,
+		},
+	}
+}
+
 func (s *school) Hydrate(data map[string]interface{}) error {
 	s.importStatus = schools.ImportStatus(data["status"].(float64))
 	s.name = data["name"].(string)
