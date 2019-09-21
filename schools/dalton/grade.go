@@ -36,7 +36,7 @@ func getAnnouncementGroupSQL(groups []int) string {
 			first = false
 		}
 		// this is trusted input, and limited to integers, and so it is not vulnerable to SQL injection
-		sql += "announcements.grade = "
+		sql += "dalton_announcements.grade = "
 		sql += strconv.Itoa(group)
 	}
 	return sql
