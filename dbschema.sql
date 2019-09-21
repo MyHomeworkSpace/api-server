@@ -5,16 +5,6 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 SET NAMES utf8mb4;
 
-CREATE TABLE `announcements` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` date NOT NULL,
-  `text` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `grade` int(2) NOT NULL,
-  `type` int(2) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `date` (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 CREATE TABLE `applications` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -81,6 +71,17 @@ CREATE TABLE `classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `dalton_announcements` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `text` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `grade` int(2) NOT NULL,
+  `type` int(2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `date` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `dalton_classes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `termId` int(11) DEFAULT NULL,
@@ -90,6 +91,15 @@ CREATE TABLE `dalton_classes` (
   `ownerName` mediumtext COLLATE utf8mb4_unicode_ci,
   `userId` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `dalton_fridays` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `index` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -124,15 +134,6 @@ CREATE TABLE `feedback` (
   `screenshot` longblob,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-CREATE TABLE `fridays` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` date NOT NULL,
-  `index` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

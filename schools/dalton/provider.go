@@ -24,7 +24,7 @@ type provider struct {
 
 func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]data.OffBlock, error) {
 	// find the starts
-	offBlockRows, err := db.Query("SELECT id, date, text, grade FROM announcements WHERE ("+groupSQL+") AND `type` = 2 AND `date` < ?", before)
+	offBlockRows, err := db.Query("SELECT id, date, text, grade FROM dalton_announcements WHERE ("+groupSQL+") AND `type` = 2 AND `date` < ?", before)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]d
 
 	// find the matching ends
 	for i, block := range blocks {
-		offBlockEndRows, err := db.Query("SELECT date FROM announcements WHERE ("+groupSQL+") AND `type` = 3 AND `text` = ? AND `date` > ?", block.Name, block.StartText)
+		offBlockEndRows, err := db.Query("SELECT date FROM dalton_announcements WHERE ("+groupSQL+") AND `type` = 3 AND `text` = ? AND `date` > ?", block.Name, block.StartText)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	announcementGroupsSQL := getAnnouncementGroupSQL(announcementGroups)
 
 	// get all friday information for time period
-	fridayRows, err := db.Query("SELECT * FROM fridays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	fridayRows, err := db.Query("SELECT * FROM dalton_fridays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 	if err != nil {
 		return data.ProviderData{}, err
 	}
@@ -95,7 +95,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	fridayRows.Close()
 
 	// get announcements for time period
-	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM dalton_ announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 	if err != nil {
 		return data.ProviderData{}, err
 	}
