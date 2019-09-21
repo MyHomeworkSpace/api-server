@@ -95,7 +95,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	fridayRows.Close()
 
 	// get announcements for time period
-	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM dalton_ announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM dalton_announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 	if err != nil {
 		return data.ProviderData{}, err
 	}
