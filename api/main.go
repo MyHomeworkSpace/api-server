@@ -22,11 +22,11 @@ const (
 var DB *sql.DB
 var RedisClient *redis.Client
 
-type StatusResponse struct {
+type statusResponse struct {
 	Status string `json:"status"`
 }
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Status string `json:"status"`
 	Error  string `json:"error"`
 }
@@ -57,7 +57,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			// are they logged in?
 			if !context.LoggedIn {
 				// no, bye
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "logged_out"})
+				ec.JSON(http.StatusUnauthorized, errorResponse{"error", "logged_out"})
 				return nil
 			}
 
@@ -65,7 +65,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 				// are they an admin?
 				if context.User.Level == 0 {
 					// no, bye
-					ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "forbidden"})
+					ec.JSON(http.StatusUnauthorized, errorResponse{"error", "forbidden"})
 					return nil
 				}
 			}

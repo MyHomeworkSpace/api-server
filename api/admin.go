@@ -14,12 +14,12 @@ import (
 	"github.com/labstack/echo"
 )
 
-type FeedbacksResponse struct {
+type feedbacksResponse struct {
 	Status    string          `json:"status"`
 	Feedbacks []data.Feedback `json:"feedbacks"`
 }
 
-type UserCountResponse struct {
+type userCountResponse struct {
 	Status string `json:"status"`
 	Count  int    `json:"count"`
 }
@@ -28,7 +28,7 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 	if err != nil {
 		errorlog.LogError("getting all feedback", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -43,25 +43,25 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 		feedbacks = append(feedbacks, resp)
 	}
 
-	ec.JSON(http.StatusOK, FeedbacksResponse{"ok", feedbacks})
+	ec.JSON(http.StatusOK, feedbacksResponse{"ok", feedbacks})
 }
 
 func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	id, err := strconv.Atoi(ec.Param("id"))
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_paramas"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_paramas"})
 		return
 	}
 
 	rows, err := DB.Query("SELECT screenshot FROM feedback WHERE id = ?", id)
 	if err != nil {
 		errorlog.LogError("getting screenshot", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if !rows.Next() {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 
@@ -69,14 +69,14 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 	err = rows.Scan(&screenshot64)
 	if err != nil {
 		errorlog.LogError("getting screenshot", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	rows.Close()
 
 	if screenshot64 == "" {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "no_screenshot"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "no_screenshot"})
 		return
 	}
 
@@ -85,7 +85,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 	screenshot, err := base64.StdEncoding.DecodeString(screenshot64)
 	if err != nil {
 		errorlog.LogError("getting screenshot", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -96,7 +96,7 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	rows, err := DB.Query("SELECT COUNT(*) FROM users")
 	if err != nil {
 		errorlog.LogError("getting user count", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -104,12 +104,12 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	count := -1
 	rows.Scan(&count)
 
-	ec.JSON(http.StatusOK, UserCountResponse{"ok", count})
+	ec.JSON(http.StatusOK, userCountResponse{"ok", count})
 }
 
 func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("template") == "" || ec.FormValue("data") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -118,17 +118,17 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 	if ec.FormValue("userID") != "" {
 		userID, err := strconv.Atoi(ec.FormValue("userID"))
 		if err != nil {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
 		}
 
 		userStruct, err := data.GetUserByID(userID)
 		if err == data.ErrNotFound {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
 		} else if err != nil {
 			errorlog.LogError("sending email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
@@ -138,21 +138,21 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 	data := map[string]interface{}{}
 	err := json.Unmarshal([]byte(ec.FormValue("data")), &data)
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	err = email.Send("", user, ec.FormValue("template"), data)
 	if err != nil {
 		errorlog.LogError("sending email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAdminTriggerError(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	errorlog.LogError("intentionally triggered error", errors.New("api: intentionally triggered error"))
-	ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+	ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 }

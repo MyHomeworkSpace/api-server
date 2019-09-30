@@ -32,11 +32,6 @@ type CSRFResponse struct {
 	Token  string `json:"token"`
 }
 
-type HelloResponse struct {
-	Server string `json:"server"`
-	Commit string `json:"builtFrom"`
-}
-
 func main() {
 	log.Println("MyHomeworkSpace API Server")
 

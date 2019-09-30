@@ -9,12 +9,12 @@ import (
 )
 
 // responses
-type PrefResponse struct {
+type prefResponse struct {
 	Status string    `json:"status"`
 	Pref   data.Pref `json:"pref"`
 }
 
-type PrefsResponse struct {
+type prefsResponse struct {
 	Status string      `json:"status"`
 	Prefs  []data.Pref `json:"prefs"`
 }
@@ -23,27 +23,27 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.Param("key"))
 	if err != nil {
 		errorlog.LogError("getting pref", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 
 	resp := data.Pref{-1, "", ""}
 	rows.Scan(&resp.ID, &resp.Key, &resp.Value)
 
-	ec.JSON(http.StatusOK, PrefResponse{"ok", resp})
+	ec.JSON(http.StatusOK, prefResponse{"ok", resp})
 }
 
 func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting prefs", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
@@ -56,19 +56,19 @@ func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		prefs = append(prefs, pref)
 	}
 
-	ec.JSON(http.StatusOK, PrefsResponse{"ok", prefs})
+	ec.JSON(http.StatusOK, prefsResponse{"ok", prefs})
 }
 
 func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("key") == "" || ec.FormValue("value") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.FormValue("key"))
 	if err != nil {
 		errorlog.LogError("setting pref", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
@@ -81,7 +81,7 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 		)
 		if err != nil {
 			errorlog.LogError("inserting pref", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 	} else {
@@ -92,10 +92,10 @@ func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 		)
 		if err != nil {
 			errorlog.LogError("updating pref", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }

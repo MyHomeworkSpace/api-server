@@ -19,23 +19,23 @@ import (
 	"github.com/labstack/echo"
 )
 
-type CSRFResponse struct {
+type csrfResponse struct {
 	Status string `json:"status"`
 	Token  string `json:"token"`
 }
 
-type SessionResponse struct {
+type sessionResponse struct {
 	Status  string `json:"status"`
 	Session string `json:"session"`
 }
 
-type TokenResponse struct {
+type tokenResponse struct {
 	Status       string          `json:"status"`
 	Token        data.EmailToken `json:"token"`
 	InfoRequired bool            `json:"infoRequired"`
 }
 
-type UserResponse struct {
+type userResponse struct {
 	Status             string     `json:"status"`
 	User               data.User  `json:"user"`
 	Tabs               []data.Tab `json:"tabs"`
@@ -47,12 +47,6 @@ type UserResponse struct {
 	Features           string     `json:"features"`
 	Level              int        `json:"level"`
 	ShowMigrateMessage int        `json:"showMigrateMessage"`
-}
-
-type TwoFactorEnabled struct {
-	Status   string `json:"status"`
-	Secret   string `json:"emergency"`
-	ImageURL string `json:"qr"`
 }
 
 func sendVerificationEmail(user *data.User) error {
@@ -144,33 +138,33 @@ func handlePasswordChange(user *data.User) error {
  */
 func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("new") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	new := ec.FormValue("new")
 
 	if !util.EmailIsValid(new) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	emailExists, _, err := data.UserExistsWithEmail(new)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if emailExists {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "email_exists"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "email_exists"})
 		return
 	}
 
 	tokenString, err := util.GenerateRandomString(64)
 	if err != nil {
 		errorlog.LogError("changing email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -182,7 +176,7 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	})
 	if err != nil {
 		errorlog.LogError("changing email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -191,21 +185,21 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	})
 	if err != nil {
 		errorlog.LogError("changing email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("current") == "" || ec.FormValue("new") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	if !validatePassword(ec.FormValue("new")) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -215,11 +209,11 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	// first verify if the current password was correct
 	err := bcrypt.CompareHashAndPassword([]byte(c.User.PasswordHash), []byte(current))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "creds_incorrect"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "creds_incorrect"})
 		return
 	} else if err != nil {
 		errorlog.LogError("changing password", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -227,7 +221,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	hash, err := bcrypt.GenerateFromPassword([]byte(new), bcrypt.DefaultCost)
 	if err != nil {
 		errorlog.LogError("changing password", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -235,28 +229,28 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), c.User.ID)
 	if err != nil {
 		errorlog.LogError("changing password", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = handlePasswordChange(c.User)
 	if err != nil {
 		errorlog.LogError("changing password", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	_, err := DB.Exec("UPDATE users SET showMigrateMessage = 0 WHERE id = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("clearing migration flag", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -265,30 +259,30 @@ func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, ec echo
 
 func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("token") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	token, err := data.GetEmailToken(ec.FormValue("token"))
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	} else if err != nil {
 		errorlog.LogError("completing email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if token.Type == data.EmailTokenResetPassword {
 		if ec.FormValue("password") == "" {
-			ec.JSON(http.StatusOK, TokenResponse{"ok", token, true})
+			ec.JSON(http.StatusOK, tokenResponse{"ok", token, true})
 			return
 		}
 
 		password := ec.FormValue("password")
 
 		if !validatePassword(password) {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
 		}
 
@@ -296,7 +290,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
@@ -304,45 +298,45 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), token.UserID)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		user, err := data.GetUserByID(token.UserID)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		err = handlePasswordChange(&user)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
-		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+		ec.JSON(http.StatusOK, tokenResponse{"ok", token, false})
 	} else if token.Type == data.EmailTokenChangeEmail {
 		_, err = DB.Exec("UPDATE users SET email = ?, emailVerified = 1 WHERE id = ?", token.Metadata, token.UserID)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
-		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+		ec.JSON(http.StatusOK, tokenResponse{"ok", token, false})
 	} else if token.Type == data.EmailTokenVerifyEmail {
 		_, err = DB.Exec("UPDATE users SET emailVerified = 1 WHERE id = ?", token.UserID)
 		if err != nil {
 			errorlog.LogError("completing email", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
-		ec.JSON(http.StatusOK, TokenResponse{"ok", token, false})
+		ec.JSON(http.StatusOK, tokenResponse{"ok", token, false})
 	} else {
-		ec.JSON(http.StatusNotFound, ErrorResponse{"error", "not_found"})
+		ec.JSON(http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 
@@ -354,7 +348,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("email") == "" || r.FormValue("password") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -363,12 +357,12 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	password := r.FormValue("password")
 
 	if !util.EmailIsValid(email) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	if !validatePassword(password) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -376,26 +370,26 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	emailExists, _, err := data.UserExistsWithEmail(email)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if emailExists {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "email_exists"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "email_exists"})
 		return
 	}
 
 	tx, err := DB.Begin()
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -406,13 +400,13 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	userID, err := res.LastInsertId()
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -423,14 +417,14 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -443,7 +437,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		schoolResult = nil
 	} else if err != nil {
 		errorlog.LogError("looking up school by email domain", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	} else {
 		schoolResult = &data.SchoolResult{
@@ -464,28 +458,28 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	user, err := data.GetUserByID(int(userID))
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = sendVerificationEmail(&user)
 	if err != nil {
 		errorlog.LogError("creating account", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, SchoolResultResponse{"ok", schoolResult})
+	ec.JSON(http.StatusOK, schoolResultResponse{"ok", schoolResult})
 }
 
 func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	cookie, _ := ec.Cookie("csrfToken")
-	ec.JSON(http.StatusOK, CSRFResponse{"ok", cookie.Value})
+	ec.JSON(http.StatusOK, csrfResponse{"ok", cookie.Value})
 }
 
 func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("email") == "" || ec.FormValue("password") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -496,7 +490,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", email)
 	if err != nil {
 		errorlog.LogError("getting user information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer userRows.Close()
@@ -509,11 +503,11 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 
 		user, err := data.GetUserByID(userID)
 		if err == data.ErrNotFound {
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "user_record_missing"})
 			return
 		} else if err != nil {
 			errorlog.LogError("getting user information", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
@@ -524,11 +518,11 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err == bcrypt.ErrMismatchedHashAndPassword {
 				// bye
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "creds_incorrect"})
+				ec.JSON(http.StatusUnauthorized, errorResponse{"error", "creds_incorrect"})
 				return
 			} else if err != nil {
 				errorlog.LogError("user login", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 
@@ -540,7 +534,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 				// this means we must authenticate with dalton
 				_, resp, _, _, err := auth.DaltonLogin(user.Username, password)
 				if resp != "" || err != nil {
-					ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", resp})
+					ec.JSON(http.StatusUnauthorized, errorResponse{"error", resp})
 					return
 				}
 
@@ -554,20 +548,20 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		enrolled2fa, err := isUser2FAEnrolled(userID)
 		if err != nil {
 			errorlog.LogError("getting user 2fa enrollment status", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		if enrolled2fa {
 			if ec.FormValue("code") == "" {
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "totp_required"})
+				ec.JSON(http.StatusUnauthorized, errorResponse{"error", "totp_required"})
 				return
 			}
 
 			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
 			if err != nil {
 				errorlog.LogError("getting user 2fa secret", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 			defer secretRows.Close()
@@ -578,7 +572,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			secretRows.Scan(&secret)
 
 			if !totp.Validate(ec.FormValue("code"), secret) {
-				ec.JSON(http.StatusUnauthorized, ErrorResponse{"error", "bad_totp_code"})
+				ec.JSON(http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
 				return
 			}
 		}
@@ -590,7 +584,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			if err != nil {
 				errorlog.LogError("converting Dalton user", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 
@@ -598,7 +592,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), userID)
 			if err != nil {
 				errorlog.LogError("converting Dalton user", err)
-				ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 		}
@@ -610,10 +604,10 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		cookie, _ := ec.Cookie("session")
 		auth.SetSession(cookie.Value, session)
 
-		ec.JSON(http.StatusOK, StatusResponse{"ok"})
+		ec.JSON(http.StatusOK, statusResponse{"ok"})
 	} else {
 		// email is not registered, bye
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "no_account"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "no_account"})
 	}
 }
 
@@ -621,11 +615,11 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 	tabs, err := data.GetTabsByUserID(c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting user information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, UserResponse{
+	ec.JSON(http.StatusOK, userResponse{
 		Status: "ok",
 		User:   *c.User,
 		Tabs:   tabs,
@@ -645,27 +639,27 @@ func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	cookie, _ := ec.Cookie("session")
 	newSession := auth.SessionInfo{-1}
 	auth.SetSession(cookie.Value, newSession)
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if c.User.EmailVerified {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "already_verified"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "already_verified"})
 		return
 	}
 
 	err := sendVerificationEmail(c.User)
 	if err != nil {
 		errorlog.LogError("resending verification email", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("email") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -675,7 +669,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", emailAddress)
 	if err != nil {
 		errorlog.LogError("password reset", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer userRows.Close()
@@ -687,18 +681,18 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 		user, err := data.GetUserByID(userID)
 		if err == data.ErrNotFound {
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "user_record_missing"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "user_record_missing"})
 			return
 		} else if err != nil {
 			errorlog.LogError("password reset", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		tokenString, err := util.GenerateRandomString(64)
 		if err != nil {
 			errorlog.LogError("password reset", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
@@ -710,7 +704,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		})
 		if err != nil {
 			errorlog.LogError("password reset", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
@@ -719,22 +713,22 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		})
 		if err != nil {
 			errorlog.LogError("password reset", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
-		ec.JSON(http.StatusOK, StatusResponse{"ok"})
+		ec.JSON(http.StatusOK, statusResponse{"ok"})
 	} else {
 		// email is not registered, bye
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "no_account"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "no_account"})
 	}
 }
 
 func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	cookie, err := ec.Cookie("session")
 	if err != nil {
-		ec.JSON(http.StatusOK, SessionResponse{"ok", ""})
+		ec.JSON(http.StatusOK, sessionResponse{"ok", ""})
 		return
 	}
-	ec.JSON(http.StatusOK, SessionResponse{"ok", cookie.Value})
+	ec.JSON(http.StatusOK, sessionResponse{"ok", cookie.Value})
 }

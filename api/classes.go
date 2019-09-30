@@ -33,15 +33,15 @@ type HomeworkClass struct {
 }
 
 // responses
-type ClassResponse struct {
+type classResponse struct {
 	Status  string          `json:"status"`
 	Classes []HomeworkClass `json:"classes"`
 }
-type SingleClassResponse struct {
+type singleClassResponse struct {
 	Status string        `json:"status"`
 	Class  HomeworkClass `json:"class"`
 }
-type HWInfoResponse struct {
+type hwInfoResponse struct {
 	Status  string `json:"status"`
 	HWItems int    `json:"hwItems"`
 }
@@ -50,7 +50,7 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
@@ -64,20 +64,20 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 		}
 		classes = append(classes, resp)
 	}
-	ec.JSON(http.StatusOK, ClassResponse{"ok", classes})
+	ec.JSON(http.StatusOK, classResponse{"ok", classes})
 }
 
 func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 	resp := HomeworkClass{-1, "", "", "", -1}
@@ -85,34 +85,34 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	if resp.Color == "" {
 		resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
 	}
-	ec.JSON(http.StatusOK, SingleClassResponse{"ok", resp})
+	ec.JSON(http.StatusOK, singleClassResponse{"ok", resp})
 }
 
 func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 
 	if !rows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 	resp := -1
 	rows.Scan(&resp)
-	ec.JSON(http.StatusOK, HWInfoResponse{"ok", resp})
+	ec.JSON(http.StatusOK, hwInfoResponse{"ok", resp})
 }
 
 func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("name") == "" || ec.FormValue("color") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -122,20 +122,20 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	)
 	if err != nil {
 		errorlog.LogError("adding class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("color") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -143,12 +143,12 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -158,16 +158,16 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	)
 	if err != nil {
 		errorlog.LogError("editing class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -175,12 +175,12 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -191,7 +191,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -199,7 +199,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -207,7 +207,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -215,16 +215,16 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	err = tx.Commit()
 	if err != nil {
 		errorlog.LogError("deleting class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id1") == "" || ec.FormValue("id2") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -232,12 +232,12 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer id1Rows.Close()
 	if !id1Rows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -245,12 +245,12 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer id2Rows.Close()
 	if !id2Rows.Next() {
-		ec.JSON(http.StatusForbidden, ErrorResponse{"error", "forbidden"})
+		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -261,7 +261,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	swapId := -1
@@ -276,7 +276,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", swapId, ec.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -284,7 +284,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id1"), ec.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -292,7 +292,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id2"), swapId)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -300,7 +300,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", swapId, ec.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -308,7 +308,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id1"), ec.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -316,7 +316,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id2"), swapId)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -324,9 +324,9 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	err = tx.Commit()
 	if err != nil {
 		errorlog.LogError("deleting class", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }

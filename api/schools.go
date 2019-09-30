@@ -13,20 +13,20 @@ import (
 
 var MainRegistry data.SchoolRegistry
 
-type DetailedSchoolErrorResponse struct {
+type detailedSchoolErrorResponse struct {
 	Status  string                 `json:"status"`
 	Error   string                 `json:"error"`
 	Details map[string]interface{} `json:"details"`
 }
 
-type SchoolResultResponse struct {
+type schoolResultResponse struct {
 	Status string             `json:"status"`
 	School *data.SchoolResult `json:"school"`
 }
 
 func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("school") == "" || ec.FormValue("data") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -35,7 +35,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	if ec.FormValue("reenroll") != "" {
 		reenroll, err = strconv.ParseBool(ec.FormValue("reenroll"))
 		if err != nil {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
 		}
 	}
@@ -43,11 +43,11 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	// find school
 	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -62,12 +62,12 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 
 	if reenroll {
 		if !enrolled {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "not_enrolled"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
 			return
 		}
 	} else {
 		if enrolled {
-			ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "already_enrolled"})
+			ec.JSON(http.StatusBadRequest, errorResponse{"error", "already_enrolled"})
 			return
 		}
 	}
@@ -78,7 +78,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 
 	err = json.Unmarshal([]byte(enrollDataString), &enrollData)
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -88,7 +88,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	tx, err := DB.Begin()
 	if err != nil {
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -98,7 +98,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		tx.Rollback()
 
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -108,7 +108,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 			tx.Rollback()
 
 			errorlog.LogError("enrolling in school - unenrolling before enroll", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 	}
@@ -121,20 +121,20 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		detailedSchoolError, ok := err.(data.DetailedSchoolError)
 		if ok {
 			// it wants to report something
-			ec.JSON(http.StatusOK, DetailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
+			ec.JSON(http.StatusOK, detailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
 			return
 		}
 
 		schoolError, ok := err.(data.SchoolError)
 		if ok {
 			// it wants to report an error code
-			ec.JSON(http.StatusOK, ErrorResponse{"error", schoolError.Code})
+			ec.JSON(http.StatusOK, errorResponse{"error", schoolError.Code})
 			return
 		}
 
 		// server error
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -143,7 +143,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		tx.Rollback()
 
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -155,7 +155,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		tx.Rollback()
 
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -163,16 +163,16 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	err = tx.Commit()
 	if err != nil {
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }
 
 func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("email") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -181,7 +181,7 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	emailParts := strings.Split(email, "@")
 
 	if len(emailParts) != 2 {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -190,11 +190,11 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	school, err := MainRegistry.GetSchoolByEmailDomain(domain)
 
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusOK, SchoolResultResponse{"ok", nil})
+		ec.JSON(http.StatusOK, schoolResultResponse{"ok", nil})
 		return
 	} else if err != nil {
 		errorlog.LogError("looking up school by email domain", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -204,23 +204,23 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		ShortName:   school.ShortName(),
 	}
 
-	ec.JSON(http.StatusOK, SchoolResultResponse{"ok", &schoolResult})
+	ec.JSON(http.StatusOK, schoolResultResponse{"ok", &schoolResult})
 }
 
 func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("school") == "" {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "missing_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
 	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
 		errorlog.LogError("unenrolling from school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -236,7 +236,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	}
 
 	if !foundSchool {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "not_enrolled"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
 		return
 	}
 
@@ -244,7 +244,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	tx, err := DB.Begin()
 	if err != nil {
 		errorlog.LogError("unenrolling from school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -253,7 +253,7 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		tx.Rollback()
 
 		errorlog.LogError("unenrolling from school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -262,16 +262,16 @@ func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		tx.Rollback()
 
 		errorlog.LogError("unenrolling from school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		errorlog.LogError("unenrolling from school", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, StatusResponse{"ok"})
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
 }

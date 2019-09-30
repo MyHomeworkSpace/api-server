@@ -11,7 +11,7 @@ import (
 )
 
 // responses
-type PlannerWeekInfoResponse struct {
+type plannerWeekInfoResponse struct {
 	Status        string                     `json:"status"`
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
 }
@@ -19,7 +19,7 @@ type PlannerWeekInfoResponse struct {
 func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	startDate, err := time.Parse("2006-01-02", ec.Param("date"))
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, ErrorResponse{"error", "invalid_params"})
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
@@ -27,7 +27,7 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 	providers, err := data.GetProvidersForUser(c.User)
 	if err != nil {
 		errorlog.LogError("getting calendar providers", err)
-		ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -37,12 +37,12 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Con
 		providerData, err := provider.GetData(DB, c.User, time.UTC, startDate, endDate, data.ProviderDataAnnouncements)
 		if err != nil {
 			errorlog.LogError("getting calendar provider data", err)
-			ec.JSON(http.StatusInternalServerError, ErrorResponse{"error", "internal_server_error"})
+			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 
 		announcements = append(announcements, providerData.Announcements...)
 	}
 
-	ec.JSON(http.StatusOK, PlannerWeekInfoResponse{"ok", announcements})
+	ec.JSON(http.StatusOK, plannerWeekInfoResponse{"ok", announcements})
 }
