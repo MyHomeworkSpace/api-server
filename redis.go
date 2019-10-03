@@ -8,9 +8,10 @@ import (
 	"gopkg.in/redis.v5"
 )
 
+// RedisClient is a pointer to the current connection to Redis
 var RedisClient *redis.Client
 
-func InitRedis() {
+func initRedis() {
 	// TODO: make password and db configurable
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", config.GetCurrent().Redis.Host, config.GetCurrent().Redis.Port),
@@ -24,6 +25,6 @@ func InitRedis() {
 	}
 }
 
-func DeInitRedis() {
+func deinitRedis() {
 	RedisClient.Close()
 }

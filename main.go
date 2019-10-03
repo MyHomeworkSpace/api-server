@@ -22,12 +22,12 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Status string `json:"status"`
 	Error  string `json:"error"`
 }
 
-type CSRFResponse struct {
+type csrfResponse struct {
 	Status string `json:"status"`
 	Token  string `json:"token"`
 }
@@ -37,8 +37,8 @@ func main() {
 
 	config.Init()
 
-	InitDatabase()
-	InitRedis()
+	initDatabase()
+	initRedis()
 
 	email.Init()
 
@@ -175,14 +175,15 @@ func main() {
 				if hasNoToken {
 					// if so, return it
 					// auth.go won't know the new token yet
-					return c.JSON(http.StatusOK, CSRFResponse{"ok", csrfToken})
-				} else {
-					return next(c)
+					return c.JSON(http.StatusOK, csrfResponse{"ok", csrfToken})
 				}
+
+				// we didn't, so just pass the request through
+				return next(c)
 			}
 
 			if csrfToken != c.QueryParam("csrfToken") || hasNoToken {
-				return c.JSON(http.StatusBadRequest, ErrorResponse{"error", "csrfToken_invalid"})
+				return c.JSON(http.StatusBadRequest, errorResponse{"error", "csrfToken_invalid"})
 			}
 
 			return next(c)
