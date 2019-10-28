@@ -149,6 +149,16 @@ CREATE TABLE `homework` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `mit_classes` (
+  `subjectID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sectionID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `units` int(11) NOT NULL,
+  `userID` int(11) NOT NULL,
+  PRIMARY KEY (`subjectID`,`sectionID`,`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `notifications` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `content` text COLLATE utf8mb4_unicode_ci,
