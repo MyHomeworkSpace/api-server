@@ -1,6 +1,7 @@
 package mit
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/MyHomeworkSpace/api-server/data"
@@ -9,8 +10,11 @@ import (
 
 type school struct {
 	importStatus schools.ImportStatus
-	name         string
-	username     string
+
+	name     string
+	username string
+
+	peInfo *peInfo
 }
 
 func (s *school) ID() string {
@@ -51,8 +55,21 @@ func (s *school) Prefixes() []data.Prefix {
 
 func (s *school) Hydrate(data map[string]interface{}) error {
 	s.importStatus = schools.ImportStatus(data["status"].(float64))
+
 	s.name = data["name"].(string)
 	s.username = data["username"].(string)
+
+	peInfoString, havePEInfo := data["peInfo"].(string)
+	if havePEInfo {
+		s.peInfo = &peInfo{}
+		err := json.Unmarshal([]byte(peInfoString), s.peInfo)
+		if err != nil {
+			return err
+		}
+	} else {
+		s.peInfo = nil
+	}
+
 	return nil
 }
 

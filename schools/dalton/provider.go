@@ -271,6 +271,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 					rows.Scan(&event.ID, &termID, &classID, &event.Name, &ownerID, &ownerName, &dayNumber, &block, &buildingName, &roomNumber, &event.Start, &event.End, &event.UserID)
 
+					event.Tags[data.EventTagReadOnly] = true
 					event.Tags[data.EventTagTermID] = termID
 					event.Tags[data.EventTagClassID] = classID
 					event.Tags[data.EventTagOwnerID] = ownerID
