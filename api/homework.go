@@ -173,7 +173,12 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 
 	tomorrowTimeToThreshold := 24 * time.Hour
 
-	location := time.FixedZone("America/New_York", -5*60*60)
+	location, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		errorlog.LogError("getting homework view", err)
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
 	now := time.Now().In(location)
 
 	if now.Weekday() == time.Friday || now.Weekday() == time.Saturday {
