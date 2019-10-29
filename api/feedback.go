@@ -47,7 +47,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 						},
 						slack.WebhookField{
 							Title: "Host",
-							Value: config.GetCurrent().Feedback.SlackHostName,
+							Value: config.GetCurrent().Server.HostName,
 							Short: true,
 						},
 						slack.WebhookField{

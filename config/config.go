@@ -24,6 +24,7 @@ type ServerConfig struct {
 	APIURLBase         string
 	AppURLBase         string
 	ReverseProxyHeader string
+	HostName           string
 }
 
 type DatabaseConfig struct {
@@ -55,9 +56,8 @@ type CORSConfig struct {
 }
 
 type SlackConfig struct {
-	SlackEnabled  bool
-	SlackURL      string
-	SlackHostName string
+	SlackEnabled bool
+	SlackURL     string
 }
 
 func createNewConfig() {
@@ -67,6 +67,7 @@ Port = 3000
 APIURLBase = "http://api-v2.myhomework.space/"
 AppURLBase = "http://myhomework.space/app.html#!"
 ReverseProxyHeader = ""
+HostName = "local"
 
 [database]
 Host = "localhost"
@@ -95,12 +96,10 @@ Origins = [ "http://myhomework.space" ]
 [errorlog]
 SlackEnabled = false
 SlackURL = ""
-SlackHostName = ""
 
 [feedback]
 SlackEnabled = false
-SlackURL = ""
-SlackHostName = ""`
+SlackURL = ""`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)

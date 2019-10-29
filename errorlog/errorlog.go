@@ -41,7 +41,7 @@ func LogError(desc string, err error) {
 					Fields: []slack.WebhookField{
 						slack.WebhookField{
 							Title: "Host",
-							Value: config.GetCurrent().ErrorLog.SlackHostName,
+							Value: config.GetCurrent().Server.HostName,
 							Short: true,
 						},
 						slack.WebhookField{
