@@ -141,7 +141,7 @@ func main() {
 			}
 
 			// bypass csrf for special internal api (this requires the ip to be localhost so it's still secure)
-			if strings.HasPrefix(c.Request().URL.Path, "/schedule/internal") {
+			if strings.HasPrefix(c.Request().URL.Path, "/internal") {
 				return next(c)
 			}
 

@@ -17,6 +17,7 @@ type Config struct {
 	CORS     CORSConfig
 	ErrorLog SlackConfig
 	Feedback SlackConfig
+	MIT      MITConfig
 }
 
 type ServerConfig struct {
@@ -60,6 +61,15 @@ type SlackConfig struct {
 	SlackURL     string
 }
 
+type MITConfig struct {
+	Warehouse MITWarehouseConfig
+}
+
+type MITWarehouseConfig struct {
+	DataProxyURL    string
+	CurrentTermCode string
+}
+
 func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -99,7 +109,11 @@ SlackURL = ""
 
 [feedback]
 SlackEnabled = false
-SlackURL = ""`
+SlackURL = ""
+
+[mit.warehouse]
+DataProxyURL = ""
+CurrentTermCode = "2020FA"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)

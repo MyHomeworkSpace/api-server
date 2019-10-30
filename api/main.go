@@ -17,6 +17,7 @@ const (
 	authLevelNone authLevel = iota
 	authLevelLoggedIn
 	authLevelAdmin
+	authLevelInternal
 )
 
 var DB *sql.DB
@@ -40,6 +41,22 @@ type RouteContext struct {
 func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 	return func(ec echo.Context) error {
 		context := RouteContext{}
+
+		// is this an internal-only thing?
+		if level == authLevelInternal {
+			// they need to be from a local ip then
+
+			// are they?
+			if isInternalRequest(&ec) {
+				// yes, bypass other checks
+				f(ec.Response(), ec.Request(), ec, context)
+				return nil
+			}
+
+			// no, bye
+			ec.JSON(http.StatusUnauthorized, errorResponse{"error", "forbidden"})
+			return nil
+		}
 
 		// are they logged in?
 		sessionUserID := GetSessionUserID(&ec)
@@ -156,6 +173,8 @@ func Init(e *echo.Echo) {
 	e.POST("/homework/edit", route(routeHomeworkEdit, authLevelLoggedIn))
 	e.POST("/homework/delete", route(routeHomeworkDelete, authLevelLoggedIn))
 	e.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone, authLevelLoggedIn))
+
+	e.POST("/internal/start_task", route(routeInternalStartTask, authLevelInternal))
 
 	e.POST("/notifications/add", route(routeNotificationsAdd, authLevelAdmin))
 	e.POST("/notifications/delete", route(routeNotificationsDelete, authLevelAdmin))

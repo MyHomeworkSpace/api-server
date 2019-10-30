@@ -149,6 +149,13 @@ CREATE TABLE `homework` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `internal_tasks` (
+  `taskID` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `lastCompletion` date NOT NULL,
+  PRIMARY KEY (`taskID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `mit_classes` (
   `subjectID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `sectionID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -156,6 +163,23 @@ CREATE TABLE `mit_classes` (
   `units` int(11) NOT NULL,
   `userID` int(11) NOT NULL,
   PRIMARY KEY (`subjectID`,`sectionID`,`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `mit_offerings` (
+  `id` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `section` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `term` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `time` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `place` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `isFake` tinyint(1) NOT NULL,
+  `isMaster` tinyint(1) NOT NULL,
+  `isDesign` tinyint(1) NOT NULL,
+  `isLab` tinyint(1) NOT NULL,
+  `isLecture` tinyint(1) NOT NULL,
+  `isRecitation` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id`,`section`,`term`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
