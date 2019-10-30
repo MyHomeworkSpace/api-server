@@ -17,6 +17,19 @@ import (
 // some classes have weird times and aren't on the catalog, so we just give up on them
 var skipClasses = []string{"15.830", "24.A03"}
 
+type catalogListing struct {
+	ID         string `json:"id"`
+	ShortTitle string `json:"short"`
+	Title      string `json:"title"`
+
+	OfferedFall   bool `bool:"fall"`
+	OfferedIAP    bool `bool:"iap"`
+	OfferedSpring bool `bool:"spring"`
+
+	FallInstructors   string `json:"fallI"`
+	SpringInstructors string `json:"springI"`
+}
+
 type subjectOffering struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
@@ -25,6 +38,9 @@ type subjectOffering struct {
 
 	Time  string `json:"time"`
 	Place string `json:"place"`
+
+	FacultyID   string `json:"facultyID"`
+	FacultyName string `json:"facultyName"`
 
 	IsFake   bool `json:"fake"`
 	IsMaster bool `json:"master"`
@@ -57,6 +73,9 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 	// TODO: don't need this to be manually set
 	params.Add("termCode", warehouseConfig.CurrentTermCode)
 
+	// TODO: remove
+	params.Add("lastUpdateDate", "2018-01-01")
+
 	requestURL := warehouseConfig.DataProxyURL + "fetch?" + params.Encode()
 
 	response, err := http.Get(requestURL)
@@ -72,7 +91,28 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 	}
 
 	if source == "catalog" {
-		return errors.New("tasks: catalog not supported yet")
+		listings := []catalogListing{}
+		err = json.NewDecoder(response.Body).Decode(&listings)
+		if err != nil {
+			return err
+		}
+
+		for _, listing := range listings {
+			_, err = tx.Exec(
+				"REPLACE INTO mit_listings(id, shortTitle, title, offeredFall, offeredIAP, offeredSpring, fallInstructors, springInstructors) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+				listing.ID,
+				listing.ShortTitle,
+				listing.Title,
+				listing.OfferedFall,
+				listing.OfferedIAP,
+				listing.OfferedSpring,
+				listing.FallInstructors,
+				listing.SpringInstructors,
+			)
+			if err != nil {
+				return err
+			}
+		}
 	} else if source == "offerings" {
 		offerings := []subjectOffering{}
 		err = json.NewDecoder(response.Body).Decode(&offerings)
@@ -96,13 +136,15 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 			}
 
 			_, err = tx.Exec(
-				"REPLACE INTO mit_offerings(id, title, section, term, time, place, isFake, isMaster, isDesign, isLab, isLecture, isRecitation) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				"REPLACE INTO mit_offerings(id, title, section, term, time, place, facultyID, facultyName, isFake, isMaster, isDesign, isLab, isLecture, isRecitation) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				offering.ID,
 				offering.Title,
 				offering.Section,
 				offering.Term,
 				offering.Time,
 				offering.Place,
+				offering.FacultyID,
+				offering.FacultyName,
 				offering.IsFake,
 				offering.IsMaster,
 				offering.IsDesign,
