@@ -161,8 +161,22 @@ CREATE TABLE `mit_classes` (
   `sectionID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `units` int(11) NOT NULL,
+  `sections` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `userID` int(11) NOT NULL,
   PRIMARY KEY (`subjectID`,`sectionID`,`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `mit_listings` (
+  `id` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `shortTitle` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `title` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `offeredFall` tinyint(1) NOT NULL,
+  `offeredIAP` tinyint(1) NOT NULL,
+  `offeredSpring` tinyint(1) NOT NULL,
+  `fallInstructors` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `springInstructors` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -173,6 +187,8 @@ CREATE TABLE `mit_offerings` (
   `term` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL,
   `time` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `place` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `facultyID` varchar(9) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `facultyName` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `isFake` tinyint(1) NOT NULL,
   `isMaster` tinyint(1) NOT NULL,
   `isDesign` tinyint(1) NOT NULL,
