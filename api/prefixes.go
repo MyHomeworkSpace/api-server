@@ -42,6 +42,13 @@ var DefaultPrefixes = []data.Prefix{
 	},
 	data.Prefix{
 		ID:         -1,
+		Background: "EE5D1E",
+		Color:      "FFFFFF",
+		Words:      []string{"Quest", "HalfTest"},
+		Default:    true,
+	},
+	data.Prefix{
+		ID:         -1,
 		Background: "DC143C",
 		Color:      "FFFFFF",
 		Words:      []string{"Test", "Final", "Exam", "Midterm", "Ahh"},
