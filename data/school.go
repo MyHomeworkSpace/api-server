@@ -18,6 +18,9 @@ type School interface {
 
 	Hydrate(data map[string]interface{}) error
 
+	GetSettings(db *sql.DB, user *User) (map[string]interface{}, error)
+	SetSettings(db *sql.DB, user *User, settings map[string]interface{}) error
+
 	Enroll(tx *sql.Tx, user *User, params map[string]interface{}) (map[string]interface{}, error)
 	Unenroll(tx *sql.Tx, user *User) error
 	NeedsUpdate(db *sql.DB) (bool, error)
