@@ -129,8 +129,13 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 				continue
 			}
 
+			termInfo, err := mit.GetTermByCode(offering.Term)
+			if err != nil {
+				return err
+			}
+
 			// check that we can parse the time info
-			_, err := mit.ParseAllTimeInfo(offering.Time)
+			_, err = mit.ParseTimeInfo(offering.Time, termInfo)
 			if err != nil {
 				return err
 			}
