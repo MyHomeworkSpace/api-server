@@ -196,5 +196,5 @@ func Init(e *echo.Echo) {
 	e.POST("/schools/unenroll", route(routeSchoolsUnenroll, authLevelLoggedIn))
 
 	e.GET("/schools/settings/get", route(routeSchoolsSettingsGet, authLevelLoggedIn))
-	e.POST("/schools/settings/set", route(routeSchoolsSettingsGet, authLevelLoggedIn))
+	e.POST("/schools/settings/set", route(routeSchoolsSettingsSet, authLevelLoggedIn))
 }
