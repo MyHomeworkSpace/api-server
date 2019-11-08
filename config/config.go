@@ -62,11 +62,8 @@ type SlackConfig struct {
 }
 
 type MITConfig struct {
-	Warehouse MITWarehouseConfig
-}
-
-type MITWarehouseConfig struct {
 	DataProxyURL    string
+	DataProxyToken  string
 	CurrentTermCode string
 }
 
@@ -111,8 +108,9 @@ SlackURL = ""
 SlackEnabled = false
 SlackURL = ""
 
-[mit.warehouse]
+[mit]
 DataProxyURL = ""
+DataProxyToken = ""
 CurrentTermCode = "2020FA"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {

@@ -174,7 +174,7 @@ func Init(e *echo.Echo) {
 	e.POST("/homework/delete", route(routeHomeworkDelete, authLevelLoggedIn))
 	e.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone, authLevelLoggedIn))
 
-	e.POST("/internal/start_task", route(routeInternalStartTask, authLevelInternal))
+	e.POST("/internal/startTask", route(routeInternalStartTask, authLevelInternal))
 
 	e.POST("/notifications/add", route(routeNotificationsAdd, authLevelAdmin))
 	e.POST("/notifications/delete", route(routeNotificationsDelete, authLevelAdmin))

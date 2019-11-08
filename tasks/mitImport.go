@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
@@ -65,25 +67,46 @@ func StartImportFromMIT(source string, db *sql.DB) error {
 }
 
 func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
-	warehouseConfig := config.GetCurrent().MIT.Warehouse
+	mitConfig := config.GetCurrent().MIT
 	params := url.Values{}
 
 	params.Add("source", source)
 
 	// TODO: don't need this to be manually set
-	params.Add("termCode", warehouseConfig.CurrentTermCode)
+	params.Add("termCode", mitConfig.CurrentTermCode)
 
 	// TODO: remove
 	params.Add("lastUpdateDate", "2018-01-01")
 
-	requestURL := warehouseConfig.DataProxyURL + "fetch?" + params.Encode()
+	requestURL := mitConfig.DataProxyURL + "fetch?" + params.Encode()
 
-	response, err := http.Get(requestURL)
+	client := &http.Client{}
+	request, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Add("X-MHS-Auth", mitConfig.DataProxyToken)
+
+	response, err := client.Do(request)
 	if err != nil {
 		return err
 	}
 
 	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		bodyBytes, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return err
+		}
+
+		return fmt.Errorf(
+			"tasks: MIT data server returned status code %d, body: '%s'",
+			response.StatusCode,
+			string(bodyBytes),
+		)
+	}
 
 	tx, err := db.Begin()
 	if err != nil {
