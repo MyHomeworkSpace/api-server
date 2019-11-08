@@ -10,6 +10,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/schools"
 
 	"github.com/MyHomeworkSpace/api-server/schools/dalton"
+	"github.com/MyHomeworkSpace/api-server/schools/mit"
 
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
@@ -56,6 +57,7 @@ func main() {
 	data.RedisClient = RedisClient
 
 	schools.MainRegistry.Register(dalton.CreateSchool())
+	schools.MainRegistry.Register(mit.CreateSchool())
 
 	e := echo.New()
 	e.Pre(middleware.RemoveTrailingSlash())
