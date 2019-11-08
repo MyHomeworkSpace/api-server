@@ -74,8 +74,8 @@ func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
 Port = 3000
-APIURLBase = "http://api-v2.myhomework.space/"
-AppURLBase = "http://myhomework.space/app.html#!"
+APIURLBase = "http://api-v2.myhomework.invalid/"
+AppURLBase = "http://app.myhomework.invalid/#!"
 ReverseProxyHeader = ""
 HostName = "local"
 
@@ -88,11 +88,11 @@ Database = "myhomeworkspace"
 [email]
 Enabled = false
 FromAddress = "misconfigured@misconfigured.invalid"
-FromDisplay = "Misconfigured MyHomeworkSpace <misconfigured@misconfigured.invalid>"
+FromDisplay = "Misconfigured MyHomeworkSpace <misconfigured@myhomeworkspace.invalid>"
 SMTPHost = "localhost"
 SMTPPort = 465
 SMTPSecure = true
-SMTPUsername = "accounts@myhomework.space"
+SMTPUsername = "misconfigured@myhomework.invalid"
 SMTPPassword = "password123"
 
 [redis]
@@ -101,7 +101,7 @@ Port = 6379
 
 [cors]
 Enabled = false
-Origins = [ "http://myhomework.space" ]
+Origins = [ "http://myhomework.invalid", "http://app.myhomework.invalid" ]
 
 [errorlog]
 SlackEnabled = false
