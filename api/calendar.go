@@ -24,15 +24,15 @@ type calendarViewResponse struct {
 }
 
 func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if len(c.User.Schools) == 0 {
-		ec.JSON(http.StatusOK, calendarStatusResponse{"ok", 0})
-		return
-	}
-
 	schools, err := data.GetSchoolsForUser(c.User)
 	if err != nil {
 		errorlog.LogError("getting calendar status", err)
 		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	if len(schools) == 0 {
+		ec.JSON(http.StatusOK, calendarStatusResponse{"ok", 0})
 		return
 	}
 

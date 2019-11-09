@@ -41,6 +41,10 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 	}
 
 	for _, schoolInfo := range user.Schools {
+		if !schoolInfo.Enabled {
+			continue
+		}
+
 		needsUpdate, err := schoolInfo.School.NeedsUpdate(db)
 		if err != nil {
 			return View{}, err

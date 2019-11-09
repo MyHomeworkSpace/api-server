@@ -49,6 +49,7 @@ func (e DetailedSchoolError) Error() string {
 type SchoolInfo struct {
 	EnrollmentID int    `json:"enrollmentID"`
 	SchoolID     string `json:"schoolID"`
+	Enabled      bool   `json:"enabled"`
 	DisplayName  string `json:"displayName"`
 	ShortName    string `json:"shortName"`
 	UserDetails  string `json:"userDetails"`
@@ -72,11 +73,15 @@ type SchoolRegistry interface {
 	Register(school School)
 }
 
-// GetSchoolsForUser returns a list of schools that the given user is enrolled in
+// GetSchoolsForUser returns a list of schools that the given user is enrolled in, excluding disabled schools.
 func GetSchoolsForUser(user *User) ([]School, error) {
 	schools := []School{}
 
 	for _, info := range user.Schools {
+		if !info.Enabled {
+			continue
+		}
+
 		schools = append(schools, info.School)
 	}
 

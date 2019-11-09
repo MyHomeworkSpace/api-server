@@ -146,7 +146,7 @@ func GetUserByID(id int) (User, error) {
 
 		user.Schools = []SchoolInfo{}
 
-		schoolRows, err := DB.Query("SELECT id, schoolId, data, userId FROM schools WHERE userId = ?", user.ID)
+		schoolRows, err := DB.Query("SELECT id, schoolId, enabled, data, userId FROM schools WHERE userId = ?", user.ID)
 		if err != nil {
 			return User{}, err
 		}
@@ -155,7 +155,7 @@ func GetUserByID(id int) (User, error) {
 			info := SchoolInfo{}
 			dataString := ""
 
-			schoolRows.Scan(&info.EnrollmentID, &info.SchoolID, &dataString, &info.UserID)
+			schoolRows.Scan(&info.EnrollmentID, &info.SchoolID, &info.Enabled, &dataString, &info.UserID)
 
 			// parse JSON data
 			data := map[string]interface{}{}

@@ -171,7 +171,9 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	// check for school prefixes we want to add
 	for _, school := range c.User.Schools {
-		prefixes = append(prefixes, school.School.Prefixes()...)
+		if school.Enabled {
+			prefixes = append(prefixes, school.School.Prefixes()...)
+		}
 	}
 
 	// load user settings

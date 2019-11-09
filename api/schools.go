@@ -207,6 +207,61 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	ec.JSON(http.StatusOK, schoolResultResponse{"ok", &schoolResult})
 }
 
+func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+	if ec.FormValue("school") == "" || ec.FormValue("enabled") == "" {
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		return
+	}
+
+	enabled, err := strconv.ParseBool(ec.FormValue("enabled"))
+	if err != nil {
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	}
+
+	// find school
+	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	if err == data.ErrNotFound {
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	} else if err != nil {
+		errorlog.LogError("set school's enabled status", err)
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	foundSchool := false
+
+	// check we're already enrolled
+	for _, userSchool := range c.User.Schools {
+		if userSchool.SchoolID == school.ID() {
+			// we are
+			foundSchool = true
+			break
+		}
+	}
+
+	if !foundSchool {
+		ec.JSON(http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
+		return
+	}
+
+	// update its status
+	_, err = DB.Exec(
+		"UPDATE schools SET enabled = ? WHERE schoolId = ? AND userId = ?",
+		enabled,
+		school.ID(),
+		c.User.ID,
+	)
+	if err != nil {
+		errorlog.LogError("set school's enabled status", err)
+		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	ec.JSON(http.StatusOK, statusResponse{"ok"})
+}
+
 func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("school") == "" {
 		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})

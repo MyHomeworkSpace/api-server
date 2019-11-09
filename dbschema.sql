@@ -230,6 +230,7 @@ CREATE TABLE `prefs` (
 CREATE TABLE `schools` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `schoolId` varchar(10) NOT NULL,
+  `enabled` tinyint(1) NOT NULL,
   `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `userId` int NOT NULL,
   PRIMARY KEY (`id`)
