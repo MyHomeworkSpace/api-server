@@ -74,6 +74,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 
 	// TODO: don't need this to be manually set
 	params.Add("termCode", mitConfig.CurrentTermCode)
+	params.Add("academicYear", mitConfig.CurrentTermCode[:4])
 
 	// TODO: remove
 	params.Add("lastUpdateDate", "2018-01-01")
