@@ -2,11 +2,20 @@ package tasks
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
+	"github.com/MyHomeworkSpace/api-server/slack"
 )
 
-type taskFunc func(lastCompletion *time.Time, param string, db *sql.DB) error
+type taskResponse struct {
+	RowsAffected int64
+}
+
+type taskFunc func(lastCompletion *time.Time, param string, db *sql.DB) (taskResponse, error)
 
 func getLastCompletion(taskID string, db *sql.DB) (*time.Time, error) {
 	rows, err := db.Query("SELECT lastCompletion FROM internal_tasks WHERE taskID = ?", taskID)
@@ -56,27 +65,80 @@ func updateLastCompletion(taskID string, db *sql.DB) error {
 	return nil
 }
 
+func taskResult(taskID string, taskName string, ok bool, err error, response taskResponse) {
+	taskSlackConfig := config.GetCurrent().Tasks.Slack
+
+	if taskSlackConfig.SlackEnabled {
+		message := fmt.Sprintf("'%s' (%s) failed!", taskName, taskID)
+		color := "danger"
+		text := "The error has been logged."
+
+		if ok {
+			message = fmt.Sprintf("'%s' (%s) completed", taskName, taskID)
+			color = "good"
+
+			if response.RowsAffected == 0 {
+				// don't bother reporting it
+				return
+			}
+
+			text = fmt.Sprintf("%d row(s) affected", response.RowsAffected)
+		}
+
+		err := slack.Post(taskSlackConfig.SlackURL, slack.WebhookMessage{
+			Attachments: []slack.WebhookAttachment{
+				slack.WebhookAttachment{
+					Fallback: message,
+					Color:    color,
+					Title:    message,
+					Text:     text,
+					Fields: []slack.WebhookField{
+						slack.WebhookField{
+							Title: "Host",
+							Value: config.GetCurrent().Server.HostName,
+							Short: true,
+						},
+					},
+					MarkdownIn: []string{
+						"fields",
+					},
+				},
+			},
+		})
+		if err != nil {
+			errorlog.LogError("posting task result to Slack", err)
+		}
+	}
+
+	if err != nil {
+		errorlog.LogError(fmt.Sprintf("running task '%s' (%s)", taskName, taskID), err)
+	}
+}
+
 func taskWatcher(taskID string, taskName string, task taskFunc, source string, db *sql.DB) {
 	log.Printf("Starting task '%s' (%s)...", taskName, taskID)
 
-	// TODO: improve error handling
-
 	lastCompletion, err := getLastCompletion(taskID, db)
 	if err != nil {
-		log.Println(err)
+		taskResult(taskID, taskName, false, err, taskResponse{})
+		return
 	}
 
-	err = task(lastCompletion, source, db)
+	response, err := task(lastCompletion, source, db)
 	if err != nil {
-		log.Println(err)
+		taskResult(taskID, taskName, false, err, taskResponse{})
+		return
 	}
 
 	if err == nil {
 		err = updateLastCompletion(taskID, db)
 		if err != nil {
-			log.Println(err)
+			taskResult(taskID, taskName, false, err, taskResponse{})
+			return
 		}
 	}
+
+	taskResult(taskID, taskName, true, nil, response)
 
 	log.Printf("Task completed.")
 }

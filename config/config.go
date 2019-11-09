@@ -17,6 +17,7 @@ type Config struct {
 	CORS     CORSConfig
 	ErrorLog SlackConfig
 	Feedback SlackConfig
+	Tasks    TasksConfig
 	MIT      MITConfig
 }
 
@@ -59,6 +60,10 @@ type CORSConfig struct {
 type SlackConfig struct {
 	SlackEnabled bool
 	SlackURL     string
+}
+
+type TasksConfig struct {
+	Slack SlackConfig
 }
 
 type MITConfig struct {
@@ -105,6 +110,10 @@ SlackEnabled = false
 SlackURL = ""
 
 [feedback]
+SlackEnabled = false
+SlackURL = ""
+
+[tasks.slack]
 SlackEnabled = false
 SlackURL = ""
 

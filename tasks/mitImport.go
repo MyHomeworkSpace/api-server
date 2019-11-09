@@ -66,7 +66,7 @@ func StartImportFromMIT(source string, db *sql.DB) error {
 	return nil
 }
 
-func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
+func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskResponse, error) {
 	mitConfig := config.GetCurrent().MIT
 	params := url.Values{}
 
@@ -83,14 +83,14 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		return err
+		return taskResponse{}, err
 	}
 
 	request.Header.Add("X-MHS-Auth", mitConfig.DataProxyToken)
 
 	response, err := client.Do(request)
 	if err != nil {
-		return err
+		return taskResponse{}, err
 	}
 
 	defer response.Body.Close()
@@ -98,10 +98,10 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 	if response.StatusCode != http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(response.Body)
 		if err != nil {
-			return err
+			return taskResponse{}, err
 		}
 
-		return fmt.Errorf(
+		return taskResponse{}, fmt.Errorf(
 			"tasks: MIT data server returned status code %d, body: '%s'",
 			response.StatusCode,
 			string(bodyBytes),
@@ -110,19 +110,33 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		return taskResponse{}, err
 	}
+
+	rowsAffected := int64(0)
 
 	if source == "catalog" {
 		listings := []catalogListing{}
 		err = json.NewDecoder(response.Body).Decode(&listings)
 		if err != nil {
-			return err
+			return taskResponse{}, err
 		}
 
 		for _, listing := range listings {
-			_, err = tx.Exec(
-				"REPLACE INTO mit_listings(id, shortTitle, title, offeredFall, offeredIAP, offeredSpring, fallInstructors, springInstructors) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+			result, err := tx.Exec(
+				`INSERT INTO
+					mit_listings(id, shortTitle, title, offeredFall, offeredIAP, offeredSpring, fallInstructors, springInstructors)
+					VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE
+					id = VALUES(id),
+					shortTitle = VALUES(shortTitle),
+					title = VALUES(title),
+					offeredFall = VALUES(offeredFall),
+					offeredIAP = VALUES(offeredIAP),
+					offeredSpring = VALUES(offeredSpring),
+					fallInstructors = VALUES(fallInstructors),
+					springInstructors = VALUES(springInstructors)
+				`,
 				listing.ID,
 				listing.ShortTitle,
 				listing.Title,
@@ -133,14 +147,22 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 				listing.SpringInstructors,
 			)
 			if err != nil {
-				return err
+				return taskResponse{}, err
+			}
+
+			rowAffected, err := result.RowsAffected()
+			if err != nil {
+				return taskResponse{}, err
+			}
+			if rowAffected > 0 {
+				rowsAffected += 1
 			}
 		}
 	} else if source == "offerings" {
 		offerings := []subjectOffering{}
 		err = json.NewDecoder(response.Body).Decode(&offerings)
 		if err != nil {
-			return err
+			return taskResponse{}, err
 		}
 
 		for _, offering := range offerings {
@@ -154,17 +176,34 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 
 			termInfo, err := mit.GetTermByCode(offering.Term)
 			if err != nil {
-				return err
+				return taskResponse{}, err
 			}
 
 			// check that we can parse the time info
 			_, err = mit.ParseTimeInfo(offering.Time, termInfo)
 			if err != nil {
-				return err
+				return taskResponse{}, err
 			}
 
-			_, err = tx.Exec(
-				"REPLACE INTO mit_offerings(id, title, section, term, time, place, facultyID, facultyName, isFake, isMaster, isDesign, isLab, isLecture, isRecitation) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			result, err := tx.Exec(
+				`INSERT INTO
+					mit_offerings(id, title, section, term, time, place, facultyID, facultyName, isFake, isMaster, isDesign, isLab, isLecture, isRecitation)
+					VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE
+					id = VALUES(id),
+					title = VALUES(title),
+					section = VALUES(section),
+					term = VALUES(term),
+					time = VALUES(time),
+					place = VALUES(place),
+					facultyID = VALUES(facultyID),
+					facultyName = VALUES(facultyName),
+					isFake = VALUES(isFake),
+					isMaster = VALUES(isMaster),
+					isDesign = VALUES(isDesign),
+					isLab = VALUES(isLab),
+					isLecture = VALUES(isLecture),
+					isRecitation = VALUES(isRecitation)`,
 				offering.ID,
 				offering.Title,
 				offering.Section,
@@ -181,10 +220,20 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) error {
 				offering.IsRecitation,
 			)
 			if err != nil {
-				return err
+				return taskResponse{}, err
+			}
+
+			rowAffected, err := result.RowsAffected()
+			if err != nil {
+				return taskResponse{}, err
+			}
+			if rowAffected > 0 {
+				rowsAffected += 1
 			}
 		}
 	}
 
-	return tx.Commit()
+	return taskResponse{
+		RowsAffected: rowsAffected,
+	}, tx.Commit()
 }
