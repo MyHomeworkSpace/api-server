@@ -150,7 +150,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	resultDataString := string(resultDataBytes)
 
 	// save the new data
-	_, err = tx.Exec("INSERT INTO schools(schoolId, data, userId) VALUES(?, ?, ?)", school.ID(), resultDataString, c.User.ID)
+	_, err = tx.Exec("INSERT INTO schools(schoolId, enabled, data, userId) VALUES(?, 1, ?, ?)", school.ID(), resultDataString, c.User.ID)
 	if err != nil {
 		tx.Rollback()
 
