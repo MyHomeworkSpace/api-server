@@ -67,8 +67,9 @@ type TasksConfig struct {
 }
 
 type MITConfig struct {
+	AuthProxyURL    string
 	DataProxyURL    string
-	DataProxyToken  string
+	ProxyToken      string
 	CurrentTermCode string
 }
 
@@ -118,8 +119,9 @@ SlackEnabled = false
 SlackURL = ""
 
 [mit]
+AuthProxyURL = ""
 DataProxyURL = ""
-DataProxyToken = ""
+ProxyToken = ""
 CurrentTermCode = "2020FA"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {

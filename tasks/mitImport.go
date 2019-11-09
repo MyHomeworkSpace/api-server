@@ -87,7 +87,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 		return taskResponse{}, err
 	}
 
-	request.Header.Add("X-MHS-Auth", mitConfig.DataProxyToken)
+	request.Header.Add("X-MHS-Auth", mitConfig.ProxyToken)
 
 	response, err := client.Do(request)
 	if err != nil {

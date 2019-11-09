@@ -3,7 +3,12 @@ package mit
 import (
 	"database/sql"
 	"encoding/json"
+	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"strings"
+
+	"github.com/MyHomeworkSpace/api-server/config"
 
 	"github.com/thatoddmailbox/touchstone-client/touchstone"
 
@@ -59,7 +64,26 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		return nil, data.SchoolError{Code: "invalid_params"}
 	}
 
-	tsClient := touchstone.NewClient()
+	cookieJar, _ := cookiejar.New(nil)
+	httpClient := &http.Client{
+		Jar: cookieJar,
+	}
+
+	if config.GetCurrent().MIT.AuthProxyURL != "" {
+		authProxyURL, err := url.Parse(config.GetCurrent().MIT.AuthProxyURL)
+		if err != nil {
+			return nil, err
+		}
+
+		httpClient.Transport = &http.Transport{
+			Proxy: http.ProxyURL(authProxyURL),
+			ProxyConnectHeader: http.Header{
+				"X-MHS-Auth": []string{config.GetCurrent().MIT.ProxyToken},
+			},
+		}
+	}
+
+	tsClient := touchstone.NewClientWithHTTPClient(httpClient)
 
 	challenge, err := tsClient.BeginUsernamePasswordAuth(username, password)
 	if err != nil {
