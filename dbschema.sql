@@ -167,6 +167,14 @@ CREATE TABLE `mit_classes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `mit_holidays` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `text` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `mit_listings` (
   `id` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `shortTitle` text COLLATE utf8mb4_unicode_ci NOT NULL,
