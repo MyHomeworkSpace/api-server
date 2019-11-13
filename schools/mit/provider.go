@@ -39,13 +39,36 @@ type offeringInfo struct {
 
 func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
 	result := data.ProviderData{
-		Announcements: nil,
+		Announcements: []data.PlannerAnnouncement{},
 		Events:        []data.Event{},
 	}
 
 	school := (p.Provider.School).(*school)
 
 	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
+
+	// check for any holidays during the time period
+	announcementRows, err := db.Query("SELECT id, date, text FROM mit_holidays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	if err != nil {
+		return data.ProviderData{}, err
+	}
+	defer announcementRows.Close()
+	for announcementRows.Next() {
+		resp := data.PlannerAnnouncement{
+			Type: data.AnnouncementTypeFullOff,
+		}
+		announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text)
+		result.Announcements = append(result.Announcements, resp)
+	}
+
+	// generate list of all off days in time period
+	offDays := []string{}
+
+	for _, announcement := range result.Announcements {
+		if announcement.Type == data.AnnouncementTypeFullOff {
+			offDays = append(offDays, announcement.Date)
+		}
+	}
 
 	// using the user's registration, find when their classes are offered
 	offerings := []offeringInfo{}
@@ -132,6 +155,11 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			dayTime, _ := time.ParseInLocation("2006-01-02", dayString, location)
 			dayOffset := int(dayTime.Unix())
 
+			// check if it's an off day
+			if util.StringSliceContains(offDays, dayString) {
+				continue
+			}
+
 			event := data.Event{
 				Tags: map[data.EventTagType]interface{}{},
 			}
@@ -202,6 +230,11 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				if util.StringSliceContains(peInfo.ParsedSkipDays, dayString) {
 					continue
 				}
+			}
+
+			// check if it's an off day
+			if util.StringSliceContains(offDays, dayString) {
+				continue
 			}
 
 			event := data.Event{
