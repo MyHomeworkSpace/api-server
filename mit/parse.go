@@ -136,7 +136,22 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 				parsedDate = parsedDate.AddDate(termInfo.FirstDayOfClasses.Year(), 0, 0)
 				endsOn = &parsedDate
 			} else {
-				return nil, nil, nil, fmt.Errorf("mit: ParseScheduledMeeting: couldn't handle info '%s'", info)
+				// some classes are not entered into the catalog correctly
+				// they have a format like T(11-12:30)
+				// if we can parse the time in parenthesis, assume that's the problem
+				parsedInfo, _, _, err := ParseScheduledMeeting(info, termInfo)
+				if err != nil {
+					// didn't work, give up
+					return nil, nil, nil, fmt.Errorf("mit: ParseScheduledMeeting: couldn't handle info '%s'", info)
+				}
+
+				// it worked, so keep going
+				if parsedInfo.StartSeconds != 0 {
+					scheduledMeeting.StartSeconds = parsedInfo.StartSeconds
+				}
+				if parsedInfo.EndSeconds != 0 {
+					scheduledMeeting.EndSeconds = parsedInfo.EndSeconds
+				}
 			}
 		}
 
