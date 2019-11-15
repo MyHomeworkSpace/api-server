@@ -31,10 +31,10 @@ func parseTime(timeString string) (int, error) {
 	timeString = strings.Replace(timeString, ":", ".", -1)
 
 	// some classes also like to just randomly add a "pm"
-	// looking at you WGS.228
+	// looking at you WGS.228 and 15.389
 	isPM := false
-	if strings.Contains(timeString, "pm") {
-		timeString = strings.Replace(timeString, "pm", "", -1)
+	if strings.Contains(timeString, "pm") || strings.Contains(timeString, "PM") {
+		timeString = strings.Replace(strings.Replace(timeString, "pm", "", -1), "PM", "", -1)
 		isPM = true
 	}
 
