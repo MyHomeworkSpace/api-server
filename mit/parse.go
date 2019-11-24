@@ -24,7 +24,7 @@ type TimeInfo struct {
 	EndsOn   time.Time
 }
 
-func parseTime(timeString string) (int, error) {
+func parseTime(timeString string, forceAM bool) (int, error) {
 	// sometimes, for whatever reason, use a colon instead of the normal dot as a separator
 	// this seems to just be some advising seminars
 	// replace these colons with a dot so that we can handle them
@@ -58,7 +58,7 @@ func parseTime(timeString string) (int, error) {
 		}
 	}
 
-	if !isPM && hour >= 8 && hour <= 12 {
+	if forceAM || (!isPM && hour >= 8 && hour <= 12) {
 		// assume AM
 	} else {
 		// assume PM
@@ -186,23 +186,29 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 	if remainingScheduledMeetingString != "" {
 		if strings.Contains(remainingScheduledMeetingString, "-") {
 			// it's a time like "4-5.30"
+			forceAM := false
+			if strings.Contains(remainingScheduledMeetingString, "AM") {
+				forceAM = true
+				remainingScheduledMeetingString = strings.Replace(remainingScheduledMeetingString, "AM", "", -1)
+			}
+
 			timeParts := strings.Split(remainingScheduledMeetingString, "-")
 			if len(timeParts) != 2 {
 				return nil, nil, nil, fmt.Errorf("mit: ParseScheduledMeeting: time info string '%s' had too many dashes", scheduledMeetingString)
 			}
 
-			scheduledMeeting.StartSeconds, err = parseTime(timeParts[0])
+			scheduledMeeting.StartSeconds, err = parseTime(timeParts[0], forceAM)
 			if err != nil {
 				return nil, nil, nil, err
 			}
 
-			scheduledMeeting.EndSeconds, err = parseTime(timeParts[1])
+			scheduledMeeting.EndSeconds, err = parseTime(timeParts[1], forceAM)
 			if err != nil {
 				return nil, nil, nil, err
 			}
 		} else {
 			// it's a time like "4"
-			scheduledMeeting.StartSeconds, err = parseTime(remainingScheduledMeetingString)
+			scheduledMeeting.StartSeconds, err = parseTime(remainingScheduledMeetingString, false)
 			if err != nil {
 				return nil, nil, nil, err
 			}
@@ -222,6 +228,10 @@ func ParseTimeInfo(timeInfoString string, termInfo TermInfo) (TimeInfo, error) {
 		BeginsOn: termInfo.FirstDayOfClasses,
 		EndsOn:   termInfo.LastDayOfClasses,
 	}
+
+	// hack to cope with the fact that some people really, really don't understand how the course catalog works
+	// this is specifically for AS.301
+	timeInfoString = strings.Replace(timeInfoString, "Thurs", "R", -1)
 
 	timeInfoParts := strings.Split(timeInfoString, ",")
 	for _, part := range timeInfoParts {
