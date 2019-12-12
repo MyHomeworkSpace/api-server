@@ -9,7 +9,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
 // structs for data
@@ -105,8 +105,8 @@ func parseRecurFormInfo(r *http.Request) (bool, int, int, string, string) {
  * routes
  */
 
-func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	startDate, err := time.Parse("2006-01-02", ec.Param("monday"))
+func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	startDate, err := time.Parse("2006-01-02", p.ByName("monday"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -186,7 +186,7 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 	})
 }
 
-func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -240,7 +240,7 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -349,7 +349,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -393,7 +393,7 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("homeworkId") == "" || r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -432,7 +432,7 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Co
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("homeworkId") == "" || r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -484,7 +484,7 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

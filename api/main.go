@@ -10,12 +10,14 @@ import (
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
-	"github.com/labstack/echo"
+	"github.com/MyHomeworkSpace/api-server/errorlog"
+
+	"github.com/julienschmidt/httprouter"
 
 	"gopkg.in/redis.v5"
 )
 
-type routeFunc func(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext)
+type routeFunc func(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext)
 type authLevel int
 
 const (
@@ -43,22 +45,22 @@ type RouteContext struct {
 	User     *data.User
 }
 
-func route(f routeFunc, level authLevel) func(ec echo.Context) error {
-	return func(ec echo.Context) error {
+func route(f routeFunc, level authLevel) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		// deal with preflights
-		if ec.Request().Method == "OPTIONS" {
-			ec.Response().Header().Set("Access-Control-Allow-Credentials", "false")
-			ec.Response().Header().Set("Access-Control-Allow-Origin", "*")
-			ec.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
-			ec.Response().Writer.WriteHeader(http.StatusOK)
-			return nil
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Credentials", "false")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "authorization")
+			w.WriteHeader(http.StatusOK)
+			return
 		}
 
 		// handle cors
 		if config.GetCurrent().CORS.Enabled && len(config.GetCurrent().CORS.Origins) > 0 {
 			foundOrigin := ""
 			for _, origin := range config.GetCurrent().CORS.Origins {
-				if origin == ec.Request().Header.Get("Origin") {
+				if origin == r.Header.Get("Origin") {
 					foundOrigin = origin
 				}
 			}
@@ -67,14 +69,14 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 				foundOrigin = config.GetCurrent().CORS.Origins[0]
 			}
 
-			ec.Response().Header().Set("Access-Control-Allow-Origin", foundOrigin)
-			ec.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Origin", foundOrigin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		// some routes bypass session stuff
-		bypassSession := strings.HasPrefix(ec.Request().URL.Path, "/application/requestAuth") || strings.HasPrefix(ec.Request().URL.Path, "/auth/completeEmailStart")
+		bypassSession := strings.HasPrefix(r.URL.Path, "/application/requestAuth") || strings.HasPrefix(r.URL.Path, "/auth/completeEmailStart")
 		if !bypassSession {
-			_, err := ec.Cookie("session")
+			_, err := r.Cookie("session")
 			if err != nil {
 				// user has no cookie, generate one
 				cookie := new(http.Cookie)
@@ -82,19 +84,21 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 				cookie.Path = "/"
 				uid, err := auth.GenerateUID()
 				if err != nil {
-					return err
+					errorlog.LogError("generating random string for session", err)
+					writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+					return
 				}
 				cookie.Value = uid
 				cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
-				ec.SetCookie(cookie)
+				http.SetCookie(w, cookie)
 			}
 
 			bypassCSRF := false
 
 			// check if they have an authorization header
-			if ec.Request().Header.Get("Authorization") != "" {
+			if r.Header.Get("Authorization") != "" {
 				// get the token
-				headerParts := strings.Split(ec.Request().Header.Get("Authorization"), " ")
+				headerParts := strings.Split(r.Header.Get("Authorization"), " ")
 				if len(headerParts) == 2 {
 					authToken := headerParts[1]
 
@@ -112,8 +116,8 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 							err = rows.Scan(&cors)
 
 							if err == nil && cors != "" {
-								ec.Response().Header().Set("Access-Control-Allow-Origin", cors)
-								ec.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
+								w.Header().Set("Access-Control-Allow-Origin", cors)
+								w.Header().Set("Access-Control-Allow-Headers", "authorization")
 							}
 						}
 					}
@@ -124,12 +128,12 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			}
 
 			// bypass csrf for special internal api (this requires the ip to be localhost so it's still secure)
-			if strings.HasPrefix(ec.Request().URL.Path, "/internal") {
+			if strings.HasPrefix(r.URL.Path, "/internal") {
 				bypassCSRF = true
 			}
 
 			if !bypassCSRF {
-				csrfCookie, err := ec.Cookie("csrfToken")
+				csrfCookie, err := r.Cookie("csrfToken")
 				csrfToken := ""
 				hasNoToken := false
 				if err != nil {
@@ -139,11 +143,13 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 					cookie.Path = "/"
 					uid, err := auth.GenerateRandomString(40)
 					if err != nil {
-						return err
+						errorlog.LogError("generating random string", err)
+						writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+						return
 					}
 					cookie.Value = uid
 					cookie.Expires = time.Now().Add(12 * 4 * 7 * 24 * time.Hour)
-					ec.SetCookie(cookie)
+					http.SetCookie(w, cookie)
 
 					hasNoToken = true
 					csrfToken = cookie.Value
@@ -154,22 +160,22 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 				}
 
 				// bypass csrf token for /auth/csrf
-				if strings.HasPrefix(ec.Request().URL.Path, "/auth/csrf") {
+				if strings.HasPrefix(r.URL.Path, "/auth/csrf") {
 					// did we just make up a token?
 					if hasNoToken {
 						// if so, return it
 						// auth.go won't know the new token yet
-						writeJSON(ec.Response(), http.StatusOK, csrfResponse{"ok", csrfToken})
-						return nil
+						writeJSON(w, http.StatusOK, csrfResponse{"ok", csrfToken})
+						return
 					}
 
 					// we didn't, so just pass the request through
 					bypassCSRF = true
 				}
 
-				if !bypassCSRF && (csrfToken != ec.QueryParam("csrfToken") || hasNoToken) {
-					writeJSON(ec.Response(), http.StatusBadRequest, errorResponse{"error", "csrfToken_invalid"})
-					return nil
+				if !bypassCSRF && (csrfToken != r.FormValue("csrfToken") || hasNoToken) {
+					writeJSON(w, http.StatusBadRequest, errorResponse{"error", "csrfToken_invalid"})
+					return
 				}
 			}
 		}
@@ -181,25 +187,27 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			// they need to be from a local ip then
 
 			// are they?
-			if isInternalRequest(&ec) {
+			if isInternalRequest(r) {
 				// yes, bypass other checks
-				f(ec.Response(), ec.Request(), ec, context)
-				return nil
+				f(w, r, p, context)
+				return
 			}
 
 			// no, bye
-			writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "forbidden"})
-			return nil
+			writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "forbidden"})
+			return
 		}
 
 		// are they logged in?
-		sessionUserID := GetSessionUserID(&ec)
+		sessionUserID := GetSessionUserID(r)
 
 		if sessionUserID != -1 {
 			context.LoggedIn = true
 			user, err := data.GetUserByID(sessionUserID)
 			if err != nil {
-				return err
+				errorlog.LogError("getting user information for request", err)
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+				return
 			}
 			context.User = &user
 		}
@@ -208,27 +216,27 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			// are they logged in?
 			if !context.LoggedIn {
 				// no, bye
-				writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "logged_out"})
-				return nil
+				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "logged_out"})
+				return
 			}
 
 			if level == authLevelAdmin {
 				// are they an admin?
 				if context.User.Level == 0 {
 					// no, bye
-					writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "forbidden"})
-					return nil
+					writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "forbidden"})
+					return
 				}
 			}
 		}
 
-		f(ec.Response(), ec.Request(), ec, context)
-		return nil
+		f(w, r, p, context)
 	}
 }
 
-func routeStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	ec.String(http.StatusOK, "Alive")
+func routeStatus(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Alive"))
 }
 
 func writeJSON(w http.ResponseWriter, status int, thing interface{}) {
@@ -238,104 +246,104 @@ func writeJSON(w http.ResponseWriter, status int, thing interface{}) {
 }
 
 // Init will initialize all available API endpoints
-func Init(e *echo.Echo) {
-	e.GET("/status", route(routeStatus, authLevelNone))
+func Init(router *httprouter.Router) {
+	router.GET("/status", route(routeStatus, authLevelNone))
 
-	e.GET("/admin/getAllFeedback", route(routeAdminGetAllFeedback, authLevelAdmin))
-	e.GET("/admin/getFeedbackScreenshot/:id", route(routeAdminGetFeedbackScreenshot, authLevelAdmin))
-	e.GET("/admin/getUserCount", route(routeAdminGetUserCount, authLevelAdmin))
-	e.POST("/admin/sendEmail", route(routeAdminSendEmail, authLevelAdmin))
-	e.POST("/admin/triggerError", route(routeAdminTriggerError, authLevelAdmin))
+	router.GET("/admin/getAllFeedback", route(routeAdminGetAllFeedback, authLevelAdmin))
+	router.GET("/admin/getFeedbackScreenshot/:id", route(routeAdminGetFeedbackScreenshot, authLevelAdmin))
+	router.GET("/admin/getUserCount", route(routeAdminGetUserCount, authLevelAdmin))
+	router.POST("/admin/sendEmail", route(routeAdminSendEmail, authLevelAdmin))
+	router.POST("/admin/triggerError", route(routeAdminTriggerError, authLevelAdmin))
 
-	e.POST("/application/completeAuth", route(routeApplicationCompleteAuth, authLevelLoggedIn))
-	e.GET("/application/get/:id", route(routeApplicationGet, authLevelLoggedIn))
-	e.GET("/application/getAuthorizations", route(routeApplicationGetAuthorizations, authLevelLoggedIn))
-	e.GET("/application/requestAuth/:id", route(routeApplicationRequestAuth, authLevelNone))
-	e.POST("/application/revokeAuth", route(routeApplicationRevokeAuth, authLevelLoggedIn))
-	e.POST("/application/revokeSelf", route(routeApplicationRevokeSelf, authLevelLoggedIn))
+	router.POST("/application/completeAuth", route(routeApplicationCompleteAuth, authLevelLoggedIn))
+	router.GET("/application/get/:id", route(routeApplicationGet, authLevelLoggedIn))
+	router.GET("/application/getAuthorizations", route(routeApplicationGetAuthorizations, authLevelLoggedIn))
+	router.GET("/application/requestAuth/:id", route(routeApplicationRequestAuth, authLevelNone))
+	router.POST("/application/revokeAuth", route(routeApplicationRevokeAuth, authLevelLoggedIn))
+	router.POST("/application/revokeSelf", route(routeApplicationRevokeSelf, authLevelLoggedIn))
 
-	e.POST("/application/manage/create", route(routeApplicationManageCreate, authLevelLoggedIn))
-	e.GET("/application/manage/getAll", route(routeApplicationManageGetAll, authLevelLoggedIn))
-	e.POST("/application/manage/update", route(routeApplicationManageUpdate, authLevelLoggedIn))
-	e.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
+	router.POST("/application/manage/create", route(routeApplicationManageCreate, authLevelLoggedIn))
+	router.GET("/application/manage/getAll", route(routeApplicationManageGetAll, authLevelLoggedIn))
+	router.POST("/application/manage/update", route(routeApplicationManageUpdate, authLevelLoggedIn))
+	router.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
 
-	e.POST("/auth/changeEmail", route(routeAuthChangeEmail, authLevelLoggedIn))
-	e.POST("/auth/changePassword", route(routeAuthChangePassword, authLevelLoggedIn))
-	e.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
-	e.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
-	e.POST("/auth/completeEmail", route(routeAuthCompleteEmail, authLevelNone))
-	e.POST("/auth/createAccount", route(routeAuthCreateAccount, authLevelNone))
-	e.GET("/auth/csrf", route(routeAuthCsrf, authLevelNone))
-	e.POST("/auth/login", route(routeAuthLogin, authLevelNone))
-	e.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
-	e.GET("/auth/logout", route(routeAuthLogout, authLevelLoggedIn))
-	e.POST("/auth/resetPassword", route(routeAuthResetPassword, authLevelNone))
-	e.POST("/auth/resendVerificationEmail", route(routeAuthResendVerificationEmail, authLevelNone))
-	e.GET("/auth/session", route(routeAuthSession, authLevelNone))
+	router.POST("/auth/changeEmail", route(routeAuthChangeEmail, authLevelLoggedIn))
+	router.POST("/auth/changePassword", route(routeAuthChangePassword, authLevelLoggedIn))
+	router.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
+	router.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
+	router.POST("/auth/completeEmail", route(routeAuthCompleteEmail, authLevelNone))
+	router.POST("/auth/createAccount", route(routeAuthCreateAccount, authLevelNone))
+	router.GET("/auth/csrf", route(routeAuthCsrf, authLevelNone))
+	router.POST("/auth/login", route(routeAuthLogin, authLevelNone))
+	router.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
+	router.GET("/auth/logout", route(routeAuthLogout, authLevelLoggedIn))
+	router.POST("/auth/resetPassword", route(routeAuthResetPassword, authLevelNone))
+	router.POST("/auth/resendVerificationEmail", route(routeAuthResendVerificationEmail, authLevelNone))
+	router.GET("/auth/session", route(routeAuthSession, authLevelNone))
 
-	e.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll, authLevelLoggedIn))
-	e.POST("/auth/2fa/completeEnroll", route(routeAuth2faCompleteEnroll, authLevelLoggedIn))
-	e.GET("/auth/2fa/status", route(routeAuth2faStatus, authLevelLoggedIn))
-	e.POST("/auth/2fa/unenroll", route(routeAuth2faUnenroll, authLevelLoggedIn))
+	router.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll, authLevelLoggedIn))
+	router.POST("/auth/2fa/completeEnroll", route(routeAuth2faCompleteEnroll, authLevelLoggedIn))
+	router.GET("/auth/2fa/status", route(routeAuth2faStatus, authLevelLoggedIn))
+	router.POST("/auth/2fa/unenroll", route(routeAuth2faUnenroll, authLevelLoggedIn))
 
-	e.GET("/calendar/getStatus", route(routeCalendarGetStatus, authLevelLoggedIn))
-	e.GET("/calendar/getView", route(routeCalendarGetView, authLevelLoggedIn))
+	router.GET("/calendar/getStatus", route(routeCalendarGetStatus, authLevelLoggedIn))
+	router.GET("/calendar/getView", route(routeCalendarGetView, authLevelLoggedIn))
 
-	e.GET("/calendar/events/getWeek/:monday", route(routeCalendarEventsGetWeek, authLevelLoggedIn))
+	router.GET("/calendar/events/getWeek/:monday", route(routeCalendarEventsGetWeek, authLevelLoggedIn))
 
-	e.POST("/calendar/events/add", route(routeCalendarEventsAdd, authLevelLoggedIn))
-	e.POST("/calendar/events/edit", route(routeCalendarEventsEdit, authLevelLoggedIn))
-	e.POST("/calendar/events/delete", route(routeCalendarEventsDelete, authLevelLoggedIn))
+	router.POST("/calendar/events/add", route(routeCalendarEventsAdd, authLevelLoggedIn))
+	router.POST("/calendar/events/edit", route(routeCalendarEventsEdit, authLevelLoggedIn))
+	router.POST("/calendar/events/delete", route(routeCalendarEventsDelete, authLevelLoggedIn))
 
-	e.POST("/calendar/hwEvents/add", route(routeCalendarHWEventsAdd, authLevelLoggedIn))
-	e.POST("/calendar/hwEvents/edit", route(routeCalendarHWEventsEdit, authLevelLoggedIn))
-	e.POST("/calendar/hwEvents/delete", route(routeCalendarHWEventsDelete, authLevelLoggedIn))
+	router.POST("/calendar/hwEvents/add", route(routeCalendarHWEventsAdd, authLevelLoggedIn))
+	router.POST("/calendar/hwEvents/edit", route(routeCalendarHWEventsEdit, authLevelLoggedIn))
+	router.POST("/calendar/hwEvents/delete", route(routeCalendarHWEventsDelete, authLevelLoggedIn))
 
-	e.GET("/classes/get", route(routeClassesGet, authLevelLoggedIn))
-	e.GET("/classes/get/:id", route(routeClassesGetID, authLevelLoggedIn))
-	e.GET("/classes/hwInfo/:id", route(routeClassesHWInfo, authLevelLoggedIn))
-	e.POST("/classes/add", route(routeClassesAdd, authLevelLoggedIn))
-	e.POST("/classes/edit", route(routeClassesEdit, authLevelLoggedIn))
-	e.POST("/classes/delete", route(routeClassesDelete, authLevelLoggedIn))
-	e.POST("/classes/swap", route(routeClassesSwap, authLevelLoggedIn))
+	router.GET("/classes/get", route(routeClassesGet, authLevelLoggedIn))
+	router.GET("/classes/get/:id", route(routeClassesGetID, authLevelLoggedIn))
+	router.GET("/classes/hwInfo/:id", route(routeClassesHWInfo, authLevelLoggedIn))
+	router.POST("/classes/add", route(routeClassesAdd, authLevelLoggedIn))
+	router.POST("/classes/edit", route(routeClassesEdit, authLevelLoggedIn))
+	router.POST("/classes/delete", route(routeClassesDelete, authLevelLoggedIn))
+	router.POST("/classes/swap", route(routeClassesSwap, authLevelLoggedIn))
 
-	e.POST("/feedback/add", route(routeFeedbackAdd, authLevelLoggedIn))
+	router.POST("/feedback/add", route(routeFeedbackAdd, authLevelLoggedIn))
 
-	e.GET("/homework/get", route(routeHomeworkGet, authLevelLoggedIn))
-	e.GET("/homework/getForClass/:classId", route(routeHomeworkGetForClass, authLevelLoggedIn))
-	e.GET("/homework/getHWView", route(routeHomeworkGetHWView, authLevelLoggedIn))
-	e.GET("/homework/getHWViewSorted", route(routeHomeworkGetHWViewSorted, authLevelLoggedIn))
-	e.GET("/homework/get/:id", route(routeHomeworkGetID, authLevelLoggedIn))
-	e.GET("/homework/getWeek/:monday", route(routeHomeworkGetWeek, authLevelLoggedIn))
-	e.GET("/homework/getPickerSuggestions", route(routeHomeworkGetPickerSuggestions, authLevelLoggedIn))
-	e.GET("/homework/search", route(routeHomeworkSearch, authLevelLoggedIn))
-	e.POST("/homework/add", route(routeHomeworkAdd, authLevelLoggedIn))
-	e.POST("/homework/edit", route(routeHomeworkEdit, authLevelLoggedIn))
-	e.POST("/homework/delete", route(routeHomeworkDelete, authLevelLoggedIn))
-	e.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone, authLevelLoggedIn))
+	router.GET("/homework/get", route(routeHomeworkGet, authLevelLoggedIn))
+	router.GET("/homework/getForClass/:classId", route(routeHomeworkGetForClass, authLevelLoggedIn))
+	router.GET("/homework/getHWView", route(routeHomeworkGetHWView, authLevelLoggedIn))
+	router.GET("/homework/getHWViewSorted", route(routeHomeworkGetHWViewSorted, authLevelLoggedIn))
+	router.GET("/homework/get/:id", route(routeHomeworkGetID, authLevelLoggedIn))
+	router.GET("/homework/getWeek/:monday", route(routeHomeworkGetWeek, authLevelLoggedIn))
+	router.GET("/homework/getPickerSuggestions", route(routeHomeworkGetPickerSuggestions, authLevelLoggedIn))
+	router.GET("/homework/search", route(routeHomeworkSearch, authLevelLoggedIn))
+	router.POST("/homework/add", route(routeHomeworkAdd, authLevelLoggedIn))
+	router.POST("/homework/edit", route(routeHomeworkEdit, authLevelLoggedIn))
+	router.POST("/homework/delete", route(routeHomeworkDelete, authLevelLoggedIn))
+	router.POST("/homework/markOverdueDone", route(routeHomeworkMarkOverdueDone, authLevelLoggedIn))
 
-	e.POST("/internal/startTask", route(routeInternalStartTask, authLevelInternal))
+	router.POST("/internal/startTask", route(routeInternalStartTask, authLevelInternal))
 
-	e.POST("/notifications/add", route(routeNotificationsAdd, authLevelAdmin))
-	e.POST("/notifications/delete", route(routeNotificationsDelete, authLevelAdmin))
-	e.GET("/notifications/get", route(routeNotificationsGet, authLevelLoggedIn))
+	router.POST("/notifications/add", route(routeNotificationsAdd, authLevelAdmin))
+	router.POST("/notifications/delete", route(routeNotificationsDelete, authLevelAdmin))
+	router.GET("/notifications/get", route(routeNotificationsGet, authLevelLoggedIn))
 
-	e.GET("/planner/getWeekInfo/:date", route(routePlannerGetWeekInfo, authLevelLoggedIn))
+	router.GET("/planner/getWeekInfo/:date", route(routePlannerGetWeekInfo, authLevelLoggedIn))
 
-	e.GET("/prefixes/getDefaultList", route(routePrefixesGetDefaultList, authLevelNone))
-	e.GET("/prefixes/getList", route(routePrefixesGetList, authLevelLoggedIn))
-	e.POST("/prefixes/delete", route(routePrefixesDelete, authLevelLoggedIn))
-	e.POST("/prefixes/add", route(routePrefixesAdd, authLevelLoggedIn))
+	router.GET("/prefixes/getDefaultList", route(routePrefixesGetDefaultList, authLevelNone))
+	router.GET("/prefixes/getList", route(routePrefixesGetList, authLevelLoggedIn))
+	router.POST("/prefixes/delete", route(routePrefixesDelete, authLevelLoggedIn))
+	router.POST("/prefixes/add", route(routePrefixesAdd, authLevelLoggedIn))
 
-	e.GET("/prefs/get/:key", route(routePrefsGet, authLevelLoggedIn))
-	e.GET("/prefs/getAll", route(routePrefsGetAll, authLevelLoggedIn))
-	e.POST("/prefs/set", route(routePrefsSet, authLevelLoggedIn))
+	router.GET("/prefs/get/:key", route(routePrefsGet, authLevelLoggedIn))
+	router.GET("/prefs/getAll", route(routePrefsGetAll, authLevelLoggedIn))
+	router.POST("/prefs/set", route(routePrefsSet, authLevelLoggedIn))
 
-	e.POST("/schools/enroll", route(routeSchoolsEnroll, authLevelLoggedIn))
-	e.GET("/schools/lookup", route(routeSchoolsLookup, authLevelLoggedIn))
-	e.POST("/schools/setEnabled", route(routeSchoolsSetEnabled, authLevelLoggedIn))
-	e.POST("/schools/unenroll", route(routeSchoolsUnenroll, authLevelLoggedIn))
+	router.POST("/schools/enroll", route(routeSchoolsEnroll, authLevelLoggedIn))
+	router.GET("/schools/lookup", route(routeSchoolsLookup, authLevelLoggedIn))
+	router.POST("/schools/setEnabled", route(routeSchoolsSetEnabled, authLevelLoggedIn))
+	router.POST("/schools/unenroll", route(routeSchoolsUnenroll, authLevelLoggedIn))
 
-	e.GET("/schools/settings/get", route(routeSchoolsSettingsGet, authLevelLoggedIn))
-	e.POST("/schools/settings/set", route(routeSchoolsSettingsSet, authLevelLoggedIn))
+	router.GET("/schools/settings/get", route(routeSchoolsSettingsGet, authLevelLoggedIn))
+	router.POST("/schools/settings/set", route(routeSchoolsSettingsSet, authLevelLoggedIn))
 }

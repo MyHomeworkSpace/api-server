@@ -5,7 +5,8 @@ import (
 	"strconv"
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type Notification struct {
@@ -19,7 +20,7 @@ type notificationsResponse struct {
 	Notifications []Notification `json:"notifications"`
 }
 
-func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("expiry") == "" || r.FormValue("content") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -35,7 +36,7 @@ func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Conte
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	idStr := r.FormValue("id")
 	if idStr == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
@@ -57,7 +58,7 @@ func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Co
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeNotificationsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeNotificationsGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `content`, `expiry` FROM notifications WHERE expiry > NOW()")
 	if err != nil {
 		errorlog.LogError("getting notification", err)

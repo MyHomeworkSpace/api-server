@@ -10,7 +10,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/calendar"
 
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
 // responses
@@ -23,7 +23,7 @@ type calendarViewResponse struct {
 	View   calendar.View `json:"view"`
 }
 
-func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	schools, err := data.GetSchoolsForUser(c.User)
 	if err != nil {
 		errorlog.LogError("getting calendar status", err)
@@ -52,7 +52,7 @@ func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, calendarStatusResponse{"ok", statusNum})
 }
 
-func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeCalendarGetView(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

@@ -5,7 +5,8 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // don't change these!
@@ -46,7 +47,7 @@ type hwInfoResponse struct {
 	HWItems int    `json:"hwItems"`
 }
 
-func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeClassesGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
@@ -67,8 +68,8 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	writeJSON(w, http.StatusOK, classResponse{"ok", classes})
 }
 
-func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", ec.Param("id"), c.User.ID)
+func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", p.ByName("id"), c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -88,8 +89,8 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	writeJSON(w, http.StatusOK, singleClassResponse{"ok", resp})
 }
 
-func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", ec.Param("id"), c.User.ID)
+func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	rows, err := DB.Query("SELECT COUNT(*) FROM homework WHERE classId = ? AND userId = ?", p.ByName("id"), c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -106,7 +107,7 @@ func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, hwInfoResponse{"ok", resp})
 }
 
-func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeClassesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("color") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -129,7 +130,7 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeClassesEdit(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("color") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -165,7 +166,7 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeClassesDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -222,7 +223,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeClassesSwap(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id1") == "" || r.FormValue("id2") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

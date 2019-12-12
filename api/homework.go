@@ -11,7 +11,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
 // responses
@@ -34,7 +34,7 @@ type singleHomeworkResponse struct {
 	Homework data.Homework `json:"homework"`
 }
 
-func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? ORDER BY `due` ASC", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting homework information", err)
@@ -52,9 +52,9 @@ func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// verify the class exists and the user owns it
-	classIDStr := ec.Param("classId")
+	classIDStr := p.ByName("classId")
 	if classIDStr == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -97,7 +97,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// look for hidden class pref
 	hiddenPref, err := data.GetPrefForUser("homeworkHiddenClasses", c.User.ID)
 	hiddenClasses := []int{}
@@ -134,7 +134,7 @@ func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	showTodayStr := r.FormValue("showToday")
 	showToday := false
 
@@ -250,8 +250,8 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 	})
 }
 
-func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.Param("id"))
+func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND id = ?", c.User.ID, p.ByName("id"))
 	if err != nil {
 		errorlog.LogError("getting homework information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -270,8 +270,8 @@ func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, singleHomeworkResponse{"ok", resp})
 }
 
-func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	startDate, err := time.Parse("2006-01-02", ec.Param("monday"))
+func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	startDate, err := time.Parse("2006-01-02", p.ByName("monday"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -295,7 +295,7 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` DESC", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting homework picker suggestions", err)
@@ -313,7 +313,7 @@ func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, e
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("q") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -344,7 +344,7 @@ func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context
 	writeJSON(w, http.StatusOK, homeworkResponse{"ok", homework})
 }
 
-func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("due") == "" || r.FormValue("complete") == "" || r.FormValue("classId") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -380,7 +380,7 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("due") == "" || r.FormValue("complete") == "" || r.FormValue("classId") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -429,7 +429,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -476,7 +476,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// look for hidden class pref
 	hiddenPref, err := data.GetPrefForUser("homeworkHiddenClasses", c.User.ID)
 	hiddenClasses := []int{}

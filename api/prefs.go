@@ -5,7 +5,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
 // responses
@@ -19,8 +19,8 @@ type prefsResponse struct {
 	Prefs  []data.Pref `json:"prefs"`
 }
 
-func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, ec.Param("key"))
+func routePrefsGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ? AND `key` = ?", c.User.ID, p.ByName("key"))
 	if err != nil {
 		errorlog.LogError("getting pref", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -39,7 +39,7 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c Ro
 	writeJSON(w, http.StatusOK, prefResponse{"ok", resp})
 }
 
-func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefsGetAll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting prefs", err)
@@ -59,7 +59,7 @@ func routePrefsGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	writeJSON(w, http.StatusOK, prefsResponse{"ok", prefs})
 }
 
-func routePrefsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefsSet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("key") == "" || r.FormValue("value") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

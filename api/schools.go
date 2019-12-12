@@ -8,7 +8,8 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 var MainRegistry data.SchoolRegistry
@@ -24,7 +25,7 @@ type schoolResultResponse struct {
 	School *data.SchoolResult `json:"school"`
 }
 
-func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("school") == "" || r.FormValue("data") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -170,7 +171,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("email") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -207,7 +208,7 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, schoolResultResponse{"ok", &schoolResult})
 }
 
-func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("school") == "" || r.FormValue("enabled") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -262,7 +263,7 @@ func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("school") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

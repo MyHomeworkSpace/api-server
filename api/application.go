@@ -8,7 +8,8 @@ import (
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type applicationTokenResponse struct {
@@ -28,7 +29,7 @@ type multipleApplicationsResponse struct {
 	Applications []data.Application `json:"applications"`
 }
 
-func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// get the application
 	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", r.FormValue("clientId"))
 	if err != nil {
@@ -81,8 +82,8 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 	writeJSON(w, http.StatusOK, applicationTokenResponse{"ok", token})
 }
 
-func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.Param("id"))
+func routeApplicationGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	rows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", p.ByName("id"))
 	if err != nil {
 		errorlog.LogError("getting application information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -101,7 +102,7 @@ func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context
 	writeJSON(w, http.StatusOK, singleApplicationResponse{"ok", resp})
 }
 
-func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT application_authorizations.id, applications.id, applications.name, applications.authorName FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting authorizations", err)
@@ -119,16 +120,16 @@ func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, e
 	writeJSON(w, http.StatusOK, applicationAuthorizationsResponse{"ok", authorizations})
 }
 
-func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	state := r.FormValue("state")
 	if state == "" {
-		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id"), http.StatusFound)
+		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+p.ByName("id"), http.StatusFound)
 	} else {
-		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id")+":"+base64.URLEncoding.EncodeToString([]byte(r.FormValue("state"))), http.StatusFound)
+		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+p.ByName("id")+":"+base64.URLEncoding.EncodeToString([]byte(r.FormValue("state"))), http.StatusFound)
 	}
 }
 
-func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// find the authorization
 	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", r.FormValue("id"))
 	if err != nil {
@@ -162,14 +163,14 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if !HasAuthToken(&ec) {
+func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	if !HasAuthToken(r) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "bad_request"})
 		return
 	}
 
 	// delete the authorization
-	_, err := DB.Exec("DELETE FROM application_authorizations WHERE token = ?", GetAuthToken(&ec))
+	_, err := DB.Exec("DELETE FROM application_authorizations WHERE token = ?", GetAuthToken(r))
 	if err != nil {
 		errorlog.LogError("revoking authorization", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -179,7 +180,7 @@ func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// generate client id
 	clientID, err := util.GenerateRandomString(42)
 	if err != nil {
@@ -215,7 +216,7 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT id, name, authorName, clientId, callbackUrl FROM applications WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting user applications", err)
@@ -234,7 +235,7 @@ func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec ech
 	writeJSON(w, http.StatusOK, multipleApplicationsResponse{"ok", apps})
 }
 
-func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("callbackUrl") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -264,7 +265,7 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

@@ -11,7 +11,8 @@ import (
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type feedbacksResponse struct {
@@ -24,7 +25,7 @@ type userCountResponse struct {
 	Count  int    `json:"count"`
 }
 
-func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 	if err != nil {
 		errorlog.LogError("getting all feedback", err)
@@ -46,8 +47,8 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 	writeJSON(w, http.StatusOK, feedbacksResponse{"ok", feedbacks})
 }
 
-func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	id, err := strconv.Atoi(ec.Param("id"))
+func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	id, err := strconv.Atoi(p.ByName("id"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_paramas"})
 		return
@@ -100,7 +101,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 	}
 }
 
-func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	rows, err := DB.Query("SELECT COUNT(*) FROM users")
 	if err != nil {
 		errorlog.LogError("getting user count", err)
@@ -115,7 +116,7 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, userCountResponse{"ok", count})
 }
 
-func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("template") == "" || r.FormValue("data") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -160,7 +161,7 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAdminTriggerError(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAdminTriggerError(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	errorlog.LogError("intentionally triggered error", errors.New("api: intentionally triggered error"))
 	writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 }

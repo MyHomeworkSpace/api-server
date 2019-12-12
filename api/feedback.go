@@ -7,10 +7,10 @@ import (
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/slack"
 
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
-func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("type") == "" || r.FormValue("text") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

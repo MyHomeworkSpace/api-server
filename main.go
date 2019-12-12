@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/schools"
+	"github.com/julienschmidt/httprouter"
 
 	"github.com/MyHomeworkSpace/api-server/schools/dalton"
 	"github.com/MyHomeworkSpace/api-server/schools/mit"
@@ -16,9 +17,6 @@ import (
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
-
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
 type errorResponse struct {
@@ -57,17 +55,18 @@ func main() {
 	schools.MainRegistry.Register(dalton.CreateSchool())
 	schools.MainRegistry.Register(mit.CreateSchool())
 
-	e := echo.New()
-	e.Pre(middleware.RemoveTrailingSlash())
-	e.Static("/api_tester", "api_tester")
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "MyHomeworkSpace API Server")
-	})
+	router := httprouter.New()
 
-	api.Init(e) // API init delayed because router must be started first
+	router.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		w.Write([]byte("MyHomeworkSpace API Server"))
+	})
+	router.ServeFiles("/api_tester/*filepath", http.Dir("api_tester/"))
+
+	api.Init(router) // API init delayed because router must be started first
+	http.Handle("/", router)
 
 	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
-	err := e.Start(fmt.Sprintf(":%d", config.GetCurrent().Server.Port))
+	err := http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}

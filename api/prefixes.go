@@ -8,7 +8,8 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 var DefaultPrefixes = []data.Prefix{
@@ -150,7 +151,7 @@ type defaultPrefixesResponse struct {
 	FallbackColor      string             `json:"fallbackColor"`
 }
 
-func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	info := []schoolPrefixInfo{}
 	schools := MainRegistry.GetAllSchools()
 	for _, school := range schools {
@@ -166,7 +167,7 @@ func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo
 	writeJSON(w, http.StatusOK, defaultPrefixesResponse{"ok", DefaultPrefixes, info, "FFD3BD", "000000"})
 }
 
-func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefixesGetList(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	prefixes := DefaultPrefixes
 
 	// check for school prefixes we want to add
@@ -206,7 +207,7 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	writeJSON(w, http.StatusOK, prefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
 }
 
-func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefixesDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -234,7 +235,7 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routePrefixesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("color") == "" || r.FormValue("background") == "" || r.FormValue("words") == "" || r.FormValue("timedEvent") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

@@ -6,7 +6,8 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type schoolSettingsResponse struct {
@@ -14,7 +15,7 @@ type schoolSettingsResponse struct {
 	Settings map[string]interface{} `json:"settings"`
 }
 
-func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("school") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -74,7 +75,7 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Con
 	writeJSON(w, http.StatusOK, schoolSettingsResponse{"ok", settings})
 }
 
-func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("school") == "" || r.FormValue("settings") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return

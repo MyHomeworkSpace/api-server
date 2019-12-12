@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
+
 	"github.com/pquerna/otp/totp"
 )
 
@@ -50,7 +52,7 @@ func isUser2FAEnrolled(userID int) (bool, error) {
  * routes
  */
 
-func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	// are they enrolled already?
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
@@ -104,7 +106,7 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 	writeJSON(w, http.StatusOK, totpSecretResponse{"ok", secret, imageURL})
 }
 
-func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("code") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -154,7 +156,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting TOTP enrollment status", err)
@@ -165,7 +167,7 @@ func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	writeJSON(w, http.StatusOK, enrollmentResponse{"ok", enrolled})
 }
 
-func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	userID := c.User.ID
 
 	if r.FormValue("code") == "" {

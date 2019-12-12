@@ -7,7 +7,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 
-	"github.com/labstack/echo"
+	"github.com/julienschmidt/httprouter"
 )
 
 // responses
@@ -16,8 +16,8 @@ type plannerWeekInfoResponse struct {
 	Announcements []data.PlannerAnnouncement `json:"announcements"`
 }
 
-func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	startDate, err := time.Parse("2006-01-02", ec.Param("date"))
+func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	startDate, err := time.Parse("2006-01-02", p.ByName("date"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return

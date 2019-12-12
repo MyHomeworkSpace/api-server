@@ -7,6 +7,8 @@ import (
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 
+	"github.com/julienschmidt/httprouter"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/pquerna/otp/totp"
@@ -15,8 +17,6 @@ import (
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
-
-	"github.com/labstack/echo"
 )
 
 type csrfResponse struct {
@@ -75,12 +75,12 @@ func sendVerificationEmail(user *data.User) error {
 	return nil
 }
 
-func HasAuthToken(c *echo.Context) bool {
-	return (*c).Request().Header.Get("Authorization") != ""
+func HasAuthToken(r *http.Request) bool {
+	return r.Header.Get("Authorization") != ""
 }
 
-func GetAuthToken(c *echo.Context) string {
-	headerParts := strings.Split((*c).Request().Header.Get("Authorization"), " ")
+func GetAuthToken(r *http.Request) string {
+	headerParts := strings.Split(r.Header.Get("Authorization"), " ")
 	if len(headerParts) != 2 {
 		return ""
 	} else {
@@ -88,41 +88,41 @@ func GetAuthToken(c *echo.Context) string {
 	}
 }
 
-func GetSessionUserID(c *echo.Context) int {
-	return GetSessionInfo(c).UserID
+func GetSessionUserID(r *http.Request) int {
+	return GetSessionInfo(r).UserID
 }
 
-func GetSessionInfo(c *echo.Context) auth.SessionInfo {
-	if HasAuthToken(c) {
+func GetSessionInfo(r *http.Request) auth.SessionInfo {
+	if HasAuthToken(r) {
 		// we have an authorization header, use that
-		token := GetAuthToken(c)
+		token := GetAuthToken(r)
 		if token == "" {
 			return auth.SessionInfo{-1}
 		}
 		return auth.GetSessionFromAuthToken(token)
-	} else {
-		cookie, err := (*c).Cookie("session")
-		if err != nil {
-			return auth.SessionInfo{-1}
-		}
-		return auth.GetSession(cookie.Value)
 	}
+
+	cookie, err := r.Cookie("session")
+	if err != nil {
+		return auth.SessionInfo{-1}
+	}
+	return auth.GetSession(cookie.Value)
 }
 
-func isInternalRequest(c *echo.Context) bool {
-	remoteAddr := (*c).Request().RemoteAddr
+func isInternalRequest(r *http.Request) bool {
+	remoteAddr := r.RemoteAddr
 	if config.GetCurrent().Server.ReverseProxyHeader != "" {
-		if (*c).Request().Header.Get(config.GetCurrent().Server.ReverseProxyHeader) != "" {
-			header := strings.Split((*c).Request().Header.Get(config.GetCurrent().Server.ReverseProxyHeader), ",")
+		if r.Header.Get(config.GetCurrent().Server.ReverseProxyHeader) != "" {
+			header := strings.Split(r.Header.Get(config.GetCurrent().Server.ReverseProxyHeader), ",")
 			remoteAddr = strings.TrimSpace(header[len(header)-1])
 		}
 	}
 
 	if strings.Split(remoteAddr, ":")[0] == "127.0.0.1" || strings.HasPrefix(remoteAddr, "[::1]") {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func validatePassword(password string) bool {
@@ -136,7 +136,7 @@ func handlePasswordChange(user *data.User) error {
 /*
  * routes
  */
-func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("new") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -192,7 +192,7 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("current") == "" || r.FormValue("new") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -243,7 +243,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Con
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	_, err := DB.Exec("UPDATE users SET showMigrateMessage = 0 WHERE id = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("clearing migration flag", err)
@@ -253,11 +253,11 @@ func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.C
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"completeEmail:"+ec.Param("token"), http.StatusFound)
+func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"completeEmail:"+p.ByName("token"), http.StatusFound)
 }
 
-func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("token") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -346,7 +346,7 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	}
 }
 
-func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("email") == "" || r.FormValue("password") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -472,12 +472,12 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	writeJSON(w, http.StatusOK, schoolResultResponse{"ok", schoolResult})
 }
 
-func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthCsrf(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	cookie, _ := r.Cookie("csrfToken")
 	writeJSON(w, http.StatusOK, csrfResponse{"ok", cookie.Value})
 }
 
-func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("email") == "" || r.FormValue("password") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -611,7 +611,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 	}
 }
 
-func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthMe(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	tabs, err := data.GetTabsByUserID(c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting user information", err)
@@ -635,14 +635,14 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 	})
 }
 
-func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthLogout(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	cookie, _ := r.Cookie("session")
 	newSession := auth.SessionInfo{-1}
 	auth.SetSession(cookie.Value, newSession)
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if c.User.EmailVerified {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "already_verified"})
 		return
@@ -657,7 +657,7 @@ func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, ec
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
-func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("email") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
@@ -724,7 +724,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	}
 }
 
-func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeAuthSession(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		writeJSON(w, http.StatusOK, sessionResponse{"ok", ""})

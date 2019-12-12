@@ -6,10 +6,11 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/tasks"
-	"github.com/labstack/echo"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-func routeInternalStartTask(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
+func routeInternalStartTask(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	task := r.FormValue("task")
 
 	if task == "" {
