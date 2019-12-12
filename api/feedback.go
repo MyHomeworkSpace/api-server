@@ -11,14 +11,14 @@ import (
 )
 
 func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("type") == "" || ec.FormValue("text") == "" {
+	if r.FormValue("type") == "" || r.FormValue("text") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	_, err := DB.Exec(
 		"INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)",
-		c.User.ID, ec.FormValue("type"), ec.FormValue("text"), ec.FormValue("screenshot"),
+		c.User.ID, r.FormValue("type"), r.FormValue("text"), r.FormValue("screenshot"),
 	)
 	if err != nil {
 		errorlog.LogError("adding feedback", err)
@@ -28,7 +28,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	if config.GetCurrent().Feedback.SlackEnabled {
 		screenshotStatement := "No screenshot included."
-		if ec.FormValue("screenshot") != "" {
+		if r.FormValue("screenshot") != "" {
 			screenshotStatement = "View screenshot on admin console."
 		}
 
@@ -38,11 +38,11 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 					Fallback: "New feedback submission",
 					Color:    "good",
 					Title:    "New feedback submission",
-					Text:     ec.FormValue("text"),
+					Text:     r.FormValue("text"),
 					Fields: []slack.WebhookField{
 						slack.WebhookField{
 							Title: "Feedback type",
-							Value: ec.FormValue("type"),
+							Value: r.FormValue("type"),
 							Short: true,
 						},
 						slack.WebhookField{

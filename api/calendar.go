@@ -53,7 +53,7 @@ func routeCalendarGetStatus(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("start") == "" || ec.FormValue("end") == "" {
+	if r.FormValue("start") == "" || r.FormValue("end") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
@@ -65,12 +65,12 @@ func routeCalendarGetView(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		return
 	}
 
-	startDate, err := time.ParseInLocation("2006-01-02", ec.FormValue("start"), timeZone)
+	startDate, err := time.ParseInLocation("2006-01-02", r.FormValue("start"), timeZone)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
-	endDate, err := time.ParseInLocation("2006-01-02", ec.FormValue("end"), timeZone)
+	endDate, err := time.ParseInLocation("2006-01-02", r.FormValue("end"), timeZone)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return

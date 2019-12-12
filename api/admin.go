@@ -80,16 +80,24 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, ec 
 		return
 	}
 
-	screenshot64 = strings.Replace(screenshot64, "data:image/png;base64,", "", 1)
+	screenshotEncodedBytes := []byte(strings.Replace(screenshot64, "data:image/png;base64,", "", 1))
+	screenshotDecodedBytes := make([]byte, base64.StdEncoding.DecodedLen(len(screenshotEncodedBytes)))
 
-	screenshot, err := base64.StdEncoding.DecodeString(screenshot64)
+	_, err = base64.StdEncoding.Decode(screenshotDecodedBytes, screenshotEncodedBytes)
 	if err != nil {
 		errorlog.LogError("getting screenshot", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.Blob(http.StatusOK, "image/png;base64", screenshot)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "image/png")
+	_, err = w.Write(screenshotDecodedBytes)
+	if err != nil {
+		errorlog.LogError("getting screenshot", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
 }
 
 func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -108,15 +116,15 @@ func routeAdminGetUserCount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("template") == "" || ec.FormValue("data") == "" {
+	if r.FormValue("template") == "" || r.FormValue("data") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	user := c.User
 
-	if ec.FormValue("userID") != "" {
-		userID, err := strconv.Atoi(ec.FormValue("userID"))
+	if r.FormValue("userID") != "" {
+		userID, err := strconv.Atoi(r.FormValue("userID"))
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
@@ -136,13 +144,13 @@ func routeAdminSendEmail(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	data := map[string]interface{}{}
-	err := json.Unmarshal([]byte(ec.FormValue("data")), &data)
+	err := json.Unmarshal([]byte(r.FormValue("data")), &data)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
-	err = email.Send("", user, ec.FormValue("template"), data)
+	err = email.Send("", user, r.FormValue("template"), data)
 	if err != nil {
 		errorlog.LogError("sending email", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

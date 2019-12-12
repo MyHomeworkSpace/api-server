@@ -135,7 +135,7 @@ func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	showTodayStr := ec.FormValue("showToday")
+	showTodayStr := r.FormValue("showToday")
 	showToday := false
 
 	if showTodayStr == "true" {
@@ -314,12 +314,12 @@ func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, e
 }
 
 func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("q") == "" {
+	if r.FormValue("q") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	query := ec.FormValue("q")
+	query := r.FormValue("q")
 
 	// sanitize the query, see https://githubengineering.com/like-injection/ for details
 	query = strings.Replace(query, "\\", "\\\\", -1)
@@ -345,17 +345,17 @@ func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("name") == "" || ec.FormValue("due") == "" || ec.FormValue("complete") == "" || ec.FormValue("classId") == "" {
+	if r.FormValue("name") == "" || r.FormValue("due") == "" || r.FormValue("complete") == "" || r.FormValue("classId") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
-	if ec.FormValue("complete") != "0" && ec.FormValue("complete") != "1" {
+	if r.FormValue("complete") != "0" && r.FormValue("complete") != "1" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	// check if you are allowed to add to the given classId
-	rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("classId"))
+	rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("classId"))
 	if err != nil {
 		errorlog.LogError("adding homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -369,7 +369,7 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	_, err = DB.Exec(
 		"INSERT INTO homework(name, `due`, `desc`, `complete`, classId, userId) VALUES(?, ?, ?, ?, ?, ?)",
-		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), c.User.ID,
+		r.FormValue("name"), r.FormValue("due"), r.FormValue("desc"), r.FormValue("complete"), r.FormValue("classId"), c.User.ID,
 	)
 	if err != nil {
 		errorlog.LogError("adding homework", err)
@@ -381,17 +381,17 @@ func routeHomeworkAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("due") == "" || ec.FormValue("complete") == "" || ec.FormValue("classId") == "" {
+	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("due") == "" || r.FormValue("complete") == "" || r.FormValue("classId") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
-	if ec.FormValue("complete") != "0" && ec.FormValue("complete") != "1" {
+	if r.FormValue("complete") != "0" && r.FormValue("complete") != "1" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	// check if you are allowed to edit the given id
-	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -404,7 +404,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 	}
 
 	// check if you are allowed to add to the given classId
-	classRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("classId"))
+	classRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("classId"))
 	if err != nil {
 		errorlog.LogError("editing homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -418,7 +418,7 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 
 	_, err = DB.Exec(
 		"UPDATE homework SET name = ?, `due` = ?, `desc` = ?, `complete` = ?, classId = ? WHERE id = ?",
-		ec.FormValue("name"), ec.FormValue("due"), ec.FormValue("desc"), ec.FormValue("complete"), ec.FormValue("classId"), ec.FormValue("id"),
+		r.FormValue("name"), r.FormValue("due"), r.FormValue("desc"), r.FormValue("complete"), r.FormValue("classId"), r.FormValue("id"),
 	)
 	if err != nil {
 		errorlog.LogError("editing homework", err)
@@ -430,13 +430,13 @@ func routeHomeworkEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, 
 }
 
 func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" {
+	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// check if you are allowed to edit the given id
-	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -451,7 +451,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	deleteTx, err := DB.Begin()
 
 	// delete the homework records
-	_, err = deleteTx.Exec("DELETE FROM homework WHERE id = ?", ec.FormValue("id"))
+	_, err = deleteTx.Exec("DELETE FROM homework WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -459,7 +459,7 @@ func routeHomeworkDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 	}
 
 	// delete any associated calendar events
-	_, err = deleteTx.Exec("DELETE FROM calendar_hwevents WHERE homeworkId = ?", ec.FormValue("id"))
+	_, err = deleteTx.Exec("DELETE FROM calendar_hwevents WHERE homeworkId = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting homework", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

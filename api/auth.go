@@ -137,12 +137,12 @@ func handlePasswordChange(user *data.User) error {
  * routes
  */
 func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("new") == "" {
+	if r.FormValue("new") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	new := ec.FormValue("new")
+	new := r.FormValue("new")
 
 	if !util.EmailIsValid(new) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
@@ -193,18 +193,18 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("current") == "" || ec.FormValue("new") == "" {
+	if r.FormValue("current") == "" || r.FormValue("new") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	if !validatePassword(ec.FormValue("new")) {
+	if !validatePassword(r.FormValue("new")) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
-	current := ec.FormValue("current")
-	new := ec.FormValue("new")
+	current := r.FormValue("current")
+	new := r.FormValue("new")
 
 	// first verify if the current password was correct
 	err := bcrypt.CompareHashAndPassword([]byte(c.User.PasswordHash), []byte(current))
@@ -254,16 +254,16 @@ func routeAuthClearMigrateFlag(w http.ResponseWriter, r *http.Request, ec echo.C
 }
 
 func routeAuthCompleteEmailStart(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"completeEmail:"+ec.Param("token"))
+	http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"completeEmail:"+ec.Param("token"), http.StatusFound)
 }
 
 func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("token") == "" {
+	if r.FormValue("token") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	token, err := data.GetEmailToken(ec.FormValue("token"))
+	token, err := data.GetEmailToken(r.FormValue("token"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
@@ -274,12 +274,12 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	}
 
 	if token.Type == data.EmailTokenResetPassword {
-		if ec.FormValue("password") == "" {
+		if r.FormValue("password") == "" {
 			writeJSON(w, http.StatusOK, tokenResponse{"ok", token, true})
 			return
 		}
 
-		password := ec.FormValue("password")
+		password := r.FormValue("password")
 
 		if !validatePassword(password) {
 			writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
@@ -451,7 +451,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	session := auth.SessionInfo{
 		UserID: int(userID),
 	}
-	cookie, _ := ec.Cookie("session")
+	cookie, _ := r.Cookie("session")
 	auth.SetSession(cookie.Value, session)
 
 	// send a verification email
@@ -473,18 +473,18 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeAuthCsrf(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	cookie, _ := ec.Cookie("csrfToken")
+	cookie, _ := r.Cookie("csrfToken")
 	writeJSON(w, http.StatusOK, csrfResponse{"ok", cookie.Value})
 }
 
 func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("email") == "" || ec.FormValue("password") == "" {
+	if r.FormValue("email") == "" || r.FormValue("password") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	email := ec.FormValue("email")
-	password := ec.FormValue("password")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
 
 	// we check if they're already in our db
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", email)
@@ -553,7 +553,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		}
 
 		if enrolled2fa {
-			if ec.FormValue("code") == "" {
+			if r.FormValue("code") == "" {
 				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "totp_required"})
 				return
 			}
@@ -571,7 +571,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 			secretRows.Next()
 			secretRows.Scan(&secret)
 
-			if !totp.Validate(ec.FormValue("code"), secret) {
+			if !totp.Validate(r.FormValue("code"), secret) {
 				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
 				return
 			}
@@ -601,7 +601,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, ec echo.Context, c R
 		session := auth.SessionInfo{
 			UserID: userID,
 		}
-		cookie, _ := ec.Cookie("session")
+		cookie, _ := r.Cookie("session")
 		auth.SetSession(cookie.Value, session)
 
 		writeJSON(w, http.StatusOK, statusResponse{"ok"})
@@ -636,7 +636,7 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 }
 
 func routeAuthLogout(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	cookie, _ := ec.Cookie("session")
+	cookie, _ := r.Cookie("session")
 	newSession := auth.SessionInfo{-1}
 	auth.SetSession(cookie.Value, newSession)
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
@@ -658,12 +658,12 @@ func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, ec
 }
 
 func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("email") == "" {
+	if r.FormValue("email") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	emailAddress := ec.FormValue("email")
+	emailAddress := r.FormValue("email")
 
 	// we check if they're already in our db
 	userRows, err := DB.Query("SELECT id FROM users WHERE email = ?", emailAddress)
@@ -725,7 +725,7 @@ func routeAuthResetPassword(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeAuthSession(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	cookie, err := ec.Cookie("session")
+	cookie, err := r.Cookie("session")
 	if err != nil {
 		writeJSON(w, http.StatusOK, sessionResponse{"ok", ""})
 		return

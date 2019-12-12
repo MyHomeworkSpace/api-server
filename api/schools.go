@@ -25,15 +25,15 @@ type schoolResultResponse struct {
 }
 
 func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("school") == "" || ec.FormValue("data") == "" {
+	if r.FormValue("school") == "" || r.FormValue("data") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	var err error
 	reenroll := false
-	if ec.FormValue("reenroll") != "" {
-		reenroll, err = strconv.ParseBool(ec.FormValue("reenroll"))
+	if r.FormValue("reenroll") != "" {
+		reenroll, err = strconv.ParseBool(r.FormValue("reenroll"))
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 			return
@@ -41,7 +41,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// find school
-	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	school, err := MainRegistry.GetSchoolByID(r.FormValue("school"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -73,7 +73,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// parse data
-	enrollDataString := ec.FormValue("data")
+	enrollDataString := r.FormValue("data")
 	enrollData := map[string]interface{}{}
 
 	err = json.Unmarshal([]byte(enrollDataString), &enrollData)
@@ -171,12 +171,12 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("email") == "" {
+	if r.FormValue("email") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	email := ec.FormValue("email")
+	email := r.FormValue("email")
 
 	emailParts := strings.Split(email, "@")
 
@@ -208,19 +208,19 @@ func routeSchoolsLookup(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("school") == "" || ec.FormValue("enabled") == "" {
+	if r.FormValue("school") == "" || r.FormValue("enabled") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	enabled, err := strconv.ParseBool(ec.FormValue("enabled"))
+	enabled, err := strconv.ParseBool(r.FormValue("enabled"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	// find school
-	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	school, err := MainRegistry.GetSchoolByID(r.FormValue("school"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -263,13 +263,13 @@ func routeSchoolsSetEnabled(w http.ResponseWriter, r *http.Request, ec echo.Cont
 }
 
 func routeSchoolsUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("school") == "" {
+	if r.FormValue("school") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
-	school, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	school, err := MainRegistry.GetSchoolByID(r.FormValue("school"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return

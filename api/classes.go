@@ -107,18 +107,18 @@ func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("name") == "" || ec.FormValue("color") == "" {
+	if r.FormValue("name") == "" || r.FormValue("color") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
-	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
+	if !util.StringSliceContains(DefaultColors, r.FormValue("color")) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	_, err := DB.Exec(
 		"INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)",
-		ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), c.User.ID,
+		r.FormValue("name"), r.FormValue("teacher"), r.FormValue("color"), c.User.ID,
 	)
 	if err != nil {
 		errorlog.LogError("adding class", err)
@@ -130,17 +130,17 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c 
 }
 
 func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("color") == "" {
+	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("color") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
-	if !util.StringSliceContains(DefaultColors, ec.FormValue("color")) {
+	if !util.StringSliceContains(DefaultColors, r.FormValue("color")) {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	// check if you are allowed to edit the given id
-	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -154,7 +154,7 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	_, err = DB.Exec(
 		"UPDATE classes SET name = ?, teacher = ?, color = ? WHERE id = ?",
-		ec.FormValue("name"), ec.FormValue("teacher"), ec.FormValue("color"), ec.FormValue("id"),
+		r.FormValue("name"), r.FormValue("teacher"), r.FormValue("color"), r.FormValue("id"),
 	)
 	if err != nil {
 		errorlog.LogError("editing class", err)
@@ -166,13 +166,13 @@ func routeClassesEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 }
 
 func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" {
+	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// check if you are allowed to delete the given id
-	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -188,7 +188,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	tx, err := DB.Begin()
 
 	// delete HW calendar events
-	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", ec.FormValue("id"))
+	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -196,7 +196,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// delete HW
-	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", ec.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -204,7 +204,7 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 	}
 
 	// delete class
-	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", ec.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -223,13 +223,13 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context,
 }
 
 func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id1") == "" || ec.FormValue("id2") == "" {
+	if r.FormValue("id1") == "" || r.FormValue("id2") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// check if you are allowed to change id1
-	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id1"))
+	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -242,7 +242,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// check if you are allowed to change id2
-	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id2"))
+	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -273,7 +273,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	tx, err := DB.Begin()
 
 	// update class id1 -> tmp
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", swapId, ec.FormValue("id1"))
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", swapId, r.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -281,7 +281,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update class id2 -> id1
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id1"), ec.FormValue("id2"))
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", r.FormValue("id1"), r.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -289,7 +289,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update class tmp -> id2
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", ec.FormValue("id2"), swapId)
+	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", r.FormValue("id2"), swapId)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -297,7 +297,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework id1 -> swp
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", swapId, ec.FormValue("id1"))
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", swapId, r.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -305,7 +305,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework id2 -> id1
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id1"), ec.FormValue("id2"))
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", r.FormValue("id1"), r.FormValue("id2"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -313,7 +313,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	// update homework swp -> id2
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", ec.FormValue("id2"), swapId)
+	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", r.FormValue("id2"), swapId)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

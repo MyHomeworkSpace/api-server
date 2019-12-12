@@ -207,12 +207,12 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 }
 
 func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" {
+	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting prefixes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -224,7 +224,7 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", ec.FormValue("id"))
+	_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting prefixes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -235,12 +235,12 @@ func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context
 }
 
 func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("color") == "" || ec.FormValue("background") == "" || ec.FormValue("words") == "" || ec.FormValue("timedEvent") == "" {
+	if r.FormValue("color") == "" || r.FormValue("background") == "" || r.FormValue("words") == "" || r.FormValue("timedEvent") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	timedEvent, err := strconv.ParseBool(ec.FormValue("timedEvent"))
+	timedEvent, err := strconv.ParseBool(r.FormValue("timedEvent"))
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -251,7 +251,7 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		timedEventInt = 1
 	}
 
-	wordsInputString := ec.FormValue("words")
+	wordsInputString := r.FormValue("words")
 	wordsList := []string{}
 	cleanedWordsList := []string{}
 
@@ -278,7 +278,7 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		return
 	}
 
-	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, c.User.ID)
+	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), r.FormValue("color"), r.FormValue("background"), timedEventInt, c.User.ID)
 	if err != nil {
 		errorlog.LogError("adding prefix", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

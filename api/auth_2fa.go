@@ -105,12 +105,12 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 }
 
 func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("code") == "" {
+	if r.FormValue("code") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	code := ec.FormValue("code")
+	code := r.FormValue("code")
 
 	// are they enrolled already?
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
@@ -168,12 +168,12 @@ func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context,
 func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	userID := c.User.ID
 
-	if ec.FormValue("code") == "" {
+	if r.FormValue("code") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	code := ec.FormValue("code")
+	code := r.FormValue("code")
 
 	// are they enrolled already?
 	enrolled, err := isUser2FAEnrolled(c.User.ID)

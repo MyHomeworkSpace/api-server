@@ -30,7 +30,7 @@ type multipleApplicationsResponse struct {
 
 func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// get the application
-	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", ec.FormValue("clientId"))
+	applicationRows, err := DB.Query("SELECT id, name, authorName, callbackUrl FROM applications WHERE clientId = ?", r.FormValue("clientId"))
 	if err != nil {
 		errorlog.LogError("completing application auth", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -120,17 +120,17 @@ func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, e
 }
 
 func routeApplicationRequestAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	state := ec.FormValue("state")
+	state := r.FormValue("state")
 	if state == "" {
-		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id"))
+		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id"), http.StatusFound)
 	} else {
-		ec.Redirect(http.StatusFound, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id")+":"+base64.URLEncoding.EncodeToString([]byte(ec.FormValue("state"))))
+		http.Redirect(w, r, config.GetCurrent().Server.AppURLBase+"applicationAuth:"+ec.Param("id")+":"+base64.URLEncoding.EncodeToString([]byte(r.FormValue("state"))), http.StatusFound)
 	}
 }
 
 func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// find the authorization
-	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
+	rows, err := DB.Query("SELECT userId FROM application_authorizations WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("revoking authorization", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -152,7 +152,7 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, ec echo.
 	}
 
 	// delete the authorization
-	_, err = DB.Exec("DELETE FROM application_authorizations WHERE id = ?", ec.FormValue("id"))
+	_, err = DB.Exec("DELETE FROM application_authorizations WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("revoking authorization", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -235,13 +235,13 @@ func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("callbackUrl") == "" {
+	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("callbackUrl") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// check that you can actually edit the application
-	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("updating application", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -254,7 +254,7 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 	}
 
 	// update the application
-	_, err = DB.Exec("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?", ec.FormValue("name"), ec.FormValue("callbackUrl"), ec.FormValue("id"))
+	_, err = DB.Exec("UPDATE applications SET name = ?, callbackUrl = ? WHERE id = ?", r.FormValue("name"), r.FormValue("callbackUrl"), r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("updating application", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -265,13 +265,13 @@ func routeApplicationManageUpdate(w http.ResponseWriter, r *http.Request, ec ech
 }
 
 func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("id") == "" {
+	if r.FormValue("id") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// check that you can actually edit the application
-	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
+	rows, err := DB.Query("SELECT id FROM applications WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting application", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -286,7 +286,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	tx, err := DB.Begin()
 
 	// delete authorizations
-	_, err = tx.Exec("DELETE FROM application_authorizations WHERE applicationId = ?", ec.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM application_authorizations WHERE applicationId = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting application", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -294,7 +294,7 @@ func routeApplicationManageDelete(w http.ResponseWriter, r *http.Request, ec ech
 	}
 
 	// delete applications
-	_, err = tx.Exec("DELETE FROM applications WHERE id = ?", ec.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM applications WHERE id = ?", r.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting application", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

@@ -15,13 +15,13 @@ type schoolSettingsResponse struct {
 }
 
 func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("school") == "" {
+	if r.FormValue("school") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
-	registrySchool, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	registrySchool, err := MainRegistry.GetSchoolByID(r.FormValue("school"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -75,13 +75,13 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Con
 }
 
 func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("school") == "" || ec.FormValue("settings") == "" {
+	if r.FormValue("school") == "" || r.FormValue("settings") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
-	registrySchool, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
+	registrySchool, err := MainRegistry.GetSchoolByID(r.FormValue("school"))
 	if err == data.ErrNotFound {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
@@ -111,7 +111,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Con
 
 	// try parsing the new settings
 	var settings map[string]interface{}
-	err = json.Unmarshal([]byte(ec.FormValue("settings")), &settings)
+	err = json.Unmarshal([]byte(r.FormValue("settings")), &settings)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return

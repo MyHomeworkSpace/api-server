@@ -20,12 +20,12 @@ type notificationsResponse struct {
 }
 
 func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	if ec.FormValue("expiry") == "" || ec.FormValue("content") == "" {
+	if r.FormValue("expiry") == "" || r.FormValue("content") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	_, err := DB.Exec("INSERT INTO notifications (content, expiry) VALUES (?, ?)", ec.FormValue("content"), ec.FormValue("expiry"))
+	_, err := DB.Exec("INSERT INTO notifications (content, expiry) VALUES (?, ?)", r.FormValue("content"), r.FormValue("expiry"))
 	if err != nil {
 		errorlog.LogError("adding notification", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -36,7 +36,7 @@ func routeNotificationsAdd(w http.ResponseWriter, r *http.Request, ec echo.Conte
 }
 
 func routeNotificationsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
-	idStr := ec.FormValue("id")
+	idStr := r.FormValue("id")
 	if idStr == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
