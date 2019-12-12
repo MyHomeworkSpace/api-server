@@ -4,7 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
+	"github.com/MyHomeworkSpace/api-server/auth"
+	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/labstack/echo"
 
@@ -41,6 +45,135 @@ type RouteContext struct {
 
 func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 	return func(ec echo.Context) error {
+		// deal with preflights
+		if ec.Request().Method == "OPTIONS" {
+			ec.Response().Header().Set("Access-Control-Allow-Credentials", "false")
+			ec.Response().Header().Set("Access-Control-Allow-Origin", "*")
+			ec.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
+			ec.Response().Writer.WriteHeader(http.StatusOK)
+			return nil
+		}
+
+		// handle cors
+		if config.GetCurrent().CORS.Enabled && len(config.GetCurrent().CORS.Origins) > 0 {
+			foundOrigin := ""
+			for _, origin := range config.GetCurrent().CORS.Origins {
+				if origin == ec.Request().Header.Get("Origin") {
+					foundOrigin = origin
+				}
+			}
+
+			if foundOrigin == "" {
+				foundOrigin = config.GetCurrent().CORS.Origins[0]
+			}
+
+			ec.Response().Header().Set("Access-Control-Allow-Origin", foundOrigin)
+			ec.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
+		// some routes bypass session stuff
+		bypassSession := strings.HasPrefix(ec.Request().URL.Path, "/application/requestAuth") || strings.HasPrefix(ec.Request().URL.Path, "/auth/completeEmailStart")
+		if !bypassSession {
+			_, err := ec.Cookie("session")
+			if err != nil {
+				// user has no cookie, generate one
+				cookie := new(http.Cookie)
+				cookie.Name = "session"
+				cookie.Path = "/"
+				uid, err := auth.GenerateUID()
+				if err != nil {
+					return err
+				}
+				cookie.Value = uid
+				cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
+				ec.SetCookie(cookie)
+			}
+
+			bypassCSRF := false
+
+			// check if they have an authorization header
+			if ec.Request().Header.Get("Authorization") != "" {
+				// get the token
+				headerParts := strings.Split(ec.Request().Header.Get("Authorization"), " ")
+				if len(headerParts) == 2 {
+					authToken := headerParts[1]
+
+					// look up token
+					rows, err := DB.Query("SELECT applications.cors FROM application_authorizations INNER JOIN applications ON application_authorizations.applicationId = applications.id WHERE application_authorizations.token = ?", authToken)
+					if err == nil {
+						// IMPORTANT: if there's an error with the token, we just continue with the request
+						// this is for backwards compatibility with old versions, where the token would always bypass csrf and only be checked when authentication was needed
+						// this is ok because if someone is able to add a new header, it should not be in a scenario where csrf would be a useful defense
+						// TODO: it would be much cleaner to just fail here if the token is bad. do any applications actually rely on this behavior?
+
+						defer rows.Close()
+						if rows.Next() {
+							cors := ""
+							err = rows.Scan(&cors)
+
+							if err == nil && cors != "" {
+								ec.Response().Header().Set("Access-Control-Allow-Origin", cors)
+								ec.Response().Header().Set("Access-Control-Allow-Headers", "authorization")
+							}
+						}
+					}
+				}
+
+				// also bypass csrf
+				bypassCSRF = true
+			}
+
+			// bypass csrf for special internal api (this requires the ip to be localhost so it's still secure)
+			if strings.HasPrefix(ec.Request().URL.Path, "/internal") {
+				bypassCSRF = true
+			}
+
+			if !bypassCSRF {
+				csrfCookie, err := ec.Cookie("csrfToken")
+				csrfToken := ""
+				hasNoToken := false
+				if err != nil {
+					// user has no cookie, generate one
+					cookie := new(http.Cookie)
+					cookie.Name = "csrfToken"
+					cookie.Path = "/"
+					uid, err := auth.GenerateRandomString(40)
+					if err != nil {
+						return err
+					}
+					cookie.Value = uid
+					cookie.Expires = time.Now().Add(12 * 4 * 7 * 24 * time.Hour)
+					ec.SetCookie(cookie)
+
+					hasNoToken = true
+					csrfToken = cookie.Value
+
+					// let the next if block handle this
+				} else {
+					csrfToken = csrfCookie.Value
+				}
+
+				// bypass csrf token for /auth/csrf
+				if strings.HasPrefix(ec.Request().URL.Path, "/auth/csrf") {
+					// did we just make up a token?
+					if hasNoToken {
+						// if so, return it
+						// auth.go won't know the new token yet
+						writeJSON(ec.Response(), http.StatusOK, csrfResponse{"ok", csrfToken})
+						return nil
+					}
+
+					// we didn't, so just pass the request through
+					bypassCSRF = true
+				}
+
+				if !bypassCSRF && (csrfToken != ec.QueryParam("csrfToken") || hasNoToken) {
+					writeJSON(ec.Response(), http.StatusBadRequest, errorResponse{"error", "csrfToken_invalid"})
+					return nil
+				}
+			}
+		}
+
 		context := RouteContext{}
 
 		// is this an internal-only thing?
@@ -99,8 +232,8 @@ func routeStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c Rout
 }
 
 func writeJSON(w http.ResponseWriter, status int, thing interface{}) {
-	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(thing)
 }
 
