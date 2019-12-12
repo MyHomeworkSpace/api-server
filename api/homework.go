@@ -45,7 +45,7 @@ func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		homework = append(homework, resp)
 	}
@@ -54,19 +54,19 @@ func routeHomeworkGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// verify the class exists and the user owns it
-	classIdStr := ec.Param("classId")
-	if classIdStr == "" {
+	classIDStr := ec.Param("classId")
+	if classIDStr == "" {
 		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
-	classId, err := strconv.Atoi(classIdStr)
+	classID, err := strconv.Atoi(classIDStr)
 	if err != nil {
 		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
-	classRows, err := DB.Query("SELECT id FROM classes WHERE id = ? AND userId = ?", classId, c.User.ID)
+	classRows, err := DB.Query("SELECT id FROM classes WHERE id = ? AND userId = ?", classID, c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting homework for class", err)
 		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -80,7 +80,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 	}
 
 	// actually get the homework
-	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classId, c.User.ID)
+	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classID, c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting homework for class", err)
 		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -90,7 +90,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, ec echo.Co
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		homework = append(homework, resp)
 	}
@@ -122,7 +122,7 @@ func routeHomeworkGetHWView(w http.ResponseWriter, r *http.Request, ec echo.Cont
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
 		if util.IntSliceContains(hiddenClasses, resp.ClassID) {
@@ -195,7 +195,7 @@ func routeHomeworkGetHWViewSorted(w http.ResponseWriter, r *http.Request, ec ech
 	}
 
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		dueDate, err := time.ParseInLocation("2006-01-02", resp.Due, location)
 		if err != nil {
@@ -264,7 +264,7 @@ func routeHomeworkGetID(w http.ResponseWriter, r *http.Request, ec echo.Context,
 		return
 	}
 
-	resp := data.Homework{-1, "", "", "", -1, -1, -1}
+	resp := data.Homework{}
 	rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 
 	ec.JSON(http.StatusOK, singleHomeworkResponse{"ok", resp})
@@ -288,7 +288,7 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Contex
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		homework = append(homework, resp)
 	}
@@ -306,7 +306,7 @@ func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, e
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		homework = append(homework, resp)
 	}
@@ -337,7 +337,7 @@ func routeHomeworkSearch(w http.ResponseWriter, r *http.Request, ec echo.Context
 
 	homework := []data.Homework{}
 	for rows.Next() {
-		resp := data.Homework{-1, "", "", "", -1, -1, -1}
+		resp := data.Homework{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.Due, &resp.Desc, &resp.Complete, &resp.ClassID, &resp.UserID)
 		homework = append(homework, resp)
 	}

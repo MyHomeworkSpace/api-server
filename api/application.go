@@ -5,40 +5,27 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/config"
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/labstack/echo"
 )
-
-type Application struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	AuthorName  string `json:"authorName"`
-	ClientID    string `json:"clientId"`
-	CallbackURL string `json:"callbackUrl"`
-}
-type ApplicationAuthorization struct {
-	ID            int    `json:"id"`
-	ApplicationID int    `json:"applicationId"`
-	Name          string `json:"name"`
-	AuthorName    string `json:"authorName"`
-}
 
 type applicationTokenResponse struct {
 	Status string `json:"status"`
 	Token  string `json:"token"`
 }
 type applicationAuthorizationsResponse struct {
-	Status         string                     `json:"status"`
-	Authorizations []ApplicationAuthorization `json:"authorizations"`
+	Status         string                          `json:"status"`
+	Authorizations []data.ApplicationAuthorization `json:"authorizations"`
 }
 type singleApplicationResponse struct {
-	Status      string      `json:"status"`
-	Application Application `json:"application"`
+	Status      string           `json:"status"`
+	Application data.Application `json:"application"`
 }
 type multipleApplicationsResponse struct {
-	Status       string        `json:"status"`
-	Applications []Application `json:"applications"`
+	Status       string             `json:"status"`
+	Applications []data.Application `json:"applications"`
 }
 
 func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -56,7 +43,7 @@ func routeApplicationCompleteAuth(w http.ResponseWriter, r *http.Request, ec ech
 		return
 	}
 
-	application := Application{-1, "", "", "", ""}
+	application := data.Application{}
 	applicationRows.Scan(&application.ID, &application.Name, &application.AuthorName, &application.CallbackURL)
 
 	// check if we've already authorized this application
@@ -108,7 +95,7 @@ func routeApplicationGet(w http.ResponseWriter, r *http.Request, ec echo.Context
 		return
 	}
 
-	resp := Application{-1, "", "", "", ""}
+	resp := data.Application{}
 	rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.CallbackURL)
 
 	ec.JSON(http.StatusOK, singleApplicationResponse{"ok", resp})
@@ -123,9 +110,9 @@ func routeApplicationGetAuthorizations(w http.ResponseWriter, r *http.Request, e
 	}
 	defer rows.Close()
 
-	authorizations := []ApplicationAuthorization{}
+	authorizations := []data.ApplicationAuthorization{}
 	for rows.Next() {
-		resp := ApplicationAuthorization{-1, -1, "", ""}
+		resp := data.ApplicationAuthorization{}
 		rows.Scan(&resp.ID, &resp.ApplicationID, &resp.Name, &resp.AuthorName)
 		authorizations = append(authorizations, resp)
 	}
@@ -194,7 +181,7 @@ func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, ec echo.
 
 func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	// generate client id
-	clientId, err := util.GenerateRandomString(42)
+	clientID, err := util.GenerateRandomString(42)
 	if err != nil {
 		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -218,7 +205,7 @@ func routeApplicationManageCreate(w http.ResponseWriter, r *http.Request, ec ech
 	rows.Scan(&authorName)
 
 	// actually create the application
-	_, err = DB.Exec("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')", c.User.ID, authorName, clientId)
+	_, err = DB.Exec("INSERT INTO applications(name, userId, authorName, clientId, callbackUrl) VALUES('New application', ?, ?, ?, '')", c.User.ID, authorName, clientID)
 	if err != nil {
 		errorlog.LogError("creating application", err)
 		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -237,9 +224,9 @@ func routeApplicationManageGetAll(w http.ResponseWriter, r *http.Request, ec ech
 	}
 	defer rows.Close()
 
-	apps := []Application{}
+	apps := []data.Application{}
 	for rows.Next() {
-		resp := Application{-1, "", "", "", ""}
+		resp := data.Application{}
 		rows.Scan(&resp.ID, &resp.Name, &resp.AuthorName, &resp.ClientID, &resp.CallbackURL)
 		apps = append(apps, resp)
 	}

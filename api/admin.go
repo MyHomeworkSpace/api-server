@@ -34,7 +34,7 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, ec echo.Co
 
 	feedbacks := []data.Feedback{}
 	for rows.Next() {
-		resp := data.Feedback{-1, -1, "", "", "", "", "", false}
+		resp := data.Feedback{}
 		var screenshot string
 		rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
 		if screenshot != "" {
