@@ -108,7 +108,7 @@ func parseRecurFormInfo(ec echo.Context) (bool, int, int, string, string) {
 func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	startDate, err := time.Parse("2006-01-02", ec.Param("monday"))
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
@@ -116,7 +116,7 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 	view, err := calendar.GetView(DB, c.User, time.UTC, startDate, endDate)
 	if err != nil {
 		errorlog.LogError("getting calendar week", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -177,7 +177,7 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 		}
 	}
 
-	ec.JSON(http.StatusOK, calendarWeekResponse{
+	writeJSON(w, http.StatusOK, calendarWeekResponse{
 		Status:         "ok",
 		Announcements:  announcements,
 		Events:         plainEvents,
@@ -188,21 +188,21 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, ec echo.
 
 func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("name") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	recur, recurFrequency, recurInterval, recurUntil, errorCode := parseRecurFormInfo(ec)
 
 	if errorCode != "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", errorCode})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", errorCode})
 		return
 	}
 
 	start, err := strconv.Atoi(ec.FormValue("start"))
 	end, err2 := strconv.Atoi(ec.FormValue("end"))
 	if err != nil || err2 != nil || start > end {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -213,14 +213,14 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	)
 	if err != nil {
 		errorlog.LogError("adding calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	eventID, err := insertResult.LastInsertId()
 	if err != nil {
 		errorlog.LogError("adding calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -232,31 +232,31 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Cont
 		)
 		if err != nil {
 			errorlog.LogError("adding calendar event", err)
-			ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" || ec.FormValue("name") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	recur, recurFrequency, recurInterval, recurUntil, errorCode := parseRecurFormInfo(ec)
 
 	if errorCode != "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", errorCode})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", errorCode})
 		return
 	}
 
 	start, err := strconv.Atoi(ec.FormValue("start"))
 	end, err2 := strconv.Atoi(ec.FormValue("end"))
 	if err != nil || err2 != nil || start > end {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -264,12 +264,12 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 	idRows, err := DB.Query("SELECT id FROM calendar_events WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -280,7 +280,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 	)
 	if err != nil {
 		errorlog.LogError("editing calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -288,7 +288,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 	recurCheckStmt, err := DB.Query("SELECT COUNT(*) FROM calendar_event_rules WHERE eventId = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	ruleCount := -1
@@ -297,7 +297,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 
 	if ruleCount < 0 || ruleCount > 1 {
 		errorlog.LogError("editing calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -313,7 +313,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 			)
 			if err != nil {
 				errorlog.LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 		} else {
@@ -324,7 +324,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 			)
 			if err != nil {
 				errorlog.LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 		}
@@ -338,7 +338,7 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 			)
 			if err != nil {
 				errorlog.LogError("editing calendar event", err)
-				ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 		} else {
@@ -346,12 +346,12 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Con
 		}
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -359,12 +359,12 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	idRows, err := DB.Query("SELECT id FROM calendar_events WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -375,7 +375,7 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	)
 	if err != nil {
 		errorlog.LogError("deleting calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -386,23 +386,23 @@ func routeCalendarEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.C
 	)
 	if err != nil {
 		errorlog.LogError("deleting calendar event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("homeworkId") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	start, err := strconv.Atoi(ec.FormValue("start"))
 	end, err2 := strconv.Atoi(ec.FormValue("end"))
 	if err != nil || err2 != nil || start > end {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -410,12 +410,12 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Co
 	rows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("homeworkId"))
 	if err != nil {
 		errorlog.LogError("adding calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -425,23 +425,23 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, ec echo.Co
 	)
 	if err != nil {
 		errorlog.LogError("adding calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" || ec.FormValue("homeworkId") == "" || ec.FormValue("start") == "" || ec.FormValue("end") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	start, err := strconv.Atoi(ec.FormValue("start"))
 	end, err2 := strconv.Atoi(ec.FormValue("end"))
 	if err != nil || err2 != nil || start > end {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -449,12 +449,12 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 	idRows, err := DB.Query("SELECT id FROM calendar_hwevents WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("editing calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -462,12 +462,12 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 	rows, err := DB.Query("SELECT id FROM homework WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("homeworkId"))
 	if err != nil {
 		errorlog.LogError("adding calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
@@ -477,16 +477,16 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, ec echo.C
 	)
 	if err != nil {
 		errorlog.LogError("editing calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -494,21 +494,21 @@ func routeCalendarHWEventsDelete(w http.ResponseWriter, r *http.Request, ec echo
 	idRows, err := DB.Query("SELECT id FROM calendar_hwevents WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer idRows.Close()
 	if !idRows.Next() {
-		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
 	_, err = DB.Exec("DELETE FROM calendar_hwevents WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting calendar homework event", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }

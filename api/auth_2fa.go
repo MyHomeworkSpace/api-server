@@ -55,12 +55,12 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		errorlog.LogError("starting TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if enrolled {
-		ec.JSON(http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
 		return
 	}
 
@@ -76,7 +76,7 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 	redisResponse := RedisClient.Set(redisKeyName, secret, time.Hour)
 	if redisResponse.Err() != nil {
 		errorlog.LogError("starting TOTP enrollment", redisResponse.Err())
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -84,7 +84,7 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 	image, err := key.Image(200, 200)
 	if err != nil {
 		errorlog.LogError("starting TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -93,7 +93,7 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 	err = png.Encode(&pngImage, image)
 	if err != nil {
 		errorlog.LogError("starting TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -101,12 +101,12 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, ec echo.Con
 
 	imageURL := "data:image/png;base64," + encodedString
 
-	ec.JSON(http.StatusOK, totpSecretResponse{"ok", secret, imageURL})
+	writeJSON(w, http.StatusOK, totpSecretResponse{"ok", secret, imageURL})
 }
 
 func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("code") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -116,12 +116,12 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		errorlog.LogError("completing TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if enrolled {
-		ec.JSON(http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
 		return
 	}
 
@@ -130,7 +130,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	secret, err := RedisClient.Get(redisKeyName).Result()
 	if err != nil {
 		errorlog.LogError("completing TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -138,7 +138,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	validated := totp.Validate(code, secret)
 
 	if !validated {
-		ec.JSON(http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
 		return
 	}
 
@@ -146,30 +146,30 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, ec echo.
 	_, err = DB.Exec("INSERT INTO totp(userId, secret) VALUES(?, ?)", c.User.ID, secret)
 	if err != nil {
 		errorlog.LogError("starting TOTP enrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	RedisClient.Del(redisKeyName)
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting TOTP enrollment status", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, enrollmentResponse{"ok", enrolled})
+	writeJSON(w, http.StatusOK, enrollmentResponse{"ok", enrolled})
 }
 
 func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	userID := c.User.ID
 
 	if ec.FormValue("code") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -179,12 +179,12 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	enrolled, err := isUser2FAEnrolled(c.User.ID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	if !enrolled {
-		ec.JSON(http.StatusUnauthorized, errorResponse{"error", "not_enrolled"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "not_enrolled"})
 		return
 	}
 
@@ -192,7 +192,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	rows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -205,7 +205,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	validated := totp.Validate(code, secret)
 
 	if !validated {
-		ec.JSON(http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
 		return
 	}
 
@@ -213,9 +213,9 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	_, err = DB.Exec("DELETE FROM totp WHERE userID = ?", userID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }

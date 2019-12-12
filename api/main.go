@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/data"
@@ -54,7 +55,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			}
 
 			// no, bye
-			ec.JSON(http.StatusUnauthorized, errorResponse{"error", "forbidden"})
+			writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "forbidden"})
 			return nil
 		}
 
@@ -74,7 +75,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 			// are they logged in?
 			if !context.LoggedIn {
 				// no, bye
-				ec.JSON(http.StatusUnauthorized, errorResponse{"error", "logged_out"})
+				writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "logged_out"})
 				return nil
 			}
 
@@ -82,7 +83,7 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 				// are they an admin?
 				if context.User.Level == 0 {
 					// no, bye
-					ec.JSON(http.StatusUnauthorized, errorResponse{"error", "forbidden"})
+					writeJSON(ec.Response(), http.StatusUnauthorized, errorResponse{"error", "forbidden"})
 					return nil
 				}
 			}
@@ -95,6 +96,12 @@ func route(f routeFunc, level authLevel) func(ec echo.Context) error {
 
 func routeStatus(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	ec.String(http.StatusOK, "Alive")
+}
+
+func writeJSON(w http.ResponseWriter, status int, thing interface{}) {
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	json.NewEncoder(w).Encode(thing)
 }
 
 // Init will initialize all available API endpoints

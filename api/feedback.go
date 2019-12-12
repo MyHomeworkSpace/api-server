@@ -12,7 +12,7 @@ import (
 
 func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("type") == "" || ec.FormValue("text") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
@@ -22,7 +22,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	)
 	if err != nil {
 		errorlog.LogError("adding feedback", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -87,5 +87,5 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 		}
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }

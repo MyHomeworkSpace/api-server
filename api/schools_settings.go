@@ -16,18 +16,18 @@ type schoolSettingsResponse struct {
 
 func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("school") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
 	registrySchool, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -45,7 +45,7 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Con
 	}
 
 	if !foundSchool {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
 		return
 	}
 
@@ -54,40 +54,40 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, ec echo.Con
 		detailedSchoolError, ok := err.(data.DetailedSchoolError)
 		if ok {
 			// it wants to report something
-			ec.JSON(http.StatusOK, detailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
+			writeJSON(w, http.StatusOK, detailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
 			return
 		}
 
 		schoolError, ok := err.(data.SchoolError)
 		if ok {
 			// it wants to report an error code
-			ec.JSON(http.StatusOK, errorResponse{"error", schoolError.Code})
+			writeJSON(w, http.StatusOK, errorResponse{"error", schoolError.Code})
 			return
 		}
 
 		// server error
 		errorlog.LogError("getting settings for school", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, schoolSettingsResponse{"ok", settings})
+	writeJSON(w, http.StatusOK, schoolSettingsResponse{"ok", settings})
 }
 
 func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("school") == "" || ec.FormValue("settings") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	// find school
 	registrySchool, err := MainRegistry.GetSchoolByID(ec.FormValue("school"))
 	if err == data.ErrNotFound {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
 		errorlog.LogError("enrolling in school", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
@@ -105,7 +105,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Con
 	}
 
 	if !foundSchool {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "not_enrolled"})
 		return
 	}
 
@@ -113,7 +113,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Con
 	var settings map[string]interface{}
 	err = json.Unmarshal([]byte(ec.FormValue("settings")), &settings)
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -123,22 +123,22 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, ec echo.Con
 		detailedSchoolError, ok := err.(data.DetailedSchoolError)
 		if ok {
 			// it wants to report something
-			ec.JSON(http.StatusOK, detailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
+			writeJSON(w, http.StatusOK, detailedSchoolErrorResponse{"error", detailedSchoolError.Code, detailedSchoolError.Details})
 			return
 		}
 
 		schoolError, ok := err.(data.SchoolError)
 		if ok {
 			// it wants to report an error code
-			ec.JSON(http.StatusOK, errorResponse{"error", schoolError.Code})
+			writeJSON(w, http.StatusOK, errorResponse{"error", schoolError.Code})
 			return
 		}
 
 		// server error
 		errorlog.LogError("settings settings for school", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, schoolSettingsResponse{"ok", settings})
+	writeJSON(w, http.StatusOK, schoolSettingsResponse{"ok", settings})
 }

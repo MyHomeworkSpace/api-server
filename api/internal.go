@@ -13,12 +13,12 @@ func routeInternalStartTask(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	task := r.FormValue("task")
 
 	if task == "" {
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	if task != "mit:fetch:catalog" && task != "mit:fetch:offerings" {
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -27,9 +27,9 @@ func routeInternalStartTask(w http.ResponseWriter, r *http.Request, ec echo.Cont
 	err := tasks.StartImportFromMIT(source, DB)
 	if err != nil {
 		errorlog.LogError("starting task", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }

@@ -163,7 +163,7 @@ func routePrefixesGetDefaultList(w http.ResponseWriter, r *http.Request, ec echo
 			Prefixes: school.Prefixes(),
 		})
 	}
-	ec.JSON(http.StatusOK, defaultPrefixesResponse{"ok", DefaultPrefixes, info, "FFD3BD", "000000"})
+	writeJSON(w, http.StatusOK, defaultPrefixesResponse{"ok", DefaultPrefixes, info, "FFD3BD", "000000"})
 }
 
 func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
@@ -180,7 +180,7 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 	rows, err := DB.Query("SELECT id, background, color, words, isTimedEvent FROM prefixes WHERE userId = ?", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting custom prefixes", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
@@ -203,46 +203,46 @@ func routePrefixesGetList(w http.ResponseWriter, r *http.Request, ec echo.Contex
 		prefixes = append(prefixes, resp)
 	}
 
-	ec.JSON(http.StatusOK, prefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
+	writeJSON(w, http.StatusOK, prefixesResponse{"ok", prefixes, "FFD3BD", "000000"})
 }
 
 func routePrefixesDelete(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("id") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	rows, err := DB.Query("SELECT id FROM prefixes WHERE userId = ? AND id = ?", c.User.ID, ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting prefixes", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		ec.JSON(http.StatusForbidden, errorResponse{"error", "forbidden"})
+		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
 	_, err = DB.Exec("DELETE FROM prefixes WHERE id = ?", ec.FormValue("id"))
 	if err != nil {
 		errorlog.LogError("deleting prefixes", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
 func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c RouteContext) {
 	if ec.FormValue("color") == "" || ec.FormValue("background") == "" || ec.FormValue("words") == "" || ec.FormValue("timedEvent") == "" {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
 	timedEvent, err := strconv.ParseBool(ec.FormValue("timedEvent"))
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -257,7 +257,7 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 
 	err = json.Unmarshal([]byte(wordsInputString), &wordsList)
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -268,22 +268,22 @@ func routePrefixesAdd(w http.ResponseWriter, r *http.Request, ec echo.Context, c
 	}
 
 	if len(cleanedWordsList) == 0 {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	wordsFormatted, err := json.Marshal(cleanedWordsList)
 	if err != nil {
-		ec.JSON(http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
 	_, err = DB.Exec("INSERT INTO prefixes(words, color, background, isTimedEvent, userId) VALUES (?, ?, ?, ?, ?)", string(wordsFormatted), ec.FormValue("color"), ec.FormValue("background"), timedEventInt, c.User.ID)
 	if err != nil {
 		errorlog.LogError("adding prefix", err)
-		ec.JSON(http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	ec.JSON(http.StatusOK, statusResponse{"ok"})
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
