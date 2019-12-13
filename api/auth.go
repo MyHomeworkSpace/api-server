@@ -209,7 +209,7 @@ func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, p httproute
 	// first verify if the current password was correct
 	err := bcrypt.CompareHashAndPassword([]byte(c.User.PasswordHash), []byte(current))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
-		writeJSON(w, http.StatusNotFound, errorResponse{"error", "creds_incorrect"})
+		writeJSON(w, http.StatusNotFound, errorResponse{"error", "password_incorrect"})
 		return
 	} else if err != nil {
 		errorlog.LogError("changing password", err)
@@ -518,7 +518,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 			err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 			if err == bcrypt.ErrMismatchedHashAndPassword {
 				// bye
-				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "creds_incorrect"})
+				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "password_incorrect"})
 				return
 			} else if err != nil {
 				errorlog.LogError("user login", err)
