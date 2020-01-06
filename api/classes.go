@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
@@ -26,11 +27,12 @@ var DefaultColors = []string{
 
 // structs for data
 type HomeworkClass struct {
-	ID      int    `json:"id"`
-	Name    string `json:"name"`
-	Teacher string `json:"teacher"`
-	Color   string `json:"color"`
-	UserID  int    `json:"userId"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Teacher   string `json:"teacher"`
+	Color     string `json:"color"`
+	SortIndex int    `json:"sortIndex"`
+	UserID    int    `json:"userId"`
 }
 
 // responses
@@ -48,7 +50,7 @@ type hwInfoResponse struct {
 }
 
 func routeClassesGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE userId = ?", c.User.ID)
+	rows, err := DB.Query("SELECT id, name, teacher, color, sortIndex, userId FROM classes WHERE userId = ? ORDER BY sortIndex ASC", c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -58,8 +60,8 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, p httprouter.Params
 
 	classes := []HomeworkClass{}
 	for rows.Next() {
-		resp := HomeworkClass{-1, "", "", "", -1}
-		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
+		resp := HomeworkClass{-1, "", "", "", -1, -1}
+		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
 		if resp.Color == "" {
 			resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
 		}
@@ -69,7 +71,7 @@ func routeClassesGet(w http.ResponseWriter, r *http.Request, p httprouter.Params
 }
 
 func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, userId FROM classes WHERE id = ? AND userId = ?", p.ByName("id"), c.User.ID)
+	rows, err := DB.Query("SELECT id, name, teacher, color, sortIndex, userId FROM classes WHERE id = ? AND userId = ?", p.ByName("id"), c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting class information", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -81,8 +83,8 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Para
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
-	resp := HomeworkClass{-1, "", "", "", -1}
-	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.UserID)
+	resp := HomeworkClass{-1, "", "", "", -1, -1}
+	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
 	if resp.Color == "" {
 		resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
 	}
@@ -118,8 +120,8 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	}
 
 	_, err := DB.Exec(
-		"INSERT INTO classes(name, teacher, color, userId) VALUES(?, ?, ?, ?)",
-		r.FormValue("name"), r.FormValue("teacher"), r.FormValue("color"), c.User.ID,
+		"INSERT INTO classes(name, teacher, color, sortIndex, userId) VALUES(?, ?, ?, (SELECT COUNT(*) FROM classes WHERE userId = ?), ?)",
+		r.FormValue("name"), r.FormValue("teacher"), r.FormValue("color"), c.User.ID, c.User.ID,
 	)
 	if err != nil {
 		errorlog.LogError("adding class", err)
@@ -229,92 +231,64 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, p httprouter.Param
 		return
 	}
 
-	// check if you are allowed to change id1
-	id1Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id1"))
+	id1, err := strconv.Atoi(r.FormValue("id1"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	}
+	id2, err := strconv.Atoi(r.FormValue("id2"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	}
+
+	// get class 1, check it's yours
+	class1Row, err := DB.Query("SELECT sortIndex FROM classes WHERE userId = ? AND id = ?", c.User.ID, id1)
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer id1Rows.Close()
-	if !id1Rows.Next() {
+	if !class1Row.Next() {
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
-	// check if you are allowed to change id2
-	id2Rows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id2"))
+	class1SortIndex := -1
+	class1Row.Scan(&class1SortIndex)
+	class1Row.Close()
+
+	// get class 2, check it's yours
+	class2Row, err := DB.Query("SELECT sortIndex FROM classes WHERE userId = ? AND id = ?", c.User.ID, id2)
 	if err != nil {
-		errorlog.LogError("swapping classes", err)
+		errorlog.LogError("deleting classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer id2Rows.Close()
-	if !id2Rows.Next() {
+	if !class2Row.Next() {
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
 
-	// find the swap id
-	// this is a dumb way of doing this and is kind of a race condition
-	// but mysql has no better way to swap primary keys
-	// hopefully no one adds 100 classes in the time this transaction takes to complete
-	swapIdStmt, err := DB.Query("SELECT max(id) + 100 FROM classes")
-	if err != nil {
-		errorlog.LogError("swapping classes", err)
-		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-		return
-	}
-	swapId := -1
-	defer swapIdStmt.Close()
-	swapIdStmt.Next()
-	swapIdStmt.Scan(&swapId)
+	class2SortIndex := -1
+	class2Row.Scan(&class2SortIndex)
+	class2Row.Close()
 
-	// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
 	tx, err := DB.Begin()
-
-	// update class id1 -> tmp
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", swapId, r.FormValue("id1"))
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	// update class id2 -> id1
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", r.FormValue("id1"), r.FormValue("id2"))
+	_, err = tx.Exec("UPDATE classes SET sortIndex = ? WHERE id = ?", class2SortIndex, id1)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
-	// update class tmp -> id2
-	_, err = tx.Exec("UPDATE classes SET id = ? WHERE id = ?", r.FormValue("id2"), swapId)
-	if err != nil {
-		errorlog.LogError("swapping classes", err)
-		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	// update homework id1 -> swp
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", swapId, r.FormValue("id1"))
-	if err != nil {
-		errorlog.LogError("swapping classes", err)
-		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	// update homework id2 -> id1
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", r.FormValue("id1"), r.FormValue("id2"))
-	if err != nil {
-		errorlog.LogError("swapping classes", err)
-		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-		return
-	}
-
-	// update homework swp -> id2
-	_, err = tx.Exec("UPDATE homework SET classId = ? WHERE classId = ?", r.FormValue("id2"), swapId)
+	_, err = tx.Exec("UPDATE classes SET sortIndex = ? WHERE id = ?", class1SortIndex, id2)
 	if err != nil {
 		errorlog.LogError("swapping classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -324,7 +298,7 @@ func routeClassesSwap(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	// go!
 	err = tx.Commit()
 	if err != nil {
-		errorlog.LogError("deleting class", err)
+		errorlog.LogError("swapping class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}

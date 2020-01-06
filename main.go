@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,6 +37,14 @@ func main() {
 
 	initDatabase()
 	initRedis()
+
+	migrationName := flag.String("migrate", "", "If specified, the API server will run the migration with the given name.")
+	flag.Parse()
+
+	if *migrationName != "" {
+		migrate(*migrationName)
+		return
+	}
 
 	email.Init()
 
