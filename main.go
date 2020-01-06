@@ -63,7 +63,19 @@ func main() {
 	router.ServeFiles("/api_tester/*filepath", http.Dir("api_tester/"))
 
 	api.Init(router) // API init delayed because router must be started first
-	http.Handle("/", router)
+	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// if it's a preflight, handle it here
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Credentials", "false")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "authorization")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// otherwise, pass it through
+		router.ServeHTTP(w, r)
+	}))
 
 	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)

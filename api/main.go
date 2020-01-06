@@ -47,15 +47,6 @@ type RouteContext struct {
 
 func route(f routeFunc, level authLevel) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		// deal with preflights
-		if r.Method == "OPTIONS" {
-			w.Header().Set("Access-Control-Allow-Credentials", "false")
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Headers", "authorization")
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
 		// handle cors
 		if config.GetCurrent().CORS.Enabled && len(config.GetCurrent().CORS.Origins) > 0 {
 			foundOrigin := ""
