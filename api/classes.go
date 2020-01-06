@@ -120,7 +120,7 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	}
 
 	_, err := DB.Exec(
-		"INSERT INTO classes(name, teacher, color, sortIndex, userId) VALUES(?, ?, ?, (SELECT COUNT(*) FROM classes WHERE userId = ?), ?)",
+		"INSERT INTO classes(name, teacher, color, sortIndex, userId) VALUES(?, ?, ?, (SELECT * FROM (SELECT COUNT(*) FROM classes WHERE userId = ?) AS sortIndex), ?)",
 		r.FormValue("name"), r.FormValue("teacher"), r.FormValue("color"), c.User.ID, c.User.ID,
 	)
 	if err != nil {
