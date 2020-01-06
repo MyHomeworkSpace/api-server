@@ -412,7 +412,7 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, p httprouter
 
 	// add default classes
 	_, err = tx.Exec(
-		"INSERT INTO classes(name, teacher, color, userId) VALUES ('Math', '', 'ff4d40', ?), ('History', '', 'ffa540', ?), ('English', '', '40ff73', ?), ('Language', '', '4071ff', ?), ('Science', '', 'ff4086', ?)",
+		"INSERT INTO classes(name, teacher, color, sortIndex, userId) VALUES ('Math', '', 'ff4d40', 0, ?), ('History', '', 'ffa540', 1, ?), ('English', '', '40ff73', 2, ?), ('Language', '', '4071ff', 3, ?), ('Science', '', 'ff4086', 4, ?)",
 		int(userID), int(userID), int(userID), int(userID), int(userID),
 	)
 	if err != nil {
