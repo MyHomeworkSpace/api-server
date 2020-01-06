@@ -174,44 +174,93 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, p httprouter.Par
 		return
 	}
 
+	id, err := strconv.Atoi(r.FormValue("id"))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	}
+
 	// check if you are allowed to delete the given id
-	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, r.FormValue("id"))
+	idRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? AND id = ?", c.User.ID, id)
 	if err != nil {
 		errorlog.LogError("deleting classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer idRows.Close()
 	if !idRows.Next() {
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
+	idRows.Close()
+
+	// get the user's current classes so that we can renumber the sort indices
+	currentClasses := []int{}
+	allIDRows, err := DB.Query("SELECT id FROM classes WHERE userId = ? ORDER BY sortIndex ASC", c.User.ID)
+	if err != nil {
+		errorlog.LogError("deleting classes", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+	for allIDRows.Next() {
+		id := -1
+
+		err = allIDRows.Scan(&id)
+		if err != nil {
+			errorlog.LogError("deleting classes", err)
+			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		currentClasses = append(currentClasses, id)
+	}
+	allIDRows.Close()
 
 	// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
 	tx, err := DB.Begin()
 
 	// delete HW calendar events
-	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", r.FormValue("id"))
+	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", id)
 	if err != nil {
+		tx.Rollback()
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	// delete HW
-	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", r.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM homework WHERE classId = ?", id)
 	if err != nil {
+		tx.Rollback()
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
 
 	// delete class
-	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", r.FormValue("id"))
+	_, err = tx.Exec("DELETE FROM classes WHERE id = ?", id)
 	if err != nil {
+		tx.Rollback()
 		errorlog.LogError("deleting class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
+	}
+
+	// update all other classes
+	currentSortIndex := 0
+	for _, classID := range currentClasses {
+		if classID == id {
+			continue
+		}
+
+		_, err = tx.Exec("UPDATE classes SET sortIndex = ? WHERE id = ?", currentSortIndex, classID)
+		if err != nil {
+			tx.Rollback()
+			errorlog.LogError("deleting class", err)
+			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		currentSortIndex++
 	}
 
 	// go!
