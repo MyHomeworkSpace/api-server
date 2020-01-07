@@ -39,14 +39,14 @@ CREATE TABLE `calendar_events` (
 
 
 CREATE TABLE `calendar_event_rules` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `eventId` INT NULL,
-  `frequency` TINYINT(1) NULL,
-  `interval` INT NULL,
-  `byDay` VARCHAR(45) NOT NULL,
-  `byMonthDay` INT NULL,
-  `byMonth` INT NULL,
-  `until` DATE NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `eventId` int(11) DEFAULT NULL,
+  `frequency` tinyint(1) DEFAULT NULL,
+  `interval` int(11) DEFAULT NULL,
+  `byDay` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `byMonthDay` int(11) DEFAULT NULL,
+  `byMonth` int(11) DEFAULT NULL,
+  `until` date DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -63,10 +63,11 @@ CREATE TABLE `calendar_hwevents` (
 
 CREATE TABLE `classes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `teacher` mediumtext COLLATE utf8mb4_unicode_ci,
-  `color` varchar(12) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `name` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `teacher` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `color` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sortIndex` int(11) NOT NULL,
+  `userId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -237,10 +238,10 @@ CREATE TABLE `prefs` (
 
 CREATE TABLE `schools` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `schoolId` varchar(10) NOT NULL,
+  `schoolId` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `enabled` tinyint(1) NOT NULL,
   `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `userId` int NOT NULL,
+  `userId` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -264,8 +265,8 @@ CREATE TABLE `tab_permissions` (
 
 
 CREATE TABLE `totp` (
-  `userId` INT NOT NULL,
-  `secret` TEXT NULL,
+  `userId` int(11) NOT NULL,
+  `secret` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -282,6 +283,6 @@ CREATE TABLE `users` (
   `level` tinyint(1) NOT NULL DEFAULT '0',
   `canFeedback` tinyint(1) NOT NULL DEFAULT '0',
   `canAnnouncements` tinyint(1) NOT NULL DEFAULT '0',
-  `showMigrateMessage` int(11) DEFAULT NULL,
+  `showMigrateMessage` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
