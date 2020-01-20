@@ -122,7 +122,7 @@ SlackURL = ""
 AuthProxyURL = ""
 DataProxyURL = ""
 ProxyToken = ""
-CurrentTermCode = "2020FA"`
+CurrentTermCode = "2020SP"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
