@@ -263,6 +263,7 @@ func Init(router *httprouter.Router) {
 	router.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
 	router.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
 	router.POST("/auth/completeEmail", route(routeAuthCompleteEmail, authLevelNone))
+	router.GET("/auth/context", route(routeAuthContext, authLevelLoggedIn))
 	router.POST("/auth/createAccount", route(routeAuthCreateAccount, authLevelNone))
 	router.GET("/auth/csrf", route(routeAuthCsrf, authLevelNone))
 	router.POST("/auth/login", route(routeAuthLogin, authLevelNone))

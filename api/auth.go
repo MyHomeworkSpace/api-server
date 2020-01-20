@@ -24,6 +24,31 @@ type csrfResponse struct {
 	Token  string `json:"token"`
 }
 
+type contextResponse struct {
+	Status string `json:"status"`
+
+	Classes                  []data.HomeworkClass `json:"classes"`
+	User                     data.User            `json:"user"`
+	Prefixes                 []data.Prefix        `json:"prefixes"`
+	PrefixFallbackBackground string               `json:"prefixFallbackBackground"`
+	PrefixFallbackColor      string               `json:"prefixFallbackColor"`
+	Prefs                    []data.Pref          `json:"prefs"`
+	Tabs                     []data.Tab           `json:"tabs"`
+}
+
+type meResponse struct {
+	Status string `json:"status"`
+
+	User data.User  `json:"user"`
+	Tabs []data.Tab `json:"tabs"`
+
+	// for backwards compatibility only
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Level int    `json:"level"`
+}
+
 type sessionResponse struct {
 	Status  string `json:"status"`
 	Session string `json:"session"`
@@ -33,20 +58,6 @@ type tokenResponse struct {
 	Status       string          `json:"status"`
 	Token        data.EmailToken `json:"token"`
 	InfoRequired bool            `json:"infoRequired"`
-}
-
-type userResponse struct {
-	Status             string     `json:"status"`
-	User               data.User  `json:"user"`
-	Tabs               []data.Tab `json:"tabs"`
-	ID                 int        `json:"id"`
-	Name               string     `json:"name"`
-	Username           string     `json:"username"`
-	Email              string     `json:"email"`
-	Type               string     `json:"type"`
-	Features           string     `json:"features"`
-	Level              int        `json:"level"`
-	ShowMigrateMessage int        `json:"showMigrateMessage"`
 }
 
 func sendVerificationEmail(user *data.User) error {
@@ -346,6 +357,60 @@ func routeAuthCompleteEmail(w http.ResponseWriter, r *http.Request, p httprouter
 	}
 }
 
+func routeAuthContext(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	tabs, err := data.GetTabsByUserID(c.User.ID)
+	if err != nil {
+		errorlog.LogError("getting user context", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// fetch all classes
+	classes, err := data.GetClassesForUser(c.User)
+	if err != nil {
+		errorlog.LogError("getting user context", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// fetch all prefixes
+	prefixes, err := data.GetPrefixesForUser(c.User)
+	if err != nil {
+		errorlog.LogError("getting user context", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// fetch all prefs
+	prefRows, err := DB.Query("SELECT `id`, `key`, `value` FROM prefs WHERE userId = ?", c.User.ID)
+	if err != nil {
+		errorlog.LogError("getting user context", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+	defer prefRows.Close()
+
+	prefs := []data.Pref{}
+
+	for prefRows.Next() {
+		pref := data.Pref{}
+		prefRows.Scan(&pref.ID, &pref.Key, &pref.Value)
+		prefs = append(prefs, pref)
+	}
+
+	writeJSON(w, http.StatusOK, contextResponse{
+		Status: "ok",
+
+		Classes:                  classes,
+		User:                     *c.User,
+		Prefixes:                 prefixes,
+		PrefixFallbackBackground: data.FallbackBackground,
+		PrefixFallbackColor:      data.FallbackColor,
+		Prefs:                    prefs,
+		Tabs:                     tabs,
+	})
+}
+
 func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("name") == "" || r.FormValue("email") == "" || r.FormValue("password") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
@@ -619,19 +684,17 @@ func routeAuthMe(w http.ResponseWriter, r *http.Request, p httprouter.Params, c 
 		return
 	}
 
-	writeJSON(w, http.StatusOK, userResponse{
+	writeJSON(w, http.StatusOK, meResponse{
 		Status: "ok",
-		User:   *c.User,
-		Tabs:   tabs,
+
+		User: *c.User,
+		Tabs: tabs,
 
 		// these are set for backwards compatibility
-		ID:                 c.User.ID,
-		Name:               c.User.Name,
-		Email:              c.User.Email,
-		Type:               c.User.Type,
-		Features:           c.User.Features,
-		Level:              c.User.Level,
-		ShowMigrateMessage: c.User.ShowMigrateMessage,
+		ID:    c.User.ID,
+		Name:  c.User.Name,
+		Email: c.User.Email,
+		Level: c.User.Level,
 	})
 }
 

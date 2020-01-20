@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
 
@@ -25,24 +26,14 @@ var DefaultColors = []string{
 	"4d4d4d",
 }
 
-// structs for data
-type HomeworkClass struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Teacher   string `json:"teacher"`
-	Color     string `json:"color"`
-	SortIndex int    `json:"sortIndex"`
-	UserID    int    `json:"userId"`
-}
-
 // responses
 type classResponse struct {
-	Status  string          `json:"status"`
-	Classes []HomeworkClass `json:"classes"`
+	Status  string               `json:"status"`
+	Classes []data.HomeworkClass `json:"classes"`
 }
 type singleClassResponse struct {
-	Status string        `json:"status"`
-	Class  HomeworkClass `json:"class"`
+	Status string             `json:"status"`
+	Class  data.HomeworkClass `json:"class"`
 }
 type hwInfoResponse struct {
 	Status  string `json:"status"`
@@ -50,23 +41,13 @@ type hwInfoResponse struct {
 }
 
 func routeClassesGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, teacher, color, sortIndex, userId FROM classes WHERE userId = ? ORDER BY sortIndex ASC", c.User.ID)
+	classes, err := data.GetClassesForUser(c.User)
 	if err != nil {
-		errorlog.LogError("getting class information", err)
+		errorlog.LogError("getting list of classes", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
-	defer rows.Close()
 
-	classes := []HomeworkClass{}
-	for rows.Next() {
-		resp := HomeworkClass{-1, "", "", "", -1, -1}
-		rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
-		if resp.Color == "" {
-			resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
-		}
-		classes = append(classes, resp)
-	}
 	writeJSON(w, http.StatusOK, classResponse{"ok", classes})
 }
 
@@ -83,7 +64,7 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Para
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
-	resp := HomeworkClass{-1, "", "", "", -1, -1}
+	resp := data.HomeworkClass{-1, "", "", "", -1, -1}
 	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
 	if resp.Color == "" {
 		resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
