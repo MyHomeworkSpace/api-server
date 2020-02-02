@@ -84,6 +84,8 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 		return nil, nil, nil, nil
 	}
 
+	parsedATime := false
+
 	if strings.Contains(scheduledMeetingString, "EVE") {
 		// it's an evening class
 		// for example "TR EVE (4-6 PM)" or "W EVE (4-6.30 PM)"
@@ -112,6 +114,8 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 
 		scheduledMeetingString = strings.Replace(scheduledMeetingString, "EVE", "", -1)
 		scheduledMeetingString = parensRegex.ReplaceAllString(scheduledMeetingString, "")
+
+		parsedATime = true
 	} else if strings.Contains(scheduledMeetingString, "(") {
 		// there's a thing in parentheses
 		// for example "TR10.30-12 (BEGINS OCT 21)"
@@ -183,7 +187,7 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 	}
 
 	var err error
-	if remainingScheduledMeetingString != "" {
+	if remainingScheduledMeetingString != "" && !parsedATime {
 		if strings.Contains(remainingScheduledMeetingString, "-") {
 			// it's a time like "4-5.30"
 			forceAM := false
@@ -215,6 +219,12 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 
 			// we can assume it's an hour long
 			scheduledMeeting.EndSeconds = scheduledMeeting.StartSeconds + 60*60
+		}
+	} else {
+		if strings.TrimSpace(remainingScheduledMeetingString) != "" && parsedATime {
+			// there's something left, and it can't be a time...
+			// complain
+			return nil, nil, nil, fmt.Errorf("mit: unexpected extra data '%s' when parsing time string '%s'", remainingScheduledMeetingString, scheduledMeetingString)
 		}
 	}
 
