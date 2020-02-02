@@ -18,7 +18,7 @@ func routeInternalStartTask(w http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	if task != "mit:fetch:catalog" && task != "mit:fetch:offerings" {
+	if task != "mit:fetch:catalog" && task != "mit:fetch:coursews" && task != "mit:fetch:offerings" {
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "invalid_params"})
 		return
 	}

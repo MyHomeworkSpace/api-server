@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/mit"
@@ -55,7 +56,7 @@ type subjectOffering struct {
 
 // StartImportFromMIT begins an import of the given data from the MIT Data Warehouse.
 func StartImportFromMIT(source string, db *sql.DB) error {
-	if source != "catalog" && source != "offerings" {
+	if source != "catalog" && source != "coursews" && source != "offerings" {
 		return errors.New("tasks: invalid parameter")
 	}
 
@@ -73,13 +74,18 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 	params.Add("source", source)
 
 	// TODO: don't need this to be manually set
-	params.Add("termCode", mitConfig.CurrentTermCode)
-	params.Add("academicYear", mitConfig.CurrentTermCode[:4])
+	currentTermCode := mitConfig.CurrentTermCode
+	params.Add("termCode", currentTermCode)
+	params.Add("academicYear", currentTermCode[:4])
 
 	// TODO: remove
 	params.Add("lastUpdateDate", "2018-01-01")
 
 	requestURL := mitConfig.DataProxyURL + "fetch?" + params.Encode()
+	if source == "coursews" {
+		// actually use the secret coursews API
+		requestURL = "https://coursews.mit.edu/coursews/"
+	}
 
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", requestURL, nil)
@@ -87,7 +93,9 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 		return taskResponse{}, err
 	}
 
-	request.Header.Add("X-MHS-Auth", mitConfig.ProxyToken)
+	if source != "coursews" {
+		request.Header.Add("X-MHS-Auth", mitConfig.ProxyToken)
+	}
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -156,7 +164,146 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 				return taskResponse{}, err
 			}
 			if rowAffected > 0 {
-				rowsAffected += 1
+				rowsAffected++
+			}
+		}
+	} else if source == "coursews" {
+		// unfortunately, this API gives us data in a rather annoying format
+		// so we cannot just parse them into a go struct
+		// instead we have to use a hacky series of typecasts :(
+		wsData := map[string]interface{}{}
+		err = json.NewDecoder(response.Body).Decode(&wsData)
+		if err != nil {
+			return taskResponse{}, err
+		}
+
+		items := wsData["items"].([]interface{})
+
+		// assume it's all the same term
+		termInfo, err := mit.GetTermByCode(currentTermCode)
+		if err != nil {
+			return taskResponse{}, err
+		}
+
+		// first, clear out any data from a previous term
+		_, err = tx.Exec("DELETE FROM mit_offerings WHERE term <> ?", currentTermCode)
+		if err != nil {
+			return taskResponse{}, err
+		}
+
+		for _, itemInterface := range items {
+			item := itemInterface.(map[string]interface{})
+
+			itemType := item["type"].(string)
+
+			if itemType == "Class" {
+				// we actually don't care about classes
+				continue
+			}
+
+			if itemType != "LectureSession" && itemType != "LabSession" && itemType != "RecitationSession" {
+				return taskResponse{}, fmt.Errorf("tasks: unknown coursews item type '%s'", itemType)
+			}
+
+			itemLabel := item["label"].(string)
+			itemSectionOf := item["section-of"].(string)
+			itemTimeAndPlace := item["timeAndPlace"].(string)
+
+			if itemTimeAndPlace == "null null" {
+				// this record tells us absolutely nothing
+				// ignore it
+				continue
+			}
+
+			// for some reason, the labels are the section + class number joined together
+			// for example, section L01 of 6.003 has a label of "L016.003"
+			// parse out the section ID
+			sectionID := strings.Replace(itemLabel, itemSectionOf, "", -1)
+
+			// in order to maximize suffering, the coursews api also combines the time and place fields
+			// examples of this include "MW9.30-11 4-251" (easy)
+			// or "TR9-11 (MEETS 4/7 TO 5/14) MEC-209" and "M EVE (6-8 PM) BOSTON PRE-REL" (why??)
+			// the high quality algorithm to parse this is to break the string into spaces, and keep removing words until it works
+			timeAndPlaceParts := strings.Split(itemTimeAndPlace, " ")
+			currentTimeString := ""
+			parsed := false
+			for i := len(timeAndPlaceParts); i > 0; i-- {
+				currentTimeString = ""
+				for j := 0; j < i; j++ {
+					if j != 0 {
+						currentTimeString += " "
+					}
+					currentTimeString += timeAndPlaceParts[j]
+				}
+
+				// attempt
+				_, err = mit.ParseTimeInfo(currentTimeString, termInfo)
+				if err != nil {
+					// oofie
+					continue
+				}
+
+				// we survived!
+				parsed = true
+				break
+			}
+
+			if !parsed {
+				return taskResponse{}, fmt.Errorf("tasks: failed to parse timeAndPlace '%s'", itemTimeAndPlace)
+			}
+
+			time := currentTimeString
+			place := strings.TrimSpace(strings.Replace(itemTimeAndPlace, currentTimeString, "", -1))
+
+			if place == "" {
+				return taskResponse{}, fmt.Errorf("tasks: didn't get place from timeAndPlace '%s'", itemTimeAndPlace)
+			}
+
+			if place == "null" {
+				place = ""
+			}
+
+			isDesign := false // design sections seem to not be included?
+			isLab := (sectionID[0] == 'B')
+			isLecture := (sectionID[0] == 'L')
+			isRecitation := (sectionID[0] == 'L')
+
+			// now, try to insert this new record
+			// since we have very little info, we do NOT overwrite existing faculty/extra data if we have some
+			result, err := tx.Exec(
+				`INSERT INTO
+					mit_offerings(id, title, section, term, time, place, facultyID, facultyName, isFake, isMaster, isDesign, isLab, isLecture, isRecitation)
+					VALUES(?, '', ?, ?, ?, ?, '', '', 0, 0, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE
+					id = VALUES(id),
+					section = VALUES(section),
+					term = VALUES(term),
+					time = VALUES(time),
+					place = VALUES(place),
+					isDesign = VALUES(isDesign),
+					isLab = VALUES(isLab),
+					isLecture = VALUES(isLecture),
+					isRecitation = VALUES(isRecitation)`,
+				itemSectionOf,
+				sectionID,
+				currentTermCode,
+				time,
+				place,
+				isDesign,
+				isLab,
+				isLecture,
+				isRecitation,
+			)
+			if err != nil {
+				return taskResponse{}, err
+			}
+
+			rowAffected, err := result.RowsAffected()
+			if err != nil {
+				return taskResponse{}, err
+			}
+			if rowAffected > 0 {
+				rowsAffected++
 			}
 		}
 	} else if source == "offerings" {
@@ -229,7 +376,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 				return taskResponse{}, err
 			}
 			if rowAffected > 0 {
-				rowsAffected += 1
+				rowsAffected++
 			}
 		}
 	}
