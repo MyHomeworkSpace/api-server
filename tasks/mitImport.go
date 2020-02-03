@@ -266,7 +266,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 			isDesign := false // design sections seem to not be included?
 			isLab := (sectionID[0] == 'B')
 			isLecture := (sectionID[0] == 'L')
-			isRecitation := (sectionID[0] == 'L')
+			isRecitation := (sectionID[0] == 'R')
 
 			// now, try to insert this new record
 			// since we have very little info, we do NOT overwrite existing faculty/extra data if we have some
