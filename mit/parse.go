@@ -70,6 +70,10 @@ func parseTime(timeString string, forceAM bool) (int, error) {
 	return timeSeconds, nil
 }
 
+func assignYearForDate(date time.Time, termInfo TermInfo) time.Time {
+	return date.AddDate(termInfo.FirstDayOfClasses.Year(), 0, 0)
+}
+
 // ParseScheduledMeeting parses the given time info string, in a format like "MW4-5.30"
 func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*ScheduledMeeting, *time.Time, *time.Time, error) {
 	scheduledMeeting := ScheduledMeeting{
@@ -129,7 +133,7 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 				if err != nil {
 					return nil, nil, nil, err
 				}
-				parsedDate = parsedDate.AddDate(termInfo.FirstDayOfClasses.Year(), 0, 0)
+				parsedDate = assignYearForDate(parsedDate, termInfo)
 				beginsOn = &parsedDate
 			} else if strings.HasPrefix(info, "END") {
 				dateString := strings.Replace(info, "ENDS ", "", -1)
@@ -137,8 +141,29 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 				if err != nil {
 					return nil, nil, nil, err
 				}
-				parsedDate = parsedDate.AddDate(termInfo.FirstDayOfClasses.Year(), 0, 0)
+				parsedDate = assignYearForDate(parsedDate, termInfo)
 				endsOn = &parsedDate
+			} else if strings.HasPrefix(info, "MEETS") {
+				// it's a message in the format "MEETS 4/7 TO 5/14"
+				dateString := strings.Replace(info, "MEETS ", "", -1)
+				parts := strings.Split(dateString, "TO")
+
+				parsedBegin, err := time.Parse("1/2", strings.TrimSpace(parts[0]))
+				if err != nil {
+					return nil, nil, nil, err
+				}
+				parsedBegin = assignYearForDate(parsedBegin, termInfo)
+				beginsOn = &parsedBegin
+
+				parsedEnd, err := time.Parse("1/2", strings.TrimSpace(parts[1]))
+				if err != nil {
+					return nil, nil, nil, err
+				}
+				parsedEnd = assignYearForDate(parsedEnd, termInfo)
+				endsOn = &parsedEnd
+			} else if strings.HasPrefix(info, "LIMITED") {
+				// it's about limited enrollment, which we don't care about
+				// just ignore it
 			} else {
 				// some classes are not entered into the catalog correctly
 				// they have a format like T(11-12:30)
@@ -194,6 +219,12 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 			if strings.Contains(remainingScheduledMeetingString, "AM") {
 				forceAM = true
 				remainingScheduledMeetingString = strings.Replace(remainingScheduledMeetingString, "AM", "", -1)
+			}
+
+			// HACK: 18.204 has a string in the format "MW2.30-4 (LIMITED 15 EACH S .."
+			// we detect this and ignore the parenthesis
+			if strings.Contains(remainingScheduledMeetingString, "(") && !strings.Contains(remainingScheduledMeetingString, ")") {
+				remainingScheduledMeetingString = strings.Split(remainingScheduledMeetingString, "(")[0]
 			}
 
 			timeParts := strings.Split(remainingScheduledMeetingString, "-")
