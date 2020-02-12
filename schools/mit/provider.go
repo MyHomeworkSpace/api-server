@@ -136,11 +136,22 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				continue
 			}
 
+			termInfo, err := mit.GetTermByCode(offering.Term)
+			if err != nil {
+				return data.ProviderData{}, err
+			}
+
+			currentEffectiveWeekday := currentDay.Weekday()
+			newWeekday, isException := termInfo.ExceptionDays[currentDay.Format("2006-01-02")]
+			if isException {
+				currentEffectiveWeekday = newWeekday
+			}
+
 			foundWeekday := false
 			relevantInfo := mit.ScheduledMeeting{}
 			for _, info := range offering.ParsedTime.Meetings {
 				for _, weekday := range info.Weekdays {
-					if currentDay.Weekday() == weekday {
+					if currentEffectiveWeekday == weekday {
 						foundWeekday = true
 						relevantInfo = info
 						break
@@ -211,9 +222,18 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				continue
 			}
 
+			// TODO: make this not depend on the global current term
+			termInfo := mit.GetCurrentTerm()
+
+			currentEffectiveWeekday := currentDay.Weekday()
+			newWeekday, isException := termInfo.ExceptionDays[currentDay.Format("2006-01-02")]
+			if isException {
+				currentEffectiveWeekday = newWeekday
+			}
+
 			foundWeekday := false
 			for _, weekday := range peInfo.ParsedDaysOfWeek {
-				if currentDay.Weekday() == weekday {
+				if currentEffectiveWeekday == weekday {
 					foundWeekday = true
 					break
 				}
