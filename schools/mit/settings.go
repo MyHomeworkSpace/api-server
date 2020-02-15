@@ -65,6 +65,7 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 
 	return map[string]interface{}{
 		"registration": registeredClasses,
+		"peInfo":       s.peInfo,
 	}, nil
 }
 
