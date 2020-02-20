@@ -15,6 +15,7 @@ type school struct {
 	username string
 
 	peInfo *peInfo
+	showPE bool
 }
 
 func (s *school) ID() string {

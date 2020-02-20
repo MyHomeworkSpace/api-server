@@ -1,6 +1,9 @@
 package data
 
-import "database/sql"
+import (
+	"database/sql"
+	"encoding/json"
+)
 
 var MainRegistry SchoolRegistry
 
@@ -19,7 +22,7 @@ type School interface {
 	Hydrate(data map[string]interface{}) error
 
 	GetSettings(db *sql.DB, user *User) (map[string]interface{}, error)
-	SetSettings(db *sql.DB, user *User, settings map[string]interface{}) error
+	SetSettings(db *sql.DB, user *User, settings map[string]interface{}) (*sql.Tx, map[string]interface{}, error)
 
 	Enroll(tx *sql.Tx, user *User, params map[string]interface{}) (map[string]interface{}, error)
 	Unenroll(tx *sql.Tx, user *User) error
@@ -71,6 +74,34 @@ type SchoolRegistry interface {
 	GetSchoolByEmailDomain(domain string) (School, error)
 	GetSchoolByID(id string) (School, error)
 	Register(school School)
+}
+
+// GetDataForSchool returns the data associated with the User's enrollment in the given School.
+func GetDataForSchool(school *School, user *User) (map[string]interface{}, error) {
+	schoolRow, err := DB.Query("SELECT data FROM schools WHERE schoolId = ? AND userId = ?", (*school).ID(), user.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer schoolRow.Close()
+
+	if !schoolRow.Next() {
+		return nil, ErrNotFound
+	}
+
+	dataString := ""
+	err = schoolRow.Scan(&dataString)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{}
+
+	err = json.Unmarshal([]byte(dataString), &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 // GetSchoolsForUser returns a list of schools that the given user is enrolled in, excluding disabled schools.

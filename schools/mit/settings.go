@@ -69,22 +69,22 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 	}, nil
 }
 
-func (s *school) SetSettings(db *sql.DB, user *data.User, settings map[string]interface{}) error {
+func (s *school) SetSettings(db *sql.DB, user *data.User, settings map[string]interface{}) (*sql.Tx, map[string]interface{}, error) {
 	sections, ok := settings["sections"]
 
 	if !ok {
-		return data.SchoolError{Code: "missing_params"}
+		return nil, nil, data.SchoolError{Code: "missing_params"}
 	}
 
 	sectionMap, ok := sections.(map[string]interface{})
 
 	if !ok {
-		return data.SchoolError{Code: "invalid_params"}
+		return nil, nil, data.SchoolError{Code: "invalid_params"}
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	for subjectID, subjectSections := range sectionMap {
@@ -95,9 +95,10 @@ func (s *school) SetSettings(db *sql.DB, user *data.User, settings map[string]in
 			user.ID,
 		)
 		if err != nil {
-			return err
+			tx.Rollback()
+			return nil, nil, err
 		}
 	}
 
-	return tx.Commit()
+	return tx, map[string]interface{}{}, nil
 }

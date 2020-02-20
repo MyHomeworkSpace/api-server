@@ -6,6 +6,7 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
+	"github.com/MyHomeworkSpace/api-server/schools"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -119,8 +120,14 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	// it worked, so pass them to the school
-	err = userSchool.SetSettings(DB, c.User, settings)
+	tx, updates, err := userSchool.SetSettings(DB, c.User, settings)
 	if err != nil {
+		if err == schools.ErrUnsupportedOperation {
+			// you can't do that
+			writeJSON(w, http.StatusOK, errorResponse{"error", "unsupported_operation"})
+			return
+		}
+
 		detailedSchoolError, ok := err.(data.DetailedSchoolError)
 		if ok {
 			// it wants to report something
@@ -136,7 +143,46 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 		}
 
 		// server error
-		errorlog.LogError("settings settings for school", err)
+		errorlog.LogError("setting settings for school", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// get the school's current data
+	schoolData, err := data.GetDataForSchool(&userSchool, c.User)
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("setting settings for school", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// update it
+	for key, value := range updates {
+		schoolData[key] = value
+	}
+
+	schoolDataBytes, err := json.Marshal(schoolData)
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("setting settings for school", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// save
+	_, err = tx.Exec("UPDATE schools SET data = ? WHERE schoolId = ? AND userId = ?", string(schoolDataBytes), userSchool.ID(), c.User.ID)
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("setting settings for school", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	// commit
+	err = tx.Commit()
+	if err != nil {
+		errorlog.LogError("setting settings for school", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
