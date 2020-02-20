@@ -71,6 +71,15 @@ func (s *school) Hydrate(data map[string]interface{}) error {
 		s.peInfo = nil
 	}
 
+	s.showPE = true
+	showPEInterface, ok := data["showPE"]
+	if ok {
+		showPEBool, ok := showPEInterface.(bool)
+		if ok {
+			s.showPE = showPEBool
+		}
+	}
+
 	return nil
 }
 

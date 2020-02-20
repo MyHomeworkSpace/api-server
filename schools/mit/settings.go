@@ -66,10 +66,23 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 	return map[string]interface{}{
 		"registration": registeredClasses,
 		"peInfo":       s.peInfo,
+		"showPE":       s.showPE,
 	}, nil
 }
 
 func (s *school) SetSettings(db *sql.DB, user *data.User, settings map[string]interface{}) (*sql.Tx, map[string]interface{}, error) {
+	var err error
+
+	showPE := s.showPE
+	showPEInterface, ok := settings["showPE"]
+
+	if ok {
+		showPE, ok = showPEInterface.(bool)
+		if !ok {
+			return nil, nil, data.SchoolError{Code: "invalid_params"}
+		}
+	}
+
 	sections, ok := settings["sections"]
 
 	if !ok {
@@ -100,5 +113,7 @@ func (s *school) SetSettings(db *sql.DB, user *data.User, settings map[string]in
 		}
 	}
 
-	return tx, map[string]interface{}{}, nil
+	return tx, map[string]interface{}{
+		"showPE": showPE,
+	}, nil
 }

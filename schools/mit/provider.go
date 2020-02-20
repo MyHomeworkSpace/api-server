@@ -194,8 +194,8 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		}
 	}
 
-	if school.peInfo != nil {
-		// we have a PE class
+	if school.peInfo != nil && school.showPE {
+		// we have a PE class and we're supposed to show it
 		peInfo := *school.peInfo
 
 		peFirstDay, err := time.ParseInLocation("2006-01-02", peInfo.ParsedFirstDay, location)
