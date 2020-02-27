@@ -61,7 +61,7 @@ var (
 		"2020-02-06": AssemblyType_Lab,
 		"2020-02-13": AssemblyType_Assembly,
 		"2020-02-20": AssemblyType_Lab,
-		"2020-02-27": AssemblyType_Assembly,
+		"2020-02-27": AssemblyType_Lab,
 		"2020-03-05": AssemblyType_Lab,
 		"2020-03-12": AssemblyType_Assembly,
 		"2020-04-02": AssemblyType_LongHouse,
