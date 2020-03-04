@@ -18,7 +18,7 @@ import (
 )
 
 // some classes have weird times and aren't on the catalog, so we just give up on them
-var skipClasses = []string{"15.830", "24.A03"}
+var skipClasses = []string{"15.830", "24.A03", "11.S969"}
 
 type catalogListing struct {
 	ID         string `json:"id"`
