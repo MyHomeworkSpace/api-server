@@ -291,6 +291,9 @@ func Init(router *httprouter.Router) {
 	router.POST("/calendar/hwEvents/edit", route(routeCalendarHWEventsEdit, authLevelLoggedIn))
 	router.POST("/calendar/hwEvents/delete", route(routeCalendarHWEventsDelete, authLevelLoggedIn))
 
+	router.GET("/calendar/eventChanges/get", route(routeCalendarEventChangesGet, authLevelLoggedIn))
+	router.POST("/calendar/eventChanges/set", route(routeCalendarEventChangesSet, authLevelLoggedIn))
+
 	router.GET("/classes/get", route(routeClassesGet, authLevelLoggedIn))
 	router.GET("/classes/get/:id", route(routeClassesGetID, authLevelLoggedIn))
 	router.GET("/classes/hwInfo/:id", route(routeClassesHWInfo, authLevelLoggedIn))

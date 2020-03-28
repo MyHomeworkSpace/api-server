@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
+
+	set "github.com/deckarep/golang-set"
 )
 
 // A ViewDay represents a day in a View.
@@ -192,6 +194,35 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			event.Source = providerIndex
 
 			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
+		}
+	}
+
+	// apply any modifications made by the user
+	eventChangeRows, err := db.Query("SELECT eventID, cancel FROM calendar_event_changes WHERE userID = ?", user.ID)
+	if err != nil {
+		return View{}, err
+	}
+	defer eventChangeRows.Close()
+
+	cancellations := set.NewSet()
+
+	for eventChangeRows.Next() {
+		eventID, cancel := "", 0
+		err = eventChangeRows.Scan(&eventID, &cancel)
+		if err != nil {
+			return View{}, err
+		}
+
+		if cancel == 1 {
+			cancellations.Add(eventID)
+		}
+	}
+
+	for dayIndex, day := range view.Days {
+		for eventIndex, event := range day.Events {
+			if cancellations.Contains(event.UniqueID) {
+				view.Days[dayIndex].Events[eventIndex].Tags[data.EventTagCancelled] = true
+			}
 		}
 	}
 

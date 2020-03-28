@@ -43,6 +43,7 @@ const (
 	EventTagReadOnly
 	EventTagShortName
 	EventTagActions
+	EventTagCancelled
 )
 
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
@@ -63,6 +64,13 @@ type EventAction struct {
 	Icon string `json:"icon"`
 	Name string `json:"name"`
 	URL  string `json:"url"`
+}
+
+// An EventChange is a modification a user makes to an Event that came from a provider.
+type EventChange struct {
+	EventID string `json:"eventID"`
+	Cancel  bool   `json:"cancel"`
+	UserID  int    `json:"userID"`
 }
 
 // An OffBlock is a period of time that's marked off on a calendar, such as a holiday.
