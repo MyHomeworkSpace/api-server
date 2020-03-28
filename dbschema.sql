@@ -39,7 +39,7 @@ CREATE TABLE `calendar_events` (
 
 
 CREATE TABLE `calendar_event_changes` (
-  `eventID` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `eventID` varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
   `cancel` tinyint(1) NOT NULL,
   `userID` int(11) NOT NULL,
   PRIMARY KEY (`eventID`,`userID`)
