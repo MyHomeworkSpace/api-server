@@ -42,6 +42,7 @@ const (
 	EventTagLocation
 	EventTagReadOnly
 	EventTagShortName
+	EventTagActions
 )
 
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
@@ -54,6 +55,13 @@ type Event struct {
 	Tags      map[EventTagType]interface{} `json:"tags"`
 	Source    int                          `json:"source"`
 	UserID    int                          `json:"userId"`
+}
+
+// An EventAction is an action that can be performed on an Event; for example, a link to open a class's website.
+type EventAction struct {
+	Icon string `json:"icon"`
+	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 // An OffBlock is a period of time that's marked off on a calendar, such as a holiday.
