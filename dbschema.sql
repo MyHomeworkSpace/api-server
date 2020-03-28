@@ -38,6 +38,14 @@ CREATE TABLE `calendar_events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `calendar_event_changes` (
+  `eventID` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `cancel` tinyint(1) NOT NULL,
+  `userID` int(11) NOT NULL,
+  PRIMARY KEY (`eventID`,`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `calendar_event_rules` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `eventId` int(11) DEFAULT NULL,
