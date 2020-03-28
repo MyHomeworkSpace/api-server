@@ -48,6 +48,7 @@ const (
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
 type Event struct {
 	ID        int                          `json:"id"`
+	UniqueID  string                       `json:"uniqueId"`
 	Name      string                       `json:"name"`
 	Start     int                          `json:"start"`
 	End       int                          `json:"end"`

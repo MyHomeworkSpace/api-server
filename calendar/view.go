@@ -3,6 +3,7 @@ package calendar
 import (
 	"database/sql"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
@@ -93,6 +94,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			&event.ID, &event.Name, &event.Start, &event.End, &desc, &event.UserID,
 			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
 		)
+		event.UniqueID = "mhs-" + strconv.Itoa(event.ID)
 		event.Tags[data.EventTagDescription] = desc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
@@ -135,6 +137,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		}
 		homework := data.Homework{}
 		hwEventRows.Scan(&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &event.UserID)
+		event.UniqueID = "mhs-hw-" + strconv.Itoa(event.ID)
 		event.Tags[data.EventTagHomework] = homework
 		event.Name = homework.Name
 
@@ -185,6 +188,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 				continue
 			}
 
+			event.UniqueID = provider.ID() + "-" + event.UniqueID
 			event.Source = providerIndex
 
 			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)

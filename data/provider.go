@@ -17,6 +17,7 @@ const (
 
 // A Provider is a source of calendar data (events, announcements, etc)
 type Provider interface {
+	ID() string
 	Name() string
 	GetData(db *sql.DB, user *User, location *time.Location, startTime time.Time, endTime time.Time, dataType ProviderDataType) (ProviderData, error)
 }

@@ -176,6 +176,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			}
 
 			event.ID = -1
+			event.UniqueID = offering.ID + "-" + offering.Section + "-" + dayString
 			event.Name = offering.ID + " - " + offering.Title + " - " + offering.Section
 
 			typeDisplay, _ := sectionCharToDisplayName[offering.Section[0]]
@@ -269,6 +270,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			}
 
 			event.ID = -1
+			event.UniqueID = peInfo.SectionID + "-" + dayString
 			event.Name = peInfo.SectionID + " - " + peInfo.Activity + " - " + peInfo.CourseTitle
 
 			event.Tags[data.EventTagReadOnly] = true

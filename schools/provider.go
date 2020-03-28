@@ -7,6 +7,10 @@ type Provider struct {
 	School data.School
 }
 
+func (p *Provider) ID() string {
+	return p.School.ID()
+}
+
 func (p *Provider) Name() string {
 	return p.School.Name() + " Schedule"
 }
