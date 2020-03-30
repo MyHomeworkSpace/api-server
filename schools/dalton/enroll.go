@@ -275,10 +275,10 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 					return nil, err
 				}
 				fridayNumber, err := strconv.Atoi(strings.Split(info, " ")[1])
-				if err != nil {
-					return nil, err
+				if err == nil {
+					// we actually have a friday number, adjust it
+					dayNumber += fridayNumber - 1
 				}
-				dayNumber += fridayNumber - 1
 			}
 
 			if daysFound[dayNumber] != "" && daysFound[dayNumber] != dayStr {
