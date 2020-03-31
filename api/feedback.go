@@ -61,11 +61,6 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, p httprouter.Param
 							Short: true,
 						},
 						slack.WebhookField{
-							Title: "User (username)",
-							Value: c.User.Username,
-							Short: true,
-						},
-						slack.WebhookField{
 							Title: "User (type)",
 							Value: c.User.Type,
 							Short: true,
