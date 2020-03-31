@@ -208,7 +208,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			var currentTerm *term
 
-			if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses) {
+			if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses.Add(time.Hour*24)) {
 				if currentDay.After(Day_ExamRelief) {
 					// it's the second term
 					currentTerm = &availableTerms[1]
