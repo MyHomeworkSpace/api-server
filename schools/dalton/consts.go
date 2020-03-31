@@ -38,7 +38,7 @@ var (
 
 	Day_SchoolStart, _   = time.Parse("2006-01-02", "2019-09-09")
 	Day_ExamRelief, _    = time.Parse("2006-01-02", "2020-01-24")
-	Day_SeniorLastDay, _ = time.Parse("2006-01-02", "2020-04-02")
+	Day_SeniorLastDay, _ = time.Parse("2006-01-02", "2020-04-23")
 	Day_SchoolEnd, _     = time.Parse("2006-01-02", "2020-06-11")
 
 	AssemblyTypeList = map[string]AssemblyType{
