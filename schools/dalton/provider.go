@@ -71,8 +71,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
 
+	school := (p.Provider.School).(*school)
+
 	// get user's grade
-	grade, err := getUserGrade(*user)
+	grade, err := getUserGrade(school.username)
 	if err != nil {
 		return data.ProviderData{}, err
 	}

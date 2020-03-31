@@ -2,17 +2,15 @@ package dalton
 
 import (
 	"strconv"
-
-	"github.com/MyHomeworkSpace/api-server/data"
 )
 
-func getUserGrade(user data.User) (int, error) {
-	if len(user.Username) < 4 {
+func getUserGrade(username string) (int, error) {
+	if len(username) < 4 {
 		// the username is not in the cXXyy format
 		// this is probably a faculty member
 		return AnnouncementGrade_Faculty, nil
 	}
-	yearInfoString := user.Username[1:3]
+	yearInfoString := username[1:3]
 	yearInfo, err := strconv.Atoi(yearInfoString)
 	if err != nil {
 		// the username is not in the cXXyy format
