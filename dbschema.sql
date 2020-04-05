@@ -59,6 +59,28 @@ CREATE TABLE `calendar_event_rules` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+CREATE TABLE `calendar_external` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` text NOT NULL,
+  `url` text NOT NULL,
+  `lastUpdated` int(11) NOT NULL,
+  `enabled` tinyint(1) NOT NULL,
+  `hidden` tinyint(1) NOT NULL,
+  `userID` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE `calendar_external_events` (
+  `uid` text NOT NULL,
+  `name` text NOT NULL,
+  `start` int(11) NOT NULL,
+  `end` int(11) NOT NULL,
+  `calendarID` int(11) NOT NULL,
+  KEY `calendarID` (`calendarID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 CREATE TABLE `calendar_hwevents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `homeworkId` int(11) DEFAULT NULL,
