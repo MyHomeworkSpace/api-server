@@ -296,7 +296,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 				return nil, err
 			}
 			if err2 != nil {
-				return nil, err
+				return nil, err2
 			}
 
 			startTime = startTime.AddDate(1970, 0, 0)
