@@ -268,18 +268,18 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			}
 
 			dayNumber := int(day.Weekday())
-			if dayNumber == int(time.Friday) {
-				// find what friday it is and add that to the day number
-				info, ok := daysInfo[dayStr]
-				if !ok {
-					return nil, err
-				}
-				fridayNumber, err := strconv.Atoi(strings.Split(info, " ")[1])
-				if err == nil {
-					// we actually have a friday number, adjust it
-					dayNumber += fridayNumber - 1
-				}
-			}
+			// if dayNumber == int(time.Friday) {
+			// 	// find what friday it is and add that to the day number
+			// 	info, ok := daysInfo[dayStr]
+			// 	if !ok {
+			// 		return nil, err
+			// 	}
+			// 	fridayNumber, err := strconv.Atoi(strings.Split(info, " ")[1])
+			// 	if err == nil {
+			// 		// we actually have a friday number, adjust it
+			// 		dayNumber += fridayNumber - 1
+			// 	}
+			// }
 
 			if daysFound[dayNumber] != "" && daysFound[dayNumber] != dayStr {
 				// we've already found a source for periods from this day, and it's not this one
