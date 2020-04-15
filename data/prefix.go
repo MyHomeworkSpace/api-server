@@ -48,21 +48,21 @@ var DefaultPrefixes = []Prefix{
 		ID:         -1,
 		Background: "EE5D1E",
 		Color:      "FFFFFF",
-		Words:      []string{"Quest", "HalfTest"},
+		Words:      []string{"Quest"},
 		Default:    true,
 	},
 	Prefix{
 		ID:         -1,
 		Background: "DC143C",
 		Color:      "FFFFFF",
-		Words:      []string{"Test", "Final", "Exam", "Midterm", "Ahh"},
+		Words:      []string{"Test", "Final", "Exam", "Midterm"},
 		Default:    true,
 	},
 	Prefix{
 		ID:         -1,
 		Background: "2AC0F1",
 		Color:      "FFFFFF",
-		Words:      []string{"ICA", "FieldTrip", "Thingy"},
+		Words:      []string{"ICA", "FieldTrip"},
 		Default:    true,
 	},
 	Prefix{
@@ -123,6 +123,13 @@ var DefaultPrefixes = []Prefix{
 		Background: "E34000",
 		Color:      "FFFFFF",
 		Words:      []string{"Apply", "Application", "Deadline"},
+		Default:    true,
+	},
+	Prefix{
+		ID:         -1,
+		Background: "3F4146",
+		Color:      "FFFFFF",
+		Words:      []string{"Form", "File", "Submit"},
 		Default:    true,
 	},
 }
