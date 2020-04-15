@@ -47,6 +47,13 @@ func (s *school) Prefixes() []data.Prefix {
 			TimedEvent: true,
 			Default:    true,
 		},
+		data.Prefix{
+			ID:         -1,
+			Background: "003DAD",
+			Color:      "FFFFFF",
+			Words:      []string{"DocID"},
+			Default:    true,
+		},
 	}
 }
 

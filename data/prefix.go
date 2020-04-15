@@ -75,13 +75,6 @@ var DefaultPrefixes = []Prefix{
 	},
 	Prefix{
 		ID:         -1,
-		Background: "003DAD",
-		Color:      "FFFFFF",
-		Words:      []string{"DocID"},
-		Default:    true,
-	},
-	Prefix{
-		ID:         -1,
 		Background: "000000",
 		Color:      "00FF00",
 		Words:      []string{"Trojun", "Hex"},
