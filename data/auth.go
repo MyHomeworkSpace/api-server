@@ -30,7 +30,6 @@ type EmailToken struct {
 type User struct {
 	ID                 int          `json:"id"`
 	Name               string       `json:"name"`
-	Username           string       `json:"-"`
 	Email              string       `json:"email"`
 	PasswordHash       string       `json:"-"`
 	Type               string       `json:"type"`
@@ -124,7 +123,7 @@ func UserExistsWithEmail(email string) (bool, int, error) {
 
 // GetUserByID fetches data for the given user ID.
 func GetUserByID(id int) (User, error) {
-	rows, err := DB.Query("SELECT id, name, username, email, password, type, features, emailVerified, level, showMigrateMessage FROM users WHERE id = ?", id)
+	rows, err := DB.Query("SELECT id, name, email, password, type, features, emailVerified, level, showMigrateMessage FROM users WHERE id = ?", id)
 	if err != nil {
 		return User{}, err
 	}
@@ -133,7 +132,7 @@ func GetUserByID(id int) (User, error) {
 		user := User{}
 		emailVerified := 0
 
-		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &emailVerified, &user.Level, &user.ShowMigrateMessage)
+		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &emailVerified, &user.Level, &user.ShowMigrateMessage)
 		if err != nil {
 			return User{}, err
 		}

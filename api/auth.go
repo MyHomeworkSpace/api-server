@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -594,10 +595,13 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 			// if we got here, no error -> password correct
 		} else {
 			// they do not, are they a dalton member? (that is, do they have a username?)
-			if user.Username != "" {
+			isDalton := strings.HasSuffix(user.Email, "@dalton.org")
+			if isDalton {
 				// they are
 				// this means we must authenticate with dalton
-				_, resp, _, _, err := auth.DaltonLogin(user.Username, password)
+
+				daltonUsername := strings.Replace(user.Email, "@dalton.org", "", -1)
+				_, resp, _, _, err := auth.DaltonLogin(daltonUsername, password)
 				if resp != "" || err != nil {
 					writeJSON(w, http.StatusUnauthorized, errorResponse{"error", resp})
 					return
@@ -606,6 +610,10 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 				// the sign-in worked
 				// flag the account for conversion after passing 2fa
 				needsConversion = true
+			} else {
+				errorlog.LogError("user login", errors.New("user is missing password hash"))
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+				return
 			}
 		}
 
