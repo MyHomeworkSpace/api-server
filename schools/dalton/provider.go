@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/calendar/external"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/schools"
 )
@@ -107,6 +108,25 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		resp := data.PlannerAnnouncement{}
 		announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
 		announcements = append(announcements, resp)
+	}
+
+	if school.externalCalendarID != -1 {
+		// we're actually secretly using a webcal link
+		externalProvider := external.Provider{
+			ExternalCalendarID:   school.externalCalendarID,
+			ExternalCalendarName: "Dalton School Calendar",
+		}
+		externalResult, err := externalProvider.GetData(db, user, location, startTime, endTime, dataType)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
+
+		if dataType&data.ProviderDataAnnouncements != 0 {
+			// fill in our announcements
+			externalResult.Announcements = announcements
+		}
+
+		return externalResult, nil
 	}
 
 	// get off blocks for time period

@@ -8,9 +8,10 @@ import (
 )
 
 type school struct {
-	importStatus schools.ImportStatus
-	name         string
-	username     string
+	importStatus       schools.ImportStatus
+	name               string
+	username           string
+	externalCalendarID int
 }
 
 func (s *school) ID() string {
@@ -61,6 +62,13 @@ func (s *school) Hydrate(data map[string]interface{}) error {
 	s.importStatus = schools.ImportStatus(data["status"].(float64))
 	s.name = data["name"].(string)
 	s.username = data["username"].(string)
+
+	s.externalCalendarID = -1
+	_, hasExternalCalendar := data["externalCalendarID"]
+	if hasExternalCalendar {
+		s.externalCalendarID = int(data["externalCalendarID"].(float64))
+	}
+
 	return nil
 }
 
