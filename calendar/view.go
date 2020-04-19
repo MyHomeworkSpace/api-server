@@ -96,7 +96,6 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			&event.ID, &event.Name, &event.Start, &event.End, &desc, &event.UserID,
 			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
 		)
-		event.UniqueID = "mhs-" + strconv.Itoa(event.ID)
 		event.Tags[data.EventTagDescription] = desc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
@@ -110,6 +109,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 					return View{}, err
 				}
 			}
+
+			event.Tags[data.EventTagCancelable] = true
 		}
 
 		eventTimes := event.CalculateTimes(endTime)
@@ -120,6 +121,13 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			if dayOffset < 0 || dayOffset > len(view.Days)-1 {
 				continue
 			}
+
+			newTags := map[data.EventTagType]interface{}{}
+			for tagType, tagValue := range event.Tags {
+				newTags[tagType] = tagValue
+			}
+			event.Tags = newTags
+			event.UniqueID = "mhs-" + strconv.Itoa(event.ID) + "-" + eventTime.Format("2006-01-02")
 
 			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
 		}

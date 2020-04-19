@@ -44,6 +44,7 @@ const (
 	EventTagShortName
 	EventTagActions
 	EventTagCancelled
+	EventTagCancelable
 )
 
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.

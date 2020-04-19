@@ -277,6 +277,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 					event.Tags[data.EventTagShortName] = strings.TrimSpace(strings.SplitN(event.Name, " - ", 2)[0])
 					event.Tags[data.EventTagReadOnly] = true
+					event.Tags[data.EventTagCancelable] = true
 					event.Tags[data.EventTagTermID] = termID
 					event.Tags[data.EventTagClassID] = classID
 					event.Tags[data.EventTagOwnerID] = ownerID

@@ -183,6 +183,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			event.Tags[data.EventTagShortName] = offering.ID + " " + typeDisplay
 			event.Tags[data.EventTagReadOnly] = true
+			event.Tags[data.EventTagCancelable] = true
 			event.Tags[data.EventTagLocation] = offering.Place
 			event.Tags[data.EventTagActions] = []data.EventAction{
 				data.EventAction{
@@ -274,6 +275,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			event.Name = peInfo.SectionID + " - " + peInfo.Activity + " - " + peInfo.CourseTitle
 
 			event.Tags[data.EventTagReadOnly] = true
+			event.Tags[data.EventTagCancelable] = true
 			event.Tags[data.EventTagLocation] = peInfo.ParsedLocation
 
 			event.Start = peInfo.ParsedStartTime
