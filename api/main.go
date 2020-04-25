@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -47,6 +48,17 @@ type RouteContext struct {
 
 func route(f routeFunc, level authLevel) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		// set up panic handler
+		defer func() {
+			if e := recover(); e != nil {
+				// there was a panic, call it an internal server error
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+
+				// and complain about it
+				errorlog.LogError("unhandled panic - "+r.URL.Path+" - "+fmt.Sprintf("%s", e), nil)
+			}
+		}()
+
 		// handle cors
 		if config.GetCurrent().CORS.Enabled && len(config.GetCurrent().CORS.Origins) > 0 {
 			foundOrigin := ""
