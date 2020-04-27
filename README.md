@@ -15,12 +15,12 @@ MySQL can be installed via your operating system's package manager, or via [the 
 
 Redis should be installed via your operating system's package manager, but you can also [compile the latest version from their website](https://redis.io/) if you want.
 
-MailHog can be downloaded from their [releases page](https://github.com/mailhog/MailHog/releases/v1.0.0). Windows users can download the appropriate exe file and run it. Linux or macOS users should download either the `_linux_amd64` or `_darwin_amd64` executable. Then, open a terminal, `cd` to the location of the executable, `chmod +x <name of executable>`, and `./<name of executable>`. That last command starts MailHog with a web UI at localhost:8025. Later on, you'll only need to run that last command to start MailHog.
+MailHog can be downloaded from their [releases page](https://github.com/mailhog/MailHog/releases/v1.0.0). Windows users can download the appropriate .exe file and run it. Linux or macOS users should download either the `_linux_amd64` or `_darwin_amd64` executable. Then, open a terminal, `cd` to the location of the executable, `chmod +x <name of executable>`, and `./<name of executable>`. That last command starts MailHog with a web UI at http://localhost:8025. Later on, you'll only need to run that last command to start MailHog.
 
-OpenResty can be installed by following [their instructions](https://openresty.org/en/download.html). You can use a different server, but you might have to alter the instructions below.
+OpenResty can be installed by following [their instructions](https://openresty.org/en/download.html). You can use a different server, such as nginx, Apache, or Microsoft IIS, but you might have to alter the instructions below.
 
 ## Setting up (for development)
-This guide looks long and complicated! However, don't worry: it's supposed to be somewhat methodical and detailed, which is why there's so many steps. You'll be up and running in no time!
+This guide might seem long and complicated! However, don't worry: it's supposed to be somewhat methodical and detailed, which is why there's so many steps. You'll be up and running in no time!
 
 1. First, you'll need to create a new database in MySQL. You can call it something clever, like `myhomeworkspace`.
 2. You'll also want to create a new user account in MySQL that has full access to the `myhomeworkspace` database. Make its password something random and secure. You'll need it later.
