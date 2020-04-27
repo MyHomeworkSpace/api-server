@@ -60,6 +60,11 @@ SMTPPassword = "password123"
 22. Now, open up the OpenResty configuration file. On Linux, this is probably at `/etc/openresty/nginx.conf`. On macOS, this is probably at `/usr/local/etc/openresty/nginx.conf`. You might need administrator privileges to edit this file.
 23. You'll see a big `http {}` block, with lots of stuff in it. At the bottom of this block, *right before the last `}`*, you will want to add the following (which will set up the API server, client, and main website all at once):
 ```
+	map $http_upgrade $mhs_connection_upgrade {
+		default upgrade;
+		''      close;
+	}
+
 	server {
 		listen 80;
 		listen [::]:80;
@@ -79,6 +84,10 @@ SMTPPassword = "password123"
 
 		location / {
 			proxy_pass http://127.0.0.1:9001;
+
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade $http_upgrade;
+			proxy_set_header Connection $mhs_connection_upgrade;
 		}
 	}
 
