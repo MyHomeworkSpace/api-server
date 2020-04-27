@@ -211,12 +211,13 @@ func routeAuthChangeName(w http.ResponseWriter, r *http.Request, p httprouter.Pa
 	}
 
 	new := r.FormValue("new")
-	userID := GetSessionUserID(r)
 
-	_, err := DB.Exec("UPDATE users SET name = ? WHERE id = ?", new, userID)
+	_, err := DB.Exec("UPDATE users SET name = ? WHERE id = ?", new, c.User.ID)
 
 	if err != nil {
+		errorlog.LogError("changing name", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
 	}
 
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
