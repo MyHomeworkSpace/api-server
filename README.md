@@ -97,7 +97,7 @@ SMTPPassword = "password123"
 25. Try going to http://api-v2.myhomework.invalid in your browser now. You should see the "MyHomeworkSpace API server" page from before.
 26. Congratulations! You've set up the MyHomeworkSpace API server. You probably want to set up the [client](https://github.com/MyHomeworkSpace/client) or [website](https://github.com/MyHomeworkSpace/website) now.
 
-# Running the server
+## Running the server
 Once you've done the setup above, running the server is as easy as:
 ```
 cd ~/go/src/github.com/MyHomeworkSpace/api-server
