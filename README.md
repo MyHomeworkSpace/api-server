@@ -11,7 +11,7 @@ The MyHomeworkSpace API server. See also the [API reference](https://support.myh
 
 Go should be downloaded from [the official website](https://golang.org/dl/).
 
-MySQL can be installed via your operating system's package manager, or via [the official site](https://dev.mysql.com/downloads/mysql/) if on Windows or macOS.
+MySQL can be installed via your operating system's package manager, or via [the official site](https://dev.mysql.com/downloads/mysql/) if on Windows or macOS. You might also want some tool to connect to and manage your MySQL database, such as [MySQL Workbench](https://dev.mysql.com/downloads/workbench/).
 
 Redis should be installed via your operating system's package manager, but you can also [compile the latest version from their website](https://redis.io/) if you want.
 
