@@ -204,6 +204,24 @@ func routeAuthChangeEmail(w http.ResponseWriter, r *http.Request, p httprouter.P
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
+func routeAuthChangeName(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	if r.FormValue("new") == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		return
+	}
+
+	new := r.FormValue("new")
+	userID := GetSessionUserID(r)
+
+	_, err := DB.Exec("UPDATE users SET name = ? WHERE id = ?", new, userID)
+
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+	}
+
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
+}
+
 func routeAuthChangePassword(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("current") == "" || r.FormValue("new") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})

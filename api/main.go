@@ -271,6 +271,7 @@ func Init(router *httprouter.Router) {
 	router.POST("/application/manage/delete", route(routeApplicationManageDelete, authLevelLoggedIn))
 
 	router.POST("/auth/changeEmail", route(routeAuthChangeEmail, authLevelLoggedIn))
+	router.POST("/auth/changeName", route(routeAuthChangeName, authLevelLoggedIn))
 	router.POST("/auth/changePassword", route(routeAuthChangePassword, authLevelLoggedIn))
 	router.POST("/auth/clearMigrateFlag", route(routeAuthClearMigrateFlag, authLevelLoggedIn))
 	router.GET("/auth/completeEmailStart/:token", route(routeAuthCompleteEmailStart, authLevelNone))
