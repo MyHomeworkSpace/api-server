@@ -50,7 +50,7 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, p httprout
 func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	id, err := strconv.Atoi(p.ByName("id"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_paramas"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 
@@ -77,7 +77,7 @@ func routeAdminGetFeedbackScreenshot(w http.ResponseWriter, r *http.Request, p h
 	rows.Close()
 
 	if screenshot64 == "" {
-		writeJSON(w, http.StatusNotFound, errorResponse{"error", "no_screenshot"})
+		writeJSON(w, http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 

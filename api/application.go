@@ -165,7 +165,7 @@ func routeApplicationRevokeAuth(w http.ResponseWriter, r *http.Request, p httpro
 
 func routeApplicationRevokeSelf(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if !HasAuthToken(r) {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "bad_request"})
+		writeJSON(w, http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 

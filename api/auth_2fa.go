@@ -186,7 +186,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.P
 	}
 
 	if !enrolled {
-		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "not_enrolled"})
+		writeJSON(w, http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
 
