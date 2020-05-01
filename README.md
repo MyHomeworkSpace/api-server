@@ -52,7 +52,8 @@ SMTPPassword = "password123"
 18. First, however, we'll set up local domain records. This is the myhomework.invalid that was mentioned earlier, and will make it so that you can access your local copy of MyHomeworkSpace by going to myhomework.invalid in your browser.
 19. You need to open the _hosts_ file on your computer. On Linux and macOS, this is located at `/etc/hosts`. On Windows, this is located at `C:\Windows\System32\drivers\etc\hosts`. Editing this file will likely require administrator privileges.
 20. In the hosts file, add the following entries:
-```127.0.0.1	myhomework.invalid
+```
+127.0.0.1	myhomework.invalid
 127.0.0.1	api-v2.myhomework.invalid
 127.0.0.1	app.myhomework.invalid
 ```
