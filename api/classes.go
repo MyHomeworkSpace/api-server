@@ -6,25 +6,9 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
-	"github.com/MyHomeworkSpace/api-server/util"
 
 	"github.com/julienschmidt/httprouter"
 )
-
-// don't change these!
-var DefaultColors = []string{
-	"ff4d40",
-	"ffa540",
-	"40ff73",
-	"4071ff",
-	"ff4086",
-	"40ccff",
-	"5940ff",
-	"ff40f5",
-	"a940ff",
-	"e6ab68",
-	"4d4d4d",
-}
 
 // responses
 type classResponse struct {
@@ -66,9 +50,6 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Para
 	}
 	resp := data.HomeworkClass{-1, "", "", "", -1, -1}
 	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
-	if resp.Color == "" {
-		resp.Color = DefaultColors[resp.ID%len(DefaultColors)]
-	}
 	writeJSON(w, http.StatusOK, singleClassResponse{"ok", resp})
 }
 
@@ -95,10 +76,6 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
-	if !util.StringSliceContains(DefaultColors, r.FormValue("color")) {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
-		return
-	}
 
 	_, err := DB.Exec(
 		"INSERT INTO classes(name, teacher, color, sortIndex, userId) VALUES(?, ?, ?, (SELECT * FROM (SELECT COUNT(*) FROM classes WHERE userId = ?) AS sortIndex), ?)",
@@ -116,10 +93,6 @@ func routeClassesAdd(w http.ResponseWriter, r *http.Request, p httprouter.Params
 func routeClassesEdit(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if r.FormValue("id") == "" || r.FormValue("name") == "" || r.FormValue("color") == "" {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
-		return
-	}
-	if !util.StringSliceContains(DefaultColors, r.FormValue("color")) {
-		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	}
 

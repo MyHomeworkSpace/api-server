@@ -4,9 +4,22 @@ import (
 	"database/sql"
 	"log"
 	"strings"
-
-	"github.com/MyHomeworkSpace/api-server/api"
 )
+
+// don't change these!
+var defaultColors = []string{
+	"ff4d40",
+	"ffa540",
+	"40ff73",
+	"4071ff",
+	"ff4086",
+	"40ccff",
+	"5940ff",
+	"ff40f5",
+	"a940ff",
+	"e6ab68",
+	"4d4d4d",
+}
 
 func handleMigrateError(err error) {
 	log.Fatalln(err)
@@ -35,7 +48,7 @@ func migrateClasses(tx *sql.Tx) error {
 
 		if color == "" {
 			// set an explicit color instead of inferring it
-			color = api.DefaultColors[id%len(api.DefaultColors)]
+			color = defaultColors[id%len(defaultColors)]
 		}
 
 		// update teacher, color, and sort index
