@@ -83,6 +83,11 @@ SMTPPassword = "password123"
 
 		server_name app.myhomework.invalid;
 
+		proxy_buffering off;
+
+		keepalive_disable safari;
+		keepalive_timeout 0;
+
 		location / {
 			proxy_pass http://127.0.0.1:9001;
 
