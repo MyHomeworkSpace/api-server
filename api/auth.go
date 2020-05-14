@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
 	"github.com/MyHomeworkSpace/api-server/util"
@@ -478,10 +479,12 @@ func routeAuthCreateAccount(w http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
+	nowUnix := time.Now().Unix()
+
 	// doesn't exist, insert new record
 	res, err := tx.Exec(
-		"INSERT INTO users(name, username, email, password, type, emailVerified, showMigrateMessage) VALUES(?, '', ?, ?, 'mhs', 0, 0)",
-		name, email, string(passwordHash),
+		"INSERT INTO users(name, username, email, password, type, emailVerified, showMigrateMessage, createdAt, lastLoginAt) VALUES(?, '', ?, ?, 'mhs', 0, 0, ?, ?)",
+		name, email, string(passwordHash), nowUnix, nowUnix,
 	)
 	if err != nil {
 		errorlog.LogError("creating account", err)
@@ -690,6 +693,15 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 		}
 
 		// if we've made it this far, they're signed in
+		// update their last login time
+		_, err = DB.Exec("UPDATE users SET lastLoginAt = ? WHERE id = ?", time.Now().Unix(), userID)
+		if err != nil {
+			errorlog.LogError("user login", err)
+			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+			return
+		}
+
+		// now set their session cookie
 		session := auth.SessionInfo{
 			UserID: userID,
 		}

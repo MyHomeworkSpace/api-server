@@ -314,5 +314,7 @@ CREATE TABLE `users` (
   `canFeedback` tinyint(1) NOT NULL DEFAULT '0',
   `canAnnouncements` tinyint(1) NOT NULL DEFAULT '0',
   `showMigrateMessage` tinyint(1) DEFAULT NULL,
+  `createdAt` int(11) NOT NULL,
+  `lastLoginAt` int(11) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
