@@ -7,33 +7,33 @@ SET NAMES utf8mb4;
 
 
 CREATE TABLE `applications` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `authorName` mediumtext COLLATE utf8mb4_unicode_ci,
-  `clientId` mediumtext COLLATE utf8mb4_unicode_ci,
-  `callbackUrl` mediumtext COLLATE utf8mb4_unicode_ci,
-  `cors` mediumtext COLLATE utf8mb4_unicode_ci,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int DEFAULT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci,
+  `authorName` text COLLATE utf8mb4_unicode_ci,
+  `clientId` text COLLATE utf8mb4_unicode_ci,
+  `callbackUrl` text COLLATE utf8mb4_unicode_ci,
+  `cors` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `application_authorizations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `applicationId` int(11) DEFAULT NULL,
-  `token` mediumtext COLLATE utf8mb4_unicode_ci,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int DEFAULT NULL,
+  `applicationId` int DEFAULT NULL,
+  `token` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `calendar_events` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `start` int(11) DEFAULT NULL,
-  `end` int(11) DEFAULT NULL,
-  `desc` mediumtext COLLATE utf8mb4_unicode_ci,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8mb4_unicode_ci,
+  `start` int DEFAULT NULL,
+  `end` int DEFAULT NULL,
+  `desc` text COLLATE utf8mb4_unicode_ci,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -41,32 +41,32 @@ CREATE TABLE `calendar_events` (
 CREATE TABLE `calendar_event_changes` (
   `eventID` varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
   `cancel` tinyint(1) NOT NULL,
-  `userID` int(11) NOT NULL,
+  `userID` int NOT NULL,
   PRIMARY KEY (`eventID`,`userID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `calendar_event_rules` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `eventId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `eventId` int DEFAULT NULL,
   `frequency` tinyint(1) DEFAULT NULL,
-  `interval` int(11) DEFAULT NULL,
+  `interval` int DEFAULT NULL,
   `byDay` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `byMonthDay` int(11) DEFAULT NULL,
-  `byMonth` int(11) DEFAULT NULL,
+  `byMonthDay` int DEFAULT NULL,
+  `byMonth` int DEFAULT NULL,
   `until` date DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `calendar_external` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `name` text NOT NULL,
   `url` text NOT NULL,
-  `lastUpdated` int(11) NOT NULL,
+  `lastUpdated` int NOT NULL,
   `enabled` tinyint(1) NOT NULL,
   `hidden` tinyint(1) NOT NULL,
-  `userID` int(11) NOT NULL,
+  `userID` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -74,94 +74,94 @@ CREATE TABLE `calendar_external` (
 CREATE TABLE `calendar_external_events` (
   `uid` text NOT NULL,
   `name` text NOT NULL,
-  `start` int(11) NOT NULL,
-  `end` int(11) NOT NULL,
-  `calendarID` int(11) NOT NULL,
+  `start` int NOT NULL,
+  `end` int NOT NULL,
+  `calendarID` int NOT NULL,
   KEY `calendarID` (`calendarID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `calendar_hwevents` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `homeworkId` int(11) DEFAULT NULL,
-  `start` int(11) DEFAULT NULL,
-  `end` int(11) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `homeworkId` int DEFAULT NULL,
+  `start` int DEFAULT NULL,
+  `end` int DEFAULT NULL,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `classes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `teacher` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `teacher` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `color` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sortIndex` int(11) NOT NULL,
-  `userId` int(11) NOT NULL,
+  `sortIndex` int NOT NULL,
+  `userId` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `dalton_announcements` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `date` date NOT NULL,
-  `text` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `grade` int(2) NOT NULL,
-  `type` int(2) NOT NULL,
+  `text` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `grade` int NOT NULL,
+  `type` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `dalton_classes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `termId` int(11) DEFAULT NULL,
-  `ownerId` int(11) DEFAULT NULL,
-  `sectionId` int(11) DEFAULT NULL,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `ownerName` mediumtext COLLATE utf8mb4_unicode_ci,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `termId` int DEFAULT NULL,
+  `ownerId` int DEFAULT NULL,
+  `sectionId` int DEFAULT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci,
+  `ownerName` text COLLATE utf8mb4_unicode_ci,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `dalton_fridays` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `date` date NOT NULL,
-  `index` int(11) NOT NULL,
+  `index` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `date` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `dalton_periods` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `classId` int(11) DEFAULT NULL,
-  `dayNumber` int(11) DEFAULT NULL,
-  `block` mediumtext COLLATE utf8mb4_unicode_ci,
-  `buildingName` mediumtext COLLATE utf8mb4_unicode_ci,
-  `roomNumber` mediumtext COLLATE utf8mb4_unicode_ci,
-  `start` int(11) DEFAULT NULL,
-  `end` int(11) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `classId` int DEFAULT NULL,
+  `dayNumber` int DEFAULT NULL,
+  `block` text COLLATE utf8mb4_unicode_ci,
+  `buildingName` text COLLATE utf8mb4_unicode_ci,
+  `roomNumber` text COLLATE utf8mb4_unicode_ci,
+  `start` int DEFAULT NULL,
+  `end` int DEFAULT NULL,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `dalton_terms` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `termId` int(11) DEFAULT NULL,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `termId` int DEFAULT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `feedback` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int DEFAULT NULL,
   `type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `text` mediumtext COLLATE utf8mb4_unicode_ci,
+  `text` text COLLATE utf8mb4_unicode_ci,
   `screenshot` longblob,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -169,13 +169,13 @@ CREATE TABLE `feedback` (
 
 
 CREATE TABLE `homework` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8mb4_unicode_ci,
   `due` date DEFAULT NULL,
-  `desc` mediumtext COLLATE utf8mb4_unicode_ci,
+  `desc` text COLLATE utf8mb4_unicode_ci,
   `complete` tinyint(1) DEFAULT NULL,
-  `classId` int(11) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `classId` int DEFAULT NULL,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -191,15 +191,15 @@ CREATE TABLE `mit_classes` (
   `subjectID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `sectionID` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `units` int(11) NOT NULL,
+  `units` int NOT NULL,
   `sections` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `userID` int(11) NOT NULL,
+  `userID` int NOT NULL,
   PRIMARY KEY (`subjectID`,`sectionID`,`userID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `mit_holidays` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `date` date NOT NULL,
   `text` text COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`)
@@ -239,7 +239,7 @@ CREATE TABLE `mit_offerings` (
 
 
 CREATE TABLE `notifications` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   `content` text COLLATE utf8mb4_unicode_ci,
   `expiry` date DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -247,74 +247,74 @@ CREATE TABLE `notifications` (
 
 
 CREATE TABLE `prefixes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `words` text COLLATE utf8mb4_unicode_ci,
   `color` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `background` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `isTimedEvent` tinyint(1) DEFAULT NULL,
-  `userId` int(11) DEFAULT NULL,
+  `userId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `prefs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `userId` int(11) DEFAULT NULL,
-  `key` mediumtext COLLATE utf8mb4_unicode_ci,
-  `value` mediumtext COLLATE utf8mb4_unicode_ci,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int DEFAULT NULL,
+  `key` text COLLATE utf8mb4_unicode_ci,
+  `value` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `schools` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `schoolId` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `enabled` tinyint(1) NOT NULL,
   `data` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `tabs` (
-  `id` int(11) NOT NULL,
-  `slug` mediumtext COLLATE utf8mb4_unicode_ci,
-  `icon` mediumtext COLLATE utf8mb4_unicode_ci,
-  `label` mediumtext COLLATE utf8mb4_unicode_ci,
-  `target` mediumtext COLLATE utf8mb4_unicode_ci,
+  `id` int NOT NULL,
+  `slug` text COLLATE utf8mb4_unicode_ci,
+  `icon` text COLLATE utf8mb4_unicode_ci,
+  `label` text COLLATE utf8mb4_unicode_ci,
+  `target` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `tab_permissions` (
-  `id` int(11) NOT NULL,
-  `userId` int(11) DEFAULT NULL,
-  `tabId` int(11) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `userId` int DEFAULT NULL,
+  `tabId` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `totp` (
-  `userId` int(11) NOT NULL,
+  `userId` int NOT NULL,
   `secret` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`userId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 CREATE TABLE `users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `username` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `email` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `password` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `username` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `type` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `features` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '[]',
   `emailVerified` tinyint(1) NOT NULL,
   `level` tinyint(1) NOT NULL DEFAULT '0',
   `canFeedback` tinyint(1) NOT NULL DEFAULT '0',
   `canAnnouncements` tinyint(1) NOT NULL DEFAULT '0',
   `showMigrateMessage` tinyint(1) DEFAULT NULL,
-  `createdAt` int(11) NOT NULL,
-  `lastLoginAt` int(11) NOT NULL,
+  `createdAt` int NOT NULL,
+  `lastLoginAt` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
