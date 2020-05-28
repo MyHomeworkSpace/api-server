@@ -61,8 +61,8 @@ CREATE TABLE `calendar_event_rules` (
 
 CREATE TABLE `calendar_external` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` text NOT NULL,
-  `url` text NOT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `url` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `lastUpdated` int NOT NULL,
   `enabled` tinyint(1) NOT NULL,
   `hidden` tinyint(1) NOT NULL,
@@ -72,8 +72,8 @@ CREATE TABLE `calendar_external` (
 
 
 CREATE TABLE `calendar_external_events` (
-  `uid` text NOT NULL,
-  `name` text NOT NULL,
+  `uid` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `start` int NOT NULL,
   `end` int NOT NULL,
   `calendarID` int NOT NULL,
