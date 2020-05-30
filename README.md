@@ -8,6 +8,7 @@ The MyHomeworkSpace API server. See also the [API reference](https://support.myh
 * Redis
 * MailHog (only required if you want to test emails)
 * OpenResty (or any other web server, but the guide assumes OpenResty)
+* Roamer
 
 Go should be downloaded from [the official website](https://golang.org/dl/).
 
@@ -19,14 +20,17 @@ MailHog can be downloaded from their [releases page](https://github.com/mailhog/
 
 OpenResty can be installed by following [their instructions](https://openresty.org/en/download.html). You can use a different server, such as nginx, Apache, or Microsoft IIS, but you might have to alter the instructions below.
 
+Roamer can be installed by following [their instructions](https://github.com/thatoddmailbox/roamer/wiki/installation).
+
 ## Setting up (for development)
 This guide might seem long and complicated! However, don't worry: it's supposed to be somewhat methodical and detailed, which is why there's so many steps. You'll be up and running in no time!
 
 1. First, you'll need to create a new database in MySQL. You can call it something clever, like `myhomeworkspace`.
 2. You'll also want to create a new user account in MySQL that has full access to the `myhomeworkspace` database. Make its password something random and secure. You'll need it later.
-3. Included with this repository is a `dbschema.sql` file. Make sure you've selected the `myhomeworkspace` database, and then run the commands in that file in order to create the table structures needed.
-4. Run `go get github.com/MyHomeworkSpace/api-server`. This will download this repository (and its dependencies) into the appropriate location of your $GOPATH.
-5. In a terminal, change directory into the location where the code was downloaded (on Linux/macOS, this will be something like `~/go/src/github.com/MyHomeworkSpace/api-server`)
+3. Run `go get github.com/MyHomeworkSpace/api-server`. This will download this repository (and its dependencies) into the appropriate location of your $GOPATH.
+4. In a terminal, change directory into the location where the code was downloaded (on Linux/macOS, this will be something like `~/go/src/github.com/MyHomeworkSpace/api-server`)
+5. Run `roamer setup`. Roamer will create a `roamer.local.toml` file.
+6. Open the `roamer.local.toml` file in a text editor of your choice. Update the line that begins with `DSN=` to refer to the database and user that you just created. It should look something like `DSN = "myhomeworkspace:mySuperSecurePassword@tcp(localhost:3306)/myhomeworkspace"`.
 6. Run `go run github.com/MyHomeworkSpace/api-server`. It will display an error, this is normal.
 7. A new `config.toml` file will have appeared in the api-server folder. Open it in a text editor.
 8. This part can get somewhat specific to your setup. We _are_ making some assumptions, but these assumptions will be valid if you follow this guide.
