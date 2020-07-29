@@ -114,6 +114,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		}
 
 		eventTimes := event.CalculateTimes(endTime)
+		eventLength := time.Duration(event.End-event.Start) * time.Second
 
 		for _, eventTime := range eventTimes {
 			dayOffset := int(math.Floor(eventTime.Sub(startTime).Hours() / 24))
@@ -126,6 +127,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			for tagType, tagValue := range event.Tags {
 				newTags[tagType] = tagValue
 			}
+			event.Start = int(eventTime.Unix())
+			event.End = int(eventTime.Add(eventLength).Unix())
 			event.Tags = newTags
 			event.UniqueID = "mhs-" + strconv.Itoa(event.ID) + "-" + eventTime.Format("2006-01-02")
 
