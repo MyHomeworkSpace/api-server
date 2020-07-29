@@ -8,4 +8,24 @@ To finish resetting your password, go <a href="{{.Data.url}}">here</a>.<br />
 If this was not you, you can safely ignore this email.<br />
 <br />
 Thanks for using MyHomeworkSpace!<br />
+
+<script type="application/ld+json">
+	[
+		{
+			"@context": "http://schema.org",
+			"@type": "EmailMessage",
+			"potentialAction": {
+				"@type": "ViewAction",
+				"url": "{{.Data.url}}",
+				"name": "Reset password"
+			},
+			"description": "Finish resetting your password",
+			"publisher": {
+				"@type": "Organization",
+				"name": "MyHomeworkSpace",
+				"url": "https://myhomework.space"
+			}
+		}
+	]
+</script>
 {{template "footer"}}
