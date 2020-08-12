@@ -51,11 +51,11 @@ func route(f routeFunc, level authLevel) httprouter.Handle {
 		// set up panic handler
 		defer func() {
 			if e := recover(); e != nil {
-				// there was a panic, call it an internal server error
-				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-
-				// and complain about it
+				// first complain about it
 				errorlog.LogError("unhandled panic - "+r.URL.Path+" - "+fmt.Sprintf("%s", e), nil)
+
+				// then tell the client that it's an internal server error
+				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			}
 		}()
 
@@ -245,7 +245,10 @@ func routeStatus(w http.ResponseWriter, r *http.Request, p httprouter.Params, c 
 func writeJSON(w http.ResponseWriter, status int, thing interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(thing)
+	err := json.NewEncoder(w).Encode(thing)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Init will initialize all available API endpoints
