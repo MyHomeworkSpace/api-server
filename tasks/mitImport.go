@@ -73,13 +73,12 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 
 	params.Add("source", source)
 
-	// TODO: don't need this to be manually set
-	currentTermCode := mitConfig.CurrentTermCode
-	params.Add("termCode", currentTermCode)
-	params.Add("academicYear", currentTermCode[:4])
+	currentTerm := mit.GetCurrentTerm()
+	params.Add("termCode", currentTerm.Code)
+	params.Add("academicYear", currentTerm.Code[:4])
 
 	// TODO: remove
-	params.Add("lastUpdateDate", "2018-01-01")
+	params.Add("lastUpdateDate", "2019-01-01")
 
 	requestURL := mitConfig.DataProxyURL + "fetch?" + params.Encode()
 	if source == "coursews" {
@@ -180,13 +179,13 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 		items := wsData["items"].([]interface{})
 
 		// assume it's all the same term
-		termInfo, err := mit.GetTermByCode(currentTermCode)
+		termInfo, err := mit.GetTermByCode(currentTerm.Code)
 		if err != nil {
 			return taskResponse{}, err
 		}
 
 		// first, clear out any data from a previous term
-		_, err = tx.Exec("DELETE FROM mit_offerings WHERE term <> ?", currentTermCode)
+		_, err = tx.Exec("DELETE FROM mit_offerings WHERE term <> ?", currentTerm.Code)
 		if err != nil {
 			return taskResponse{}, err
 		}
@@ -286,7 +285,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 					isRecitation = VALUES(isRecitation)`,
 				itemSectionOf,
 				sectionID,
-				currentTermCode,
+				currentTerm.Code,
 				time,
 				place,
 				isDesign,

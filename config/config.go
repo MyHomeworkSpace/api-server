@@ -67,10 +67,9 @@ type TasksConfig struct {
 }
 
 type MITConfig struct {
-	AuthProxyURL    string
-	DataProxyURL    string
-	ProxyToken      string
-	CurrentTermCode string
+	AuthProxyURL string
+	DataProxyURL string
+	ProxyToken   string
 }
 
 func createNewConfig() {
@@ -121,8 +120,7 @@ SlackURL = ""
 [mit]
 AuthProxyURL = ""
 DataProxyURL = ""
-ProxyToken = ""
-CurrentTermCode = "2020SP"`
+ProxyToken = ""`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
