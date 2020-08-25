@@ -107,6 +107,29 @@ func TestTimeParser(t *testing.T) {
 		EndSeconds:   10 * hourSeconds,
 	}, termDate(2020, time.September, 4), termDate(2020, time.October, 6))
 
+	testSingleTime(t, "WF EVE (5-7)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Wednesday, time.Friday},
+		StartSeconds: 17 * hourSeconds,
+		EndSeconds:   19 * hourSeconds,
+	}, nil, nil)
+	testSingleTime(t, "TR EVE (4-6 PM)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Tuesday, time.Thursday},
+		StartSeconds: 16 * hourSeconds,
+		EndSeconds:   18 * hourSeconds,
+	}, nil, nil)
+
+	testSingleTime(t, "MW10 (LIMITED)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Monday, time.Wednesday},
+		StartSeconds: 10 * hourSeconds,
+		EndSeconds:   11 * hourSeconds,
+	}, nil, nil)
+
+	testSingleTime(t, "WR3.30-4.45 (LIMITED) (BEGINS OCT 14) (ENDS OCT 23)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Wednesday, time.Thursday},
+		StartSeconds: (15 * hourSeconds) + (30 * minuteSeconds),
+		EndSeconds:   (16 * hourSeconds) + (45 * minuteSeconds),
+	}, termDate(2020, time.October, 14), termDate(2020, time.October, 23))
+
 	/*
 	 * not well-formed
 	 */
