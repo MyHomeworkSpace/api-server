@@ -42,6 +42,13 @@ func GetTermByCode(code string) (TermInfo, error) {
 				"2020-02-18": time.Monday,
 			},
 		}, nil
+	} else if code == "2021FA" {
+		return TermInfo{
+			Code:              "2021FA",
+			FirstDayOfClasses: time.Date(2020, 9, 1, 0, 0, 0, 0, time.UTC),
+			LastDayOfClasses:  time.Date(2020, 12, 9, 0, 0, 0, 0, time.UTC),
+			ExceptionDays:     map[string]time.Weekday{},
+		}, nil
 	}
 
 	return TermInfo{}, ErrBadTermCode
@@ -49,6 +56,6 @@ func GetTermByCode(code string) (TermInfo, error) {
 
 // GetCurrentTerm returns a TermInfo struct for the current academic term.
 func GetCurrentTerm() TermInfo {
-	term, _ := GetTermByCode("2020SP")
+	term, _ := GetTermByCode("2021FA")
 	return term
 }

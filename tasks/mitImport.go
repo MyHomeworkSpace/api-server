@@ -18,7 +18,7 @@ import (
 )
 
 // some classes have weird times and aren't on the catalog, so we just give up on them
-var skipClasses = []string{"15.830", "24.A03", "11.S969", "SCM.263"}
+var skipClasses = []string{"15.284", "15.386"}
 
 type catalogListing struct {
 	ID         string `json:"id"`
@@ -329,7 +329,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 			// check that we can parse the time info
 			_, err = mit.ParseTimeInfo(offering.Time, termInfo)
 			if err != nil {
-				return taskResponse{}, err
+				return taskResponse{}, fmt.Errorf("mit: failed to parse time of offering of %s (%s): %s", offering.ID, offering.Section, err.Error())
 			}
 
 			result, err := tx.Exec(
