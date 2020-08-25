@@ -92,42 +92,44 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 
 	parsedATime := false
 
-	if strings.Contains(scheduledMeetingString, "EVE") {
-		// it's an evening class
-		// for example "TR EVE (4-6 PM)" or "W EVE (4-6.30 PM)"
-
-		matches := parensRegex.FindAllStringSubmatch(scheduledMeetingString, -1)
-		if len(matches) != 1 {
-			return nil, nil, nil, fmt.Errorf("mit: ParseScheduledMeeting: time info string '%s' had unexpected number of parens", scheduledMeetingString)
-		}
-
-		time := matches[0][1]
-		time = strings.Replace(time, " PM", "", -1)
-
-		subScheduledMeeting, _, _, err := ParseScheduledMeeting(time, termInfo)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-
-		if subScheduledMeeting.StartSeconds < 12*60*60 {
-			subScheduledMeeting.StartSeconds += 12 * 60 * 60
-		} else if subScheduledMeeting.EndSeconds < 12*60*60 {
-			subScheduledMeeting.EndSeconds += 12 * 60 * 60
-		}
-
-		scheduledMeeting.StartSeconds = subScheduledMeeting.StartSeconds
-		scheduledMeeting.EndSeconds = subScheduledMeeting.EndSeconds
-
-		scheduledMeetingString = strings.Replace(scheduledMeetingString, "EVE", "", -1)
-		scheduledMeetingString = parensRegex.ReplaceAllString(scheduledMeetingString, "")
-
-		parsedATime = true
-	} else if strings.Contains(scheduledMeetingString, "(") {
+	if strings.Contains(scheduledMeetingString, "(") {
 		// there's a thing in parentheses
 		// for example "TR10.30-12 (BEGINS OCT 21)"
+
+		// it could be an evening class
+		// for example "TR EVE (4-6 PM)" or "W EVE (4-6.30 PM)"
+		isEvening := (strings.Contains(scheduledMeetingString, "EVE"))
+
 		matches := parensRegex.FindAllStringSubmatch(scheduledMeetingString, -1)
-		for _, match := range matches {
+		for i, match := range matches {
 			info := match[1]
+
+			if i == 0 && isEvening {
+				// it's an evening class
+				// the first paren is a time
+				info = strings.Replace(info, " PM", "", -1)
+
+				subScheduledMeeting, _, _, err := ParseScheduledMeeting(info, termInfo)
+				if err != nil {
+					return nil, nil, nil, err
+				}
+
+				if subScheduledMeeting.StartSeconds < 12*60*60 {
+					subScheduledMeeting.StartSeconds += 12 * 60 * 60
+				} else if subScheduledMeeting.EndSeconds < 12*60*60 {
+					subScheduledMeeting.EndSeconds += 12 * 60 * 60
+				}
+
+				scheduledMeeting.StartSeconds = subScheduledMeeting.StartSeconds
+				scheduledMeeting.EndSeconds = subScheduledMeeting.EndSeconds
+
+				scheduledMeetingString = strings.Replace(scheduledMeetingString, "EVE", "", -1)
+				scheduledMeetingString = parensRegex.ReplaceAllString(scheduledMeetingString, "")
+
+				parsedATime = true
+
+				continue
+			}
 
 			if strings.HasPrefix(info, "BEGINS") {
 				dateString := strings.Replace(info, "BEGINS ", "", -1)
@@ -197,6 +199,7 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 		'W': time.Wednesday,
 		'R': time.Thursday,
 		'F': time.Friday,
+		'S': time.Saturday,
 	}
 
 	remainingScheduledMeetingString := ""

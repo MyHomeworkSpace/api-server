@@ -82,6 +82,11 @@ func TestTimeParser(t *testing.T) {
 		StartSeconds: (13 * hourSeconds) + (30 * minuteSeconds),
 		EndSeconds:   (15 * hourSeconds) + (30 * minuteSeconds),
 	}, nil, nil)
+	testSingleTime(t, "S4", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Saturday},
+		StartSeconds: 16 * hourSeconds,
+		EndSeconds:   17 * hourSeconds,
+	}, nil, nil)
 
 	testSingleTime(t, "MTF11", &ScheduledMeeting{
 		Weekdays:     []time.Weekday{time.Monday, time.Tuesday, time.Friday},
@@ -117,6 +122,11 @@ func TestTimeParser(t *testing.T) {
 		StartSeconds: 16 * hourSeconds,
 		EndSeconds:   18 * hourSeconds,
 	}, nil, nil)
+	testSingleTime(t, "MW EVE (4.30-5.30 PM) (BEGINS NOV 2)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Monday, time.Wednesday},
+		StartSeconds: (16 * hourSeconds) + (30 * minuteSeconds),
+		EndSeconds:   (17 * hourSeconds) + (30 * minuteSeconds),
+	}, termDate(2020, time.November, 2), nil)
 
 	testSingleTime(t, "MW10 (LIMITED)", &ScheduledMeeting{
 		Weekdays:     []time.Weekday{time.Monday, time.Wednesday},
@@ -125,6 +135,12 @@ func TestTimeParser(t *testing.T) {
 	}, nil, nil)
 
 	testSingleTime(t, "WR3.30-4.45 (LIMITED) (BEGINS OCT 14) (ENDS OCT 23)", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Wednesday, time.Thursday},
+		StartSeconds: (15 * hourSeconds) + (30 * minuteSeconds),
+		EndSeconds:   (16 * hourSeconds) + (45 * minuteSeconds),
+	}, termDate(2020, time.October, 14), termDate(2020, time.October, 23))
+
+	testSingleTime(t, "WR EVE (3.30-4.45 PM) (LIMITED) (BEGINS OCT 14) (ENDS OCT 23)", &ScheduledMeeting{
 		Weekdays:     []time.Weekday{time.Wednesday, time.Thursday},
 		StartSeconds: (15 * hourSeconds) + (30 * minuteSeconds),
 		EndSeconds:   (16 * hourSeconds) + (45 * minuteSeconds),
