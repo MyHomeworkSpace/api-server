@@ -184,7 +184,9 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			event.Tags[data.EventTagShortName] = offering.ID + " " + typeDisplay
 			event.Tags[data.EventTagReadOnly] = true
 			event.Tags[data.EventTagCancelable] = true
-			event.Tags[data.EventTagLocation] = offering.Place
+			if offering.Place != "VIRTUAL" {
+				event.Tags[data.EventTagLocation] = offering.Place
+			}
 			event.Tags[data.EventTagActions] = []data.EventAction{
 				{
 					Icon: "external-link",
