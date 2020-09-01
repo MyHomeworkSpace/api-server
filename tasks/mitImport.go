@@ -312,6 +312,12 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 			return taskResponse{}, err
 		}
 
+		// first, clear out any data from a previous term
+		_, err = tx.Exec("DELETE FROM mit_offerings WHERE term <> ?", currentTerm.Code)
+		if err != nil {
+			return taskResponse{}, err
+		}
+
 		for _, offering := range offerings {
 			if offering.Time == "" {
 				continue
