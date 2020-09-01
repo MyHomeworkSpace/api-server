@@ -186,7 +186,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			event.Tags[data.EventTagCancelable] = true
 			event.Tags[data.EventTagLocation] = offering.Place
 			event.Tags[data.EventTagActions] = []data.EventAction{
-				data.EventAction{
+				{
 					Icon: "external-link",
 					Name: "Open website",
 					URL:  "http://course.mit.edu/" + offering.ID,

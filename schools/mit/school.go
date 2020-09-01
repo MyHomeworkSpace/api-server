@@ -44,7 +44,7 @@ func (s *school) EmailDomain() string {
 
 func (s *school) Prefixes() []data.Prefix {
 	return []data.Prefix{
-		data.Prefix{
+		{
 			ID:         -1,
 			Background: "4C6C9B",
 			Color:      "FFFFFF",
