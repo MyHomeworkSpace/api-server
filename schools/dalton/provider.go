@@ -303,14 +303,14 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 							// now look up what type of assembly period it is this week
 							assemblyType, foundType := AssemblyTypeList[dayTime.Format("2006-01-02")]
 
-							if !foundType || assemblyType == AssemblyType_Assembly {
+							if !foundType || assemblyType == AssemblyTypeAssembly {
 								// set name to assembly and room to Theater
 								result.Events[eventIndex].Name = "Assembly"
 								result.Events[eventIndex].Tags[data.EventTagRoomNumber] = "Theater"
-							} else if assemblyType == AssemblyType_LongHouse {
+							} else if assemblyType == AssemblyTypeLongHouse {
 								// set name to long house
 								result.Events[eventIndex].Name = "Long House"
-							} else if assemblyType == AssemblyType_Lab {
+							} else if assemblyType == AssemblyTypeLab {
 								// just remove it
 								result.Events = append(result.Events[:eventIndex], result.Events[eventIndex+1:]...)
 							}
