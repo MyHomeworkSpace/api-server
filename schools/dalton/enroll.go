@@ -209,8 +209,8 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	// find all periods of classes
 	dayMap := map[int]map[int][]calendarPeriod{}
-	for _, term := range []int{1, 2} {
-		dayMap[term] = map[int][]calendarPeriod{
+	for termIndex, term := range ImportTerms {
+		dayMap[termIndex+1] = map[int][]calendarPeriod{
 			0: {},
 			1: {},
 			2: {},
@@ -221,20 +221,13 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			7: {},
 		}
 
-		startDate := Term1_Import_Start
-		endDate := Term1_Import_End
-		if term == 2 {
-			startDate = Term2_Import_Start
-			endDate = Term2_Import_End
-		}
-
 		response, err = blackbaud.Request(schoolSlug, "GET", "DataDirect/ScheduleList", url.Values{
 			"format":          {"json"},
 			"viewerId":        {strconv.Itoa(bbUserID)},
 			"personaId":       {"2"},
 			"viewerPersonaId": {"2"},
-			"start":           {strconv.FormatInt(startDate.Unix(), 10)},
-			"end":             {strconv.FormatInt(endDate.Unix(), 10)},
+			"start":           {strconv.FormatInt(term.Start.Unix(), 10)},
+			"end":             {strconv.FormatInt(term.End.Unix(), 10)},
 		}, map[string]interface{}{}, jar, ajaxToken, "")
 		if err != nil {
 			return nil, err
@@ -314,35 +307,24 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 				-1,
 			}
 
-			dayMap[term][dayNumber] = append(dayMap[term][dayNumber], periodItem)
+			dayMap[termIndex+1][dayNumber] = append(dayMap[termIndex+1][dayNumber], periodItem)
 		}
 	}
 
 	// find locations of classes
-	datesToSearch := map[int][]time.Time{
-		1: {
-			Term1_Import_Start,
-			Term1_Import_Start.Add(1 * 24 * time.Hour),
-			Term1_Import_Start.Add(2 * 24 * time.Hour),
-			Term1_Import_Start.Add(3 * 24 * time.Hour),
-			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday1) * 24 * time.Hour),
-			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday2) * 24 * time.Hour),
-			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday3) * 24 * time.Hour),
-			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday4) * 24 * time.Hour),
-		},
-		2: {
-			Term2_Import_Start,
-			Term2_Import_Start.Add(1 * 24 * time.Hour),
-			Term2_Import_Start.Add(2 * 24 * time.Hour),
-			Term2_Import_Start.Add(3 * 24 * time.Hour),
-			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday1) * 24 * time.Hour),
-			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday2) * 24 * time.Hour),
-			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday3) * 24 * time.Hour),
-			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday4) * 24 * time.Hour),
-		},
-	}
+	for termIndex, term := range ImportTerms {
+		termNum := termIndex + 1
+		termDates := []time.Time{
+			term.Start,
+			term.Start.Add(1 * 24 * time.Hour),
+			term.Start.Add(2 * 24 * time.Hour),
+			term.Start.Add(3 * 24 * time.Hour),
+			term.Start.Add(time.Duration(term.DayOffsets[0]) * 24 * time.Hour),
+			term.Start.Add(time.Duration(term.DayOffsets[1]) * 24 * time.Hour),
+			term.Start.Add(time.Duration(term.DayOffsets[2]) * 24 * time.Hour),
+			term.Start.Add(time.Duration(term.DayOffsets[3]) * 24 * time.Hour),
+		}
 
-	for termNum, termDates := range datesToSearch {
 		for dayNumber, date := range termDates {
 			periods := dayMap[termNum][dayNumber+1]
 

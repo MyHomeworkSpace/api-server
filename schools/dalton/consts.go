@@ -23,6 +23,12 @@ const (
 	AssemblyTypeLab
 )
 
+type importTerm struct {
+	Start      time.Time
+	End        time.Time
+	DayOffsets []int
+}
+
 // these change every year
 var (
 	// the grade that someone in the class of 2019 is in for this year
@@ -36,21 +42,28 @@ var (
 
 	// import ranges
 	// these should be ranges with 4 fridays in a row and the first week having no off days
-	Term1_Import_Start = time.Date(2019, time.September, 9, 0, 0, 0, 0, time.UTC)
-	Term1_Import_End   = time.Date(2019, time.October, 5, 0, 0, 0, 0, time.UTC)
-
-	Term1_Import_DayOffset_Friday1 = 4
-	Term1_Import_DayOffset_Friday2 = ((7 * 1) + 4)
-	Term1_Import_DayOffset_Friday3 = ((7 * 2) + 4)
-	Term1_Import_DayOffset_Friday4 = ((7 * 3) + 4)
-
-	Term2_Import_Start = time.Date(2020, time.January, 27, 0, 0, 0, 0, time.UTC)
-	Term2_Import_End   = time.Date(2020, time.February, 22, 0, 0, 0, 0, time.UTC)
-
-	Term2_Import_DayOffset_Friday1 = ((7 * 3) + 4)
-	Term2_Import_DayOffset_Friday2 = 4
-	Term2_Import_DayOffset_Friday3 = ((7 * 1) + 4)
-	Term2_Import_DayOffset_Friday4 = ((7 * 2) + 4)
+	ImportTerms = []importTerm{
+		{
+			Start: time.Date(2019, time.September, 9, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2019, time.October, 5, 0, 0, 0, 0, time.UTC),
+			DayOffsets: []int{
+				4,
+				((7 * 1) + 4),
+				((7 * 2) + 4),
+				((7 * 3) + 4),
+			},
+		},
+		{
+			Start: time.Date(2020, time.January, 27, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2020, time.February, 22, 0, 0, 0, 0, time.UTC),
+			DayOffsets: []int{
+				((7 * 3) + 4),
+				4,
+				((7 * 1) + 4),
+				((7 * 2) + 4),
+			},
+		},
+	}
 
 	AssemblyTypeList = map[string]AssemblyType{
 		"2019-09-12": AssemblyTypeAssembly,
