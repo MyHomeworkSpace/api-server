@@ -212,14 +212,14 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	dayMap := map[int]map[int][]calendarPeriod{}
 	for _, term := range []int{1, 2} {
 		dayMap[term] = map[int][]calendarPeriod{
-			0: []calendarPeriod{},
-			1: []calendarPeriod{},
-			2: []calendarPeriod{},
-			3: []calendarPeriod{},
-			4: []calendarPeriod{},
-			5: []calendarPeriod{},
-			6: []calendarPeriod{},
-			7: []calendarPeriod{},
+			0: {},
+			1: {},
+			2: {},
+			3: {},
+			4: {},
+			5: {},
+			6: {},
+			7: {},
 		}
 
 		startDate := calendar.Term1_Import_Start
