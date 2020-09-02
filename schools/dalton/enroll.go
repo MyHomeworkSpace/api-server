@@ -9,7 +9,6 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/auth"
 	"github.com/MyHomeworkSpace/api-server/blackbaud"
-	"github.com/MyHomeworkSpace/api-server/calendar"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/schools"
 )
@@ -222,11 +221,11 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			7: {},
 		}
 
-		startDate := calendar.Term1_Import_Start
-		endDate := calendar.Term1_Import_End
+		startDate := Term1_Import_Start
+		endDate := Term1_Import_End
 		if term == 2 {
-			startDate = calendar.Term2_Import_Start
-			endDate = calendar.Term2_Import_End
+			startDate = Term2_Import_Start
+			endDate = Term2_Import_End
 		}
 
 		response, err = blackbaud.Request(schoolSlug, "GET", "DataDirect/ScheduleList", url.Values{
@@ -322,24 +321,24 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	// find locations of classes
 	datesToSearch := map[int][]time.Time{
 		1: {
-			calendar.Term1_Import_Start,
-			calendar.Term1_Import_Start.Add(1 * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(2 * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(3 * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(time.Duration(calendar.Term1_Import_DayOffset_Friday1) * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(time.Duration(calendar.Term1_Import_DayOffset_Friday2) * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(time.Duration(calendar.Term1_Import_DayOffset_Friday3) * 24 * time.Hour),
-			calendar.Term1_Import_Start.Add(time.Duration(calendar.Term1_Import_DayOffset_Friday4) * 24 * time.Hour),
+			Term1_Import_Start,
+			Term1_Import_Start.Add(1 * 24 * time.Hour),
+			Term1_Import_Start.Add(2 * 24 * time.Hour),
+			Term1_Import_Start.Add(3 * 24 * time.Hour),
+			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday1) * 24 * time.Hour),
+			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday2) * 24 * time.Hour),
+			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday3) * 24 * time.Hour),
+			Term1_Import_Start.Add(time.Duration(Term1_Import_DayOffset_Friday4) * 24 * time.Hour),
 		},
 		2: {
-			calendar.Term2_Import_Start,
-			calendar.Term2_Import_Start.Add(1 * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(2 * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(3 * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(time.Duration(calendar.Term2_Import_DayOffset_Friday1) * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(time.Duration(calendar.Term2_Import_DayOffset_Friday2) * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(time.Duration(calendar.Term2_Import_DayOffset_Friday3) * 24 * time.Hour),
-			calendar.Term2_Import_Start.Add(time.Duration(calendar.Term2_Import_DayOffset_Friday4) * 24 * time.Hour),
+			Term2_Import_Start,
+			Term2_Import_Start.Add(1 * 24 * time.Hour),
+			Term2_Import_Start.Add(2 * 24 * time.Hour),
+			Term2_Import_Start.Add(3 * 24 * time.Hour),
+			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday1) * 24 * time.Hour),
+			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday2) * 24 * time.Hour),
+			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday3) * 24 * time.Hour),
+			Term2_Import_Start.Add(time.Duration(Term2_Import_DayOffset_Friday4) * 24 * time.Hour),
 		},
 	}
 
