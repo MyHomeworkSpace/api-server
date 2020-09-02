@@ -207,18 +207,25 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		classMap[houseSectionID] = houseInfo
 	}
 
+	rotationDay := time.Friday
+	rotationDayCount := 4
+	if CurrentMode == SchoolModeVirtual {
+		rotationDay = time.Wednesday
+		rotationDayCount = 2
+	}
+
 	// find all periods of classes
 	dayMap := map[int]map[int][]calendarPeriod{}
 	for termIndex, term := range ImportTerms {
 		dayMap[termIndex+1] = map[int][]calendarPeriod{
-			0: {},
 			1: {},
 			2: {},
 			3: {},
 			4: {},
 			5: {},
-			6: {},
-			7: {},
+		}
+		for i := 0; i < rotationDayCount-1; i++ {
+			dayMap[termIndex+1][6+i] = []calendarPeriod{}
 		}
 
 		response, err = blackbaud.Request(schoolSlug, "GET", "DataDirect/ScheduleList", url.Values{
@@ -235,15 +242,16 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 		totalPeriodList := response.([]interface{})
 		daysFound := map[int]string{
-			0: "",
 			1: "",
 			2: "",
 			3: "",
 			4: "",
 			5: "",
-			6: "",
-			7: "",
 		}
+		for i := 0; i < rotationDayCount-1; i++ {
+			daysFound[6+i] = ""
+		}
+
 		daysInfo := map[string]string{}
 		for _, period := range totalPeriodList {
 			periodInfo := period.(map[string]interface{})
@@ -260,18 +268,20 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			}
 
 			dayNumber := int(day.Weekday())
-			// if dayNumber == int(time.Friday) {
-			// 	// find what friday it is and add that to the day number
-			// 	info, ok := daysInfo[dayStr]
-			// 	if !ok {
-			// 		return nil, err
-			// 	}
-			// 	fridayNumber, err := strconv.Atoi(strings.Split(info, " ")[1])
-			// 	if err == nil {
-			// 		// we actually have a friday number, adjust it
-			// 		dayNumber += fridayNumber - 1
-			// 	}
-			// }
+			if dayNumber == int(rotationDay) {
+				// find what rotation it is and add that to the day number
+				info, ok := daysInfo[dayStr]
+				if !ok {
+					return nil, err
+				}
+				rotationNumber, err := strconv.Atoi(strings.Split(info, " ")[1])
+				if err == nil {
+					// we actually have a rotation number, adjust it
+					if rotationNumber != 1 {
+						dayNumber = int(time.Friday) + rotationNumber - 1
+					}
+				}
+			}
 
 			if daysFound[dayNumber] != "" && daysFound[dayNumber] != dayStr {
 				// we've already found a source for periods from this day, and it's not this one
@@ -314,15 +324,29 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	// find locations of classes
 	for termIndex, term := range ImportTerms {
 		termNum := termIndex + 1
-		termDates := []time.Time{
-			term.Start,
-			term.Start.Add(1 * 24 * time.Hour),
-			term.Start.Add(2 * 24 * time.Hour),
-			term.Start.Add(3 * 24 * time.Hour),
-			term.Start.Add(time.Duration(term.DayOffsets[0]) * 24 * time.Hour),
-			term.Start.Add(time.Duration(term.DayOffsets[1]) * 24 * time.Hour),
-			term.Start.Add(time.Duration(term.DayOffsets[2]) * 24 * time.Hour),
-			term.Start.Add(time.Duration(term.DayOffsets[3]) * 24 * time.Hour),
+		var termDates []time.Time
+		if CurrentMode == SchoolModeNormal {
+			// SchoolModeNormal
+			termDates = []time.Time{
+				term.Start,
+				term.Start.Add(1 * 24 * time.Hour),
+				term.Start.Add(2 * 24 * time.Hour),
+				term.Start.Add(3 * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[0]) * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[1]) * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[2]) * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[3]) * 24 * time.Hour),
+			}
+		} else {
+			// SchoolModeVirtual
+			termDates = []time.Time{
+				term.Start,
+				term.Start.Add(1 * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[0]) * 24 * time.Hour),
+				term.Start.Add(3 * 24 * time.Hour),
+				term.Start.Add(4 * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[1]) * 24 * time.Hour),
+			}
 		}
 
 		for dayNumber, date := range termDates {

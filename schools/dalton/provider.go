@@ -83,18 +83,18 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	announcementGroups := getGradeAnnouncementGroups(grade)
 	announcementGroupsSQL := getAnnouncementGroupSQL(announcementGroups)
 
-	// get all friday information for time period
-	fridayRows, err := db.Query("SELECT * FROM dalton_fridays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	// get all rotation information for time period
+	rotationRows, err := db.Query("SELECT * FROM dalton_rotations WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
 	if err != nil {
 		return data.ProviderData{}, err
 	}
-	fridays := []data.PlannerFriday{}
-	for fridayRows.Next() {
-		friday := data.PlannerFriday{}
-		fridayRows.Scan(&friday.ID, &friday.Date, &friday.Index)
-		fridays = append(fridays, friday)
+	rotations := []data.PlannerFriday{}
+	for rotationRows.Next() {
+		rotation := data.PlannerFriday{}
+		rotationRows.Scan(&rotation.ID, &rotation.Date, &rotation.Index)
+		rotations = append(rotations, rotation)
 	}
-	fridayRows.Close()
+	rotationRows.Close()
 
 	// get announcements for time period
 	announcementRows, err := db.Query("SELECT id, date, text, grade, `type` FROM dalton_announcements WHERE date >= ? AND date <= ? AND ("+announcementGroupsSQL+") AND type < 2", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
@@ -127,16 +127,21 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	if dataType&data.ProviderDataAnnouncements != 0 {
 		result.Announcements = []data.PlannerAnnouncement{}
 
-		// add fridays as announcements
-		for _, friday := range fridays {
-			fridayAnnouncement := data.PlannerAnnouncement{
+		// add rotations as announcements
+		for _, rotation := range rotations {
+			dayName := "Friday "
+			if CurrentMode == SchoolModeVirtual {
+				dayName = "Wednesday "
+			}
+
+			rotationAnnouncement := data.PlannerAnnouncement{
 				ID:    -1,
-				Date:  friday.Date,
-				Text:  "Friday " + strconv.Itoa(friday.Index),
+				Date:  rotation.Date,
+				Text:  dayName + strconv.Itoa(rotation.Index),
 				Grade: -1,
 				Type:  0,
 			}
-			result.Announcements = append(result.Announcements, fridayAnnouncement)
+			result.Announcements = append(result.Announcements, rotationAnnouncement)
 		}
 
 		// add standard announcements
@@ -191,12 +196,6 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			availableTerms = append(availableTerms, term)
 		}
 
-		// if user is a senior, their classes end earlier
-		lastDayOfClasses := Day_SchoolEnd
-		if grade == 12 {
-			lastDayOfClasses = Day_SeniorEnd
-		}
-
 		// get schedule events
 		currentDay := startTime
 		for i := 0; i < dayCount; i++ {
@@ -208,13 +207,21 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			var currentTerm *term
 
-			if currentDay.Add(time.Second).After(Day_SchoolStart) && currentDay.Before(lastDayOfClasses) {
-				if currentDay.After(Day_ExamRelief) {
-					// it's the second term
-					currentTerm = &availableTerms[1]
-				} else {
-					// it's the first term
-					currentTerm = &availableTerms[0]
+			for _, termToCheck := range availableTerms {
+				dates := TermMap[termToCheck.Name]
+				startDate, endDate := dates[0], dates[1]
+				if currentDay.Add(time.Second).After(startDate) && currentDay.Before(endDate) {
+					// special exception: in normal mode, seniors stop having classes at a certain point
+					if CurrentMode == SchoolModeVirtual {
+						// if user is a senior, their classes end earlier
+						if grade == 12 && currentDay.After(Day_SeniorEnd) {
+							currentTerm = nil
+							break
+						}
+					}
+
+					currentTerm = &termToCheck
+					break
 				}
 			}
 
@@ -236,20 +243,25 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					continue
 				}
 
-				// calculate day index (1 = monday, 8 = friday 4)
+				// calculate day index (1 = monday, 8 = rotation 4)
 				dayNumber := int(dayTime.Weekday())
 
-				if dayTime.Weekday() == time.Friday {
-					fridayNumber := -1
-					for _, friday := range fridays {
-						if dayString == friday.Date {
-							fridayNumber = friday.Index
+				rotationDay := time.Friday
+				if CurrentMode == SchoolModeVirtual {
+					rotationDay = time.Wednesday
+				}
+
+				if dayTime.Weekday() == rotationDay {
+					rotationNumber := -1
+					for _, rotation := range rotations {
+						if dayString == rotation.Date {
+							rotationNumber = rotation.Index
 							break
 						}
 					}
 
-					if fridayNumber != -1 {
-						dayNumber = 4 + fridayNumber
+					if rotationNumber != -1 {
+						dayNumber = 4 + rotationNumber
 					} else {
 						continue
 					}

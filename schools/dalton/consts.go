@@ -23,10 +23,30 @@ const (
 	AssemblyTypeLab
 )
 
+// A SchoolMode describes the overall mode that scheduling takes place in.
+type SchoolMode int
+
+// The available SchoolModes.
+const (
+	// SchoolModeNormal refers to the normal Dalton schedule: two semesters with 45-minute classes.
+	SchoolModeNormal SchoolMode = iota
+
+	// SchoolModeVirtual refers to the Dalton schedule as modified to respond to the COVID-19 pandemic: three semesters with classes varying in duration.
+	SchoolModeVirtual
+)
+
 type importTerm struct {
 	Start      time.Time
 	End        time.Time
 	DayOffsets []int
+}
+
+func mustParse(t time.Time, err error) time.Time {
+	if err != nil {
+		panic(err)
+	}
+
+	return t
 }
 
 // these change every year
@@ -35,66 +55,56 @@ var (
 	// used to calculate other people's grade
 	Grade_ClassOf2019 AnnouncementGrade = 13
 
+	CurrentMode = SchoolModeVirtual
+
 	Day_SchoolStart, _ = time.Parse("2006-01-02", "2019-09-09")
 	Day_ExamRelief, _  = time.Parse("2006-01-02", "2020-01-24")
 	Day_SeniorEnd, _   = time.Parse("2006-01-02", "2020-04-23")
 	Day_SchoolEnd, _   = time.Parse("2006-01-02", "2020-06-11")
 
+	TermMap = map[string][]time.Time{
+		"1st Term": {
+			mustParse(time.Parse("2006-01-02", "2020-09-21")),
+			mustParse(time.Parse("2006-01-02", "2020-12-19")),
+		},
+		"2nd Term": {
+			mustParse(time.Parse("2006-01-02", "2021-01-04")),
+			mustParse(time.Parse("2006-01-02", "2021-03-20")),
+		},
+		"3rd Term": {
+			mustParse(time.Parse("2006-01-02", "2021-04-05")),
+			mustParse(time.Parse("2006-01-02", "2021-06-17")),
+		},
+	}
+
 	// import ranges
-	// these should be ranges with 4 fridays in a row and the first week having no off days
+	// these should be ranges with 4 fridays/2 wednesdays in a row and the first week having no off days
 	ImportTerms = []importTerm{
 		{
-			Start: time.Date(2019, time.September, 9, 0, 0, 0, 0, time.UTC),
-			End:   time.Date(2019, time.October, 5, 0, 0, 0, 0, time.UTC),
+			Start: time.Date(2020, time.September, 21, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2021, time.January, 3, 0, 0, 0, 0, time.UTC),
 			DayOffsets: []int{
-				4,
-				((7 * 1) + 4),
-				((7 * 2) + 4),
-				((7 * 3) + 4),
+				2,
+				((7 * 1) + 2),
 			},
 		},
 		{
-			Start: time.Date(2020, time.January, 27, 0, 0, 0, 0, time.UTC),
-			End:   time.Date(2020, time.February, 22, 0, 0, 0, 0, time.UTC),
+			Start: time.Date(2021, time.January, 4, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2021, time.March, 19, 0, 0, 0, 0, time.UTC),
 			DayOffsets: []int{
-				((7 * 3) + 4),
-				4,
-				((7 * 1) + 4),
-				((7 * 2) + 4),
+				2,
+				((7 * 1) + 2),
+			},
+		},
+		{
+			Start: time.Date(2021, time.April, 5, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2021, time.June, 17, 0, 0, 0, 0, time.UTC),
+			DayOffsets: []int{
+				2,
+				((7 * 1) + 2),
 			},
 		},
 	}
 
-	AssemblyTypeList = map[string]AssemblyType{
-		"2019-09-12": AssemblyTypeAssembly,
-		"2019-09-19": AssemblyTypeAssembly,
-		"2019-09-26": AssemblyTypeLab,
-		"2019-10-03": AssemblyTypeAssembly,
-		"2019-10-10": AssemblyTypeLab,
-		"2019-10-17": AssemblyTypeAssembly,
-		"2019-10-24": AssemblyTypeLongHouse,
-		"2019-10-31": AssemblyTypeLab,
-		"2019-11-07": AssemblyTypeLab,
-		"2019-11-14": AssemblyTypeAssembly,
-		"2019-11-21": AssemblyTypeAssembly,
-		"2019-12-05": AssemblyTypeAssembly,
-		"2019-12-12": AssemblyTypeLongHouse,
-		"2019-12-19": AssemblyTypeAssembly,
-		"2020-01-09": AssemblyTypeAssembly,
-		"2020-01-30": AssemblyTypeAssembly,
-		"2020-02-06": AssemblyTypeLab,
-		"2020-02-13": AssemblyTypeAssembly,
-		"2020-02-20": AssemblyTypeLab,
-		"2020-02-27": AssemblyTypeLab,
-		"2020-03-05": AssemblyTypeLab,
-		"2020-03-12": AssemblyTypeAssembly,
-		"2020-04-02": AssemblyTypeLongHouse,
-		"2020-04-16": AssemblyTypeAssembly,
-		"2020-04-23": AssemblyTypeLab,
-		"2020-04-30": AssemblyTypeAssembly,
-		"2020-05-07": AssemblyTypeAssembly,
-		"2020-05-14": AssemblyTypeAssembly,
-		"2020-05-21": AssemblyTypeAssembly,
-		"2020-05-28": AssemblyTypeLab,
-	}
+	AssemblyTypeList = map[string]AssemblyType{}
 )
