@@ -144,6 +144,27 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			result.Announcements = append(result.Announcements, rotationAnnouncement)
 		}
 
+		// add exception day announcements
+		currentDay := startTime
+		for i := 0; i < dayCount; i++ {
+			if i != 0 {
+				currentDay = currentDay.Add(24 * time.Hour)
+			}
+
+			dayString := currentDay.Format("2006-01-02")
+
+			overrideDay, isException := ExceptionDays[dayString]
+			if isException {
+				result.Announcements = append(result.Announcements, data.PlannerAnnouncement{
+					ID:    -1,
+					Date:  dayString,
+					Text:  overrideDay.String() + " Class Schedule",
+					Grade: -1,
+					Type:  0,
+				})
+			}
+		}
+
 		// add standard announcements
 		result.Announcements = append(result.Announcements, announcements...)
 
@@ -246,12 +267,17 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				// calculate day index (1 = monday, 8 = rotation 4)
 				dayNumber := int(dayTime.Weekday())
 
+				overrideDay, isException := ExceptionDays[dayString]
+				if isException {
+					dayNumber = int(overrideDay)
+				}
+
 				rotationDay := time.Friday
 				if CurrentMode == SchoolModeVirtual {
 					rotationDay = time.Wednesday
 				}
 
-				if dayTime.Weekday() == rotationDay {
+				if !isException && dayTime.Weekday() == rotationDay {
 					rotationNumber := -1
 					for _, rotation := range rotations {
 						if dayString == rotation.Date {
@@ -267,7 +293,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					}
 				}
 
-				if dayTime.Weekday() == time.Saturday || dayTime.Weekday() == time.Sunday {
+				if !isException && dayTime.Weekday() == time.Saturday || dayTime.Weekday() == time.Sunday {
 					continue
 				}
 

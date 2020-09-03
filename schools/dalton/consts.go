@@ -55,12 +55,11 @@ var (
 	// used to calculate other people's grade
 	Grade_ClassOf2019 AnnouncementGrade = 13
 
+	// the current school mode
 	CurrentMode = SchoolModeVirtual
 
-	Day_SchoolStart, _ = time.Parse("2006-01-02", "2019-09-09")
-	Day_ExamRelief, _  = time.Parse("2006-01-02", "2020-01-24")
-	Day_SeniorEnd, _   = time.Parse("2006-01-02", "2020-04-23")
-	Day_SchoolEnd, _   = time.Parse("2006-01-02", "2020-06-11")
+	// only relevant in SchoolModeNormal
+	Day_SeniorEnd, _ = time.Parse("2006-01-02", "2020-04-23")
 
 	TermMap = map[string][]time.Time{
 		"1st Term": {
@@ -75,6 +74,12 @@ var (
 			mustParse(time.Parse("2006-01-02", "2021-04-05")),
 			mustParse(time.Parse("2006-01-02", "2021-06-17")),
 		},
+	}
+
+	// days that are overriden with another weekday's schedule
+	ExceptionDays = map[string]time.Weekday{
+		"2020-12-16": time.Thursday,
+		"2020-12-17": time.Friday,
 	}
 
 	// import ranges
