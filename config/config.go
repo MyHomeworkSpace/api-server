@@ -19,6 +19,7 @@ type Config struct {
 	Feedback SlackConfig
 	Tasks    TasksConfig
 	MIT      MITConfig
+	Cornell  CornellConfig
 }
 
 type ServerConfig struct {
@@ -72,6 +73,10 @@ type MITConfig struct {
 	ProxyToken   string
 }
 
+type CornellConfig struct {
+	CurrentTerm string
+}
+
 func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -120,7 +125,10 @@ SlackURL = ""
 [mit]
 AuthProxyURL = ""
 DataProxyURL = ""
-ProxyToken = ""`
+ProxyToken = ""
+
+[cornell]
+CurrentTerm = ""`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
