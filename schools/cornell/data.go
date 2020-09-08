@@ -1,6 +1,6 @@
 package cornell
 
-type ClassItem struct {
+type classItem struct {
 	CourseID          int    `json:"crseId"`
 	CourseOfferNumber int    `json:"crseOfferNbr"`
 	Subject           string `json:"subject"`
@@ -12,11 +12,11 @@ type ClassItem struct {
 	Exists            bool   `json:"exists"`
 }
 
-type CoursePairs struct {
+type coursePairs struct {
 	CoursePairs []string `json:"crsePairs"`
 }
 
-type Course struct {
+type course struct {
 	Strm              int           `json:"strm"`
 	CourseID          int           `json:"crseId"`
 	CourseOfferNumber int           `json:"crseOfferNbr"`
@@ -24,13 +24,13 @@ type Course struct {
 	CatalogNumber     string        `json:"catalogNbr"`
 	TitleShort        string        `json:"titleShort"`
 	TitleLong         string        `json:"titleLong"`
-	EnrollGroups      []EnrollGroup `json:"enrollGroups"`
+	EnrollGroups      []enrollGroup `json:"enrollGroups"`
 	Cap               string        `json:"capDttm"`
 	RosterPrint       bool          `json:"rosterPrint"`
 }
 
-type EnrollGroup struct {
-	ClassSections             []Section   `json:"classSections"`
+type enrollGroup struct {
+	ClassSections             []section   `json:"classSections"`
 	UnitsMinimum              int         `json:"unitsMinimum"`
 	UnitsMaximum              int         `json:"unitsMaximum"`
 	ComponentsOptional        []string    `json:"componentsOptional"`
@@ -42,16 +42,16 @@ type EnrollGroup struct {
 	SyllabusReferenceMap      interface{} `json:"syllabusReferenceMap"` //no idea what this is meant to be user for
 	SyllabusReferenceMapCount int         `json:"syllabusReferenceMapCount"`
 	SyllabusPublishedMapCount int         `json:"syllabusPublishedMapCount"`
-	Syllabuses                []Syllabus  `json:"syllabusReferences"`
+	Syllabuses                []syllabus  `json:"syllabusReferences"`
 	RosterPrint               bool        `json:"rosterPrint"`
 }
 
-type Section struct {
+type section struct {
 	Component              string      `json:"ssrComponent"`
 	ComponentLong          string      `json:"ssrComponentLong"`
 	Section                string      `json:"section"`
 	ClassNum               int         `json:"classNbr"`
-	Meetings               []Meeting   `json:"meetings"`
+	Meetings               []meeting   `json:"meetings"`
 	Campus                 string      `json:"campus"`
 	CampusDesc             string      `json:"campusDescr"`
 	AcadOrg                string      `json:"acadOrg"`
@@ -72,7 +72,7 @@ type Section struct {
 	RosterPrint            bool        `json:"rosterPrint"`
 }
 
-type Meeting struct {
+type meeting struct {
 	Number            int    `json:"classMtgNumber"`
 	StartTime         string `json:"timeStart"`
 	EndTime           string `json:"timeEnd"`
@@ -92,7 +92,7 @@ type Meeting struct {
 	MeetingTopicDesc  string `json:"meetingTopicDescription"`
 }
 
-type Syllabus struct {
+type syllabus struct {
 	RosterSlug      string `json:"rosterSlug"`
 	LinkID          string `json:"linkId"`
 	SyllabusID      string `json:"syllabusId"`
@@ -106,7 +106,7 @@ type Syllabus struct {
 	ResourceUpdated string `json:"resourceUpdatedDttm"`
 }
 
-type Class struct {
+type event struct {
 	Subject       string // this is the subject, e.g. in CHEM 2090, it would be CHEM
 	CatalogNum    string // this is the course number, e.g. in CHEM 2090, it would be 2090
 	ClassNum      string // this is the class number, e.g. in CHEM 2090, it might be 4749
@@ -117,4 +117,15 @@ type Class struct {
 	CampusLong    string // this is the long name for the campus, for example, Ithaca
 	Location      string // this is the abbreviated name of the campus, for example, ITH
 	LocationLong  string // this is the long name of the campus, for example, "Ithaca, NY (Main Campus)"
+	Monday        bool   // defines if the class meets on monday
+	Tuesday       bool   // '' tuesday
+	Wednesday     bool   // etc
+	Thursday      bool
+	Friday        bool
+	Saturday      bool
+	Sunday        bool
+	StartDate     string // date the class has its first meeting (ISO 8601 string)
+	EndDate       string // date the class has its last meeting (ISO 8601 string)
+	StartTime     int    // time class starts, in seconds since the start of the day
+	EndTime       int    // time class ends, in seconds since the start of the day
 }

@@ -49,3 +49,22 @@ func (s *school) Prefixes() []data.Prefix {
 		},
 	}
 }
+
+func (s *school) Hydrate(data map[string]interface{}) error {
+	s.name = data["name"].(string)
+	s.netID = data["netid"].(string)
+	s.importStatus = schools.ImportStatus(data["status"].(float64))
+	return nil
+}
+
+func (s *school) CalendarProvider() data.Provider {
+	return &provider{
+		schools.Provider{
+			School: s,
+		},
+	}
+}
+
+func CreateSchool() *school {
+	return &school{}
+}
