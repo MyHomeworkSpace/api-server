@@ -87,6 +87,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 									URL:  "https://classes.cornell.edu/browse/roster/" + config.GetCurrent().Cornell.CurrentTerm + "/class/" + subject + "/" + catalogNum,
 								},
 							},
+							data.EventTagSection: section,
 						},
 					}
 
