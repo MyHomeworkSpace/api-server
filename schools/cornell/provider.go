@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/schools"
 )
@@ -52,15 +53,16 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				return data.ProviderData{}, err
 			}
 
-			fmt.Printf("%s %s %s\n", subject, catalogNum, component)
-
 			startDateTime, err := time.Parse("2006-01-02", startDate)
 			endDateTime, err := time.Parse("2006-01-02", endDate)
 			if err != nil {
 				return data.ProviderData{}, err
 			}
 			for currentDate.Before(endTime) {
-				if startDateTime.After(currentDate) {
+				iso8601CurrentDate := currentDate.Format("2006-01-02")
+				hasClasses := 1
+				db.QueryRow("SELECT hasClasses FROM cornell_holidays WHERE startDate <= DATE(?) AND endDate >= DATE(?)", iso8601CurrentDate, iso8601CurrentDate).Scan(&hasClasses)
+				if startDateTime.After(currentDate) || hasClasses == 0 {
 					currentDate = currentDate.Add(time.Hour * 24)
 					continue
 				} else if endDateTime.Before(currentDate) {
@@ -78,8 +80,29 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 							data.EventTagCancelable: true,
 							data.EventTagShortName:  fmt.Sprintf("%s %s %s", subject, catalogNum, component),
 							data.EventTagReadOnly:   true,
+							data.EventTagActions: []data.EventAction{
+								{
+									Icon: "external-link",
+									Name: "View Roster",
+									URL:  "https://classes.cornell.edu/browse/roster/" + config.GetCurrent().Cornell.CurrentTerm + "/class/" + subject + "/" + catalogNum,
+								},
+							},
 						},
 					}
+
+					if subject == "CS" {
+						// all CS course websites follow the same structure
+						actions := event.Tags[data.EventTagActions]
+
+						actions = append(actions.([]data.EventAction), data.EventAction{
+							Icon: "external-link",
+							Name: "Course Website",
+							URL:  "https://courses.cs.cornell.edu/cs" + catalogNum + "/" + config.GetCurrent().Cornell.CurrentCSTerm + "/",
+						})
+
+						event.Tags[data.EventTagActions] = actions
+					}
+
 					events = append(events, event)
 				}
 				currentDate = currentDate.Add(time.Hour * 24)
@@ -87,6 +110,33 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		}
 
 		results.Events = events
+	}
+
+	if dataType == data.ProviderDataAnnouncements || dataType == data.ProviderDataAll {
+		announcements := []data.PlannerAnnouncement{}
+
+		currentDate := startTime
+		for currentDate.Before(endTime) {
+			iso8601CurrentDate := currentDate.Format("2006-01-02")
+			name := ""
+			ID := -1
+			errNoRows := db.QueryRow("SELECT id, name FROM cornell_holidays WHERE startDate <= DATE(?) AND endDate >= DATE(?)", iso8601CurrentDate, iso8601CurrentDate).Scan(&ID, &name)
+
+			if errNoRows == nil {
+				announcement := data.PlannerAnnouncement{
+					ID:   ID,
+					Date: iso8601CurrentDate,
+					Text: name,
+				}
+				announcements = append(announcements, announcement)
+			} else if errNoRows != sql.ErrNoRows {
+				return data.ProviderData{}, errNoRows
+			}
+
+			currentDate = currentDate.Add(time.Hour * 24)
+		}
+
+		results.Announcements = announcements
 	}
 	return results, nil
 }

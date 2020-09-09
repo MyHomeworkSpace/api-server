@@ -74,7 +74,8 @@ type MITConfig struct {
 }
 
 type CornellConfig struct {
-	CurrentTerm string
+	CurrentTerm   string
+	CurrentCSTerm string
 }
 
 func createNewConfig() {
@@ -128,7 +129,8 @@ DataProxyURL = ""
 ProxyToken = ""
 
 [cornell]
-CurrentTerm = ""`
+CurrentTerm = ""
+CurrentCSTerm = ""`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
