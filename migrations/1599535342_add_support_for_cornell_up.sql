@@ -1,5 +1,13 @@
--- Description: add support for cornell
+-- Description: Add support for Cornell
 -- Up migration
+CREATE TABLE `cornell_holidays` (
+	`id` int NOT NULL AUTO_INCREMENT,
+	`startDate` date,
+	`endDate` date,
+	`name` text,
+	`hasClasses` tinyint(1),
+	PRIMARY KEY (id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 CREATE TABLE `cornell_courses` (
 	`id` int NOT NULL AUTO_INCREMENT,
 	`userId` int,
@@ -9,7 +17,7 @@ CREATE TABLE `cornell_courses` (
 	`units` int,
 	`rosterId` int,
 	PRIMARY KEY (id)
-);
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 CREATE TABLE `cornell_events` (
 	`id` int NOT NULL AUTO_INCREMENT,
 	`title` text,
@@ -39,4 +47,4 @@ CREATE TABLE `cornell_events` (
 	`facilityLong` text,
 	`building` text,
 	PRIMARY KEY (id)
-);
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
