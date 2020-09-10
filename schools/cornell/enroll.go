@@ -76,7 +76,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		return nil, data.SchoolError{Code: "invalid_credentials"}
 	}
 
-	// otherwise we're logged in! Unfortunatley, CUWebLogin has this intermediate screen that says Your login credentials are being transmitted to the website via POST. This only works if you use javascript, so we need to manually transmit the token
+	// otherwise we're logged in! Unfortunately, CUWebLogin has this intermediate screen that says Your login credentials are being transmitted to the website via POST. This only works if you use javascript, so we need to manually transmit the token
 
 	if err != nil {
 		return nil, err
