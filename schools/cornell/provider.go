@@ -15,7 +15,7 @@ type provider struct {
 
 func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
 	results := data.ProviderData{}
-	if dataType == data.ProviderDataEvents || dataType == data.ProviderDataAll {
+	if dataType&data.ProviderDataEvents != 0 {
 		events := []data.Event{}
 		rows, err := db.Query("SELECT title, subject, catalogNum, component, componentLong, section, startDate, endDate, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday, facilityLong FROM cornell_events WHERE userId = ?", user.ID)
 		if err != nil {
@@ -115,7 +115,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		results.Events = events
 	}
 
-	if dataType == data.ProviderDataAnnouncements || dataType == data.ProviderDataAll {
+	if dataType&data.ProviderDataAnnouncements != 0 {
 		announcements := []data.PlannerAnnouncement{}
 
 		currentDate := startTime
