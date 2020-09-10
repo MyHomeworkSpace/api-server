@@ -130,67 +130,68 @@ func GetUserByID(id int) (User, error) {
 		return User{}, err
 	}
 
-	if rows.Next() {
-		user := User{}
-		emailVerified := 0
+	defer rows.Close()
 
-		err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &emailVerified, &user.Level, &user.ShowMigrateMessage, &user.CreatedAt, &user.LastLoginAt)
-		if err != nil {
-			return User{}, err
-		}
-
-		if emailVerified == 1 {
-			user.EmailVerified = true
-		}
-
-		rows.Close()
-
-		user.Schools = []SchoolInfo{}
-
-		schoolRows, err := DB.Query("SELECT id, schoolId, enabled, data, userId FROM schools WHERE userId = ?", user.ID)
-		if err != nil {
-			return User{}, err
-		}
-
-		for schoolRows.Next() {
-			info := SchoolInfo{}
-			dataString := ""
-
-			schoolRows.Scan(&info.EnrollmentID, &info.SchoolID, &info.Enabled, &dataString, &info.UserID)
-
-			// parse JSON data
-			data := map[string]interface{}{}
-
-			err := json.Unmarshal([]byte(dataString), &data)
-			if err != nil {
-				return User{}, err
-			}
-
-			// get school and hydrate it
-			school, err := MainRegistry.GetSchoolByID(info.SchoolID)
-			if err != nil {
-				return User{}, err
-			}
-
-			school.Hydrate(data)
-
-			// set SchoolInfo
-			info.DisplayName = school.Name()
-			info.ShortName = school.ShortName()
-			info.UserDetails = school.UserDetails()
-			info.EmailAddress = school.EmailAddress()
-			info.School = school
-
-			user.Schools = append(user.Schools, info)
-		}
-
-		schoolRows.Close()
-
-		return user, nil
-	} else {
-		rows.Close()
+	if !rows.Next() {
 		return User{}, ErrNotFound
 	}
+
+	user := User{}
+	emailVerified := 0
+
+	err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Type, &user.Features, &emailVerified, &user.Level, &user.ShowMigrateMessage, &user.CreatedAt, &user.LastLoginAt)
+	if err != nil {
+		return User{}, err
+	}
+
+	if emailVerified == 1 {
+		user.EmailVerified = true
+	}
+
+	user.Schools = []SchoolInfo{}
+
+	schoolRows, err := DB.Query("SELECT id, schoolId, enabled, data, userId FROM schools WHERE userId = ?", user.ID)
+	if err != nil {
+		return User{}, err
+	}
+	defer schoolRows.Close()
+
+	for schoolRows.Next() {
+		info := SchoolInfo{}
+		dataString := ""
+
+		err := schoolRows.Scan(&info.EnrollmentID, &info.SchoolID, &info.Enabled, &dataString, &info.UserID)
+		if err != nil {
+			return User{}, err
+		}
+
+		// parse JSON data
+		data := map[string]interface{}{}
+
+		err = json.Unmarshal([]byte(dataString), &data)
+		if err != nil {
+			return User{}, err
+		}
+
+		// get school and hydrate it
+		school, err := MainRegistry.GetSchoolByID(info.SchoolID)
+		if err != nil {
+			return User{}, err
+		}
+
+		school.Hydrate(data)
+
+		// set SchoolInfo
+		info.DisplayName = school.Name()
+		info.ShortName = school.ShortName()
+		info.UserDetails = school.UserDetails()
+		info.EmailAddress = school.EmailAddress()
+		info.School = school
+
+		user.Schools = append(user.Schools, info)
+	}
+
+	return user, nil
 }
 
 // DeleteEmailToken deletes the given email token.
