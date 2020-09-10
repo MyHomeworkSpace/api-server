@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
-	"github.com/MyHomeworkSpace/api-server/email"
 	"github.com/MyHomeworkSpace/api-server/schools"
 	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/PuerkitoBio/goquery"
@@ -268,11 +267,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
 				break
 			}
 		}
-	}
-
-	err = email.Send("", user, "cornellLink", nil)
-	if err != nil {
-		return nil, err
 	}
 
 	return map[string]interface{}{
