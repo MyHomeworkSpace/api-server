@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/schools"
 )
@@ -87,7 +86,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 								{
 									Icon: "external-link",
 									Name: "View Roster",
-									URL:  "https://classes.cornell.edu/browse/roster/" + config.GetCurrent().Cornell.CurrentTerm + "/class/" + subject + "/" + catalogNum,
+									URL:  "https://classes.cornell.edu/browse/roster/" + GetCurrentTerm().Code + "/class/" + subject + "/" + catalogNum,
 								},
 							},
 							data.EventTagSection: section,
@@ -101,7 +100,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 						actions = append(actions.([]data.EventAction), data.EventAction{
 							Icon: "external-link",
 							Name: "Course Website",
-							URL:  "https://courses.cs.cornell.edu/cs" + catalogNum + "/" + config.GetCurrent().Cornell.CurrentCSTerm + "/",
+							URL:  "https://courses.cs.cornell.edu/cs" + catalogNum + "/" + GetCurrentTerm().CSCode + "/",
 						})
 
 						event.Tags[data.EventTagActions] = actions

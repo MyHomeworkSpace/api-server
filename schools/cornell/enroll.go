@@ -41,8 +41,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		Jar: cookieJar,
 	}
 
-	// term := config.GetCurrent().Cornell.CurrentTerm
-	term := "FA20"
+	term := GetCurrentTerm().Code
 
 	resp, err := c.Get("https://classes.cornell.edu/sascuwalogin/login/redirect?redirectUri=https%3A//classes.cornell.edu/scheduler/roster/" + term)
 	if err != nil {
