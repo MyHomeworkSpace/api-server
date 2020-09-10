@@ -1,5 +1,7 @@
 package cornell
 
+// This file contains import related structs!
+
 type classItem struct {
 	CourseID          int    `json:"crseId"`
 	CourseOfferNumber int    `json:"crseOfferNbr"`
@@ -104,28 +106,4 @@ type syllabus struct {
 	ResourceID      string `json:"resourceId"`
 	ResourceAdded   string `json:"resourceAddedDttm"`
 	ResourceUpdated string `json:"resourceUpdatedDttm"`
-}
-
-type event struct {
-	Subject       string // this is the subject, e.g. in CHEM 2090, it would be CHEM
-	CatalogNum    string // this is the course number, e.g. in CHEM 2090, it would be 2090
-	ClassNum      string // this is the class number, e.g. in CHEM 2090, it might be 4749
-	Component     string // this would be LEC for example
-	ComponentLong string // this would be Lecture for example
-	Section       string // this is the section number, like 403, not to be confused with the class number
-	Campus        string // this is the campus, for example MAIN or TECH
-	CampusLong    string // this is the long name for the campus, for example, Ithaca
-	Location      string // this is the abbreviated name of the campus, for example, ITH
-	LocationLong  string // this is the long name of the campus, for example, "Ithaca, NY (Main Campus)"
-	Monday        bool   // defines if the class meets on monday
-	Tuesday       bool   // '' tuesday
-	Wednesday     bool   // etc
-	Thursday      bool
-	Friday        bool
-	Saturday      bool
-	Sunday        bool
-	StartDate     string // date the class has its first meeting (ISO 8601 string)
-	EndDate       string // date the class has its last meeting (ISO 8601 string)
-	StartTime     int    // time class starts, in seconds since the start of the day
-	EndTime       int    // time class ends, in seconds since the start of the day
 }
