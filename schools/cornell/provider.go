@@ -23,10 +23,10 @@ type holiday struct {
 
 func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
 	results := data.ProviderData{}
-	// startTimeISO8601 := startTime.Format("2006-01-02")
-	// endTimeISO8601 := endTime.Format("2006-01-02")
+	startTimeISO8601 := startTime.Format("2006-01-02")
+	endTimeISO8601 := endTime.Format("2006-01-02")
 
-	rows, err := db.Query("SELECT id, startDate, endDate, name, hasClasses FROM cornell_holidays")
+	rows, err := db.Query("SELECT id, startDate, endDate, name, hasClasses FROM cornell_holidays WHERE endDate > ? and startDate < ?", startTimeISO8601, endTimeISO8601)
 	if err != nil {
 		return data.ProviderData{}, err
 	}
