@@ -15,7 +15,7 @@ type school struct {
 }
 
 func (s *school) ID() string {
-	return "cu"
+	return "cornell"
 }
 
 func (s *school) Name() string {

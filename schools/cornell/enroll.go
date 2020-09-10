@@ -22,7 +22,7 @@ var apiKeyRegexp = regexp.MustCompile(`"key":"(?P<Key>[^"]*)`)
 var nameRegexp = regexp.MustCompile(`login.*"name":"([^"]*)`) //kinda hacky, I should fix this
 
 func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface{}) (map[string]interface{}, error) {
-	netidRaw, ok := params["netid"]
+	netidRaw, ok := params["username"]
 	passwordRaw, ok2 := params["password"]
 
 	if !ok || !ok2 {
