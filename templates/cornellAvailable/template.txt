@@ -1,0 +1,8 @@
+Hi there {{.User.Name | fname}},
+
+We're writing to let you know that you can now link your Cornell NetID to MyHomeworkSpace to automatically import your schedule!
+
+It's super easy to do! Just log into the settings page (https://app.myhomework.space/#!settings), and click "Connect Account." Once you complete this process, all of your classes and most Cornell-specific events will appear in Calendar and on Dashboard! If you are having trouble, have any feedback or suggestions, or just want to say "hi," we're available through the feedback button, or via email at hello@myhomework.space.
+
+Have a wonderful afternoon,
+The MyHomeworkSpace Team
