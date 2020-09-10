@@ -73,7 +73,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	confirmationDocString, _ := confirmationDoc.Html()
 
 	if strings.Contains(confirmationDocString, "Unable to log in") {
-		return nil, data.SchoolError{Code: "invalid_credentials"}
+		return nil, data.SchoolError{Code: "creds_incorrect"}
 	}
 
 	// otherwise we're logged in! Unfortunately, CUWebLogin has this intermediate screen that says Your login credentials are being transmitted to the website via POST. This only works if you use javascript, so we need to manually transmit the token
