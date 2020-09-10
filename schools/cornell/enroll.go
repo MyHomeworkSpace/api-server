@@ -45,7 +45,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	resp, err := c.Get("https://classes.cornell.edu/sascuwalogin/login/redirect?redirectUri=https%3A//classes.cornell.edu/scheduler/roster/" + term)
 	if err != nil {
-		return nil, data.SchoolError{Code: "couldnt_reach_cornell"}
+		return nil, err
 	}
 
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -66,7 +66,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	loginResp, err := c.PostForm(resp.Request.URL.Scheme+"://"+resp.Request.URL.Host+"/"+loginForm, values)
 	if err != nil {
-		return nil, data.SchoolError{Code: "couldnt_reach_cornell"}
+		return nil, err
 	}
 
 	confirmationDoc, err := goquery.NewDocumentFromReader(loginResp.Body)
@@ -113,7 +113,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	scheduleResp, err := c.Do(scheduleReq)
 	if err != nil {
-		return nil, data.SchoolError{Code: "couldnt_reach_cornell"}
+		return nil, err
 	}
 
 	scheduleRespBuf := new(bytes.Buffer)
@@ -141,14 +141,14 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	courseDetailReq, err := http.NewRequest("POST", "https://classes.cornell.edu/api/3.0/scheduler/course-detail", bytes.NewBuffer(coursePairsJSON))
 	if err != nil {
-		return nil, data.SchoolError{Code: "couldnt_reach_cornell"}
+		return nil, err
 	}
 	courseDetailReq.Header.Set("Content-Type", "application/json")
 	courseDetailReq.Header.Add("Authorization", "ClassRoster "+APIKey)
 
 	courseDetailsResp, err := c.Do(courseDetailReq)
 	if err != nil {
-		return nil, data.SchoolError{Code: "couldnt_reach_cornell"}
+		return nil, err
 	}
 
 	courseDetailBuf := new(bytes.Buffer)
