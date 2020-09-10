@@ -160,6 +160,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	if err != nil {
 		return nil, err
 	}
+
 	// ok, now we have all the course details and the classes that the student is taking. Now we need to put it all in the db.
 
 	for _, course := range courses {
@@ -171,35 +172,36 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		for _, details := range courseDetails {
 			if details.CourseID == course.CourseID {
 				// we matched the details with the course!
-				for _, section := range details.EnrollGroups[0].ClassSections {
-					if util.IntSliceContains(course.ClassNumbers, section.ClassNum) {
-						for _, meeting := range section.Meetings {
+				for _, eg := range details.EnrollGroups {
+					for _, section := range eg.ClassSections {
+						if util.IntSliceContains(course.ClassNumbers, section.ClassNum) {
+							for _, meeting := range section.Meetings {
 
-							startDate, err := time.Parse("01/02/2006", meeting.StartDate)
-							endDate, err := time.Parse("01/02/2006", meeting.EndDate)
-							startTime, err := time.Parse("3:04PM", meeting.StartTime)
-							endTime, err := time.Parse("3:04PM", meeting.EndTime)
-							if err != nil {
-								return nil, err
-							}
+								startDate, err := time.Parse("01/02/2006", meeting.StartDate)
+								endDate, err := time.Parse("01/02/2006", meeting.EndDate)
+								startTime, err := time.Parse("3:04PM", meeting.StartTime)
+								endTime, err := time.Parse("3:04PM", meeting.EndTime)
+								if err != nil {
+									return nil, err
+								}
 
-							// kinda hacky but it works
-							startTime = time.Date(1970, 01, 01, startTime.Hour(), startTime.Minute(), 0, 0, time.UTC)
-							endTime = time.Date(1970, 01, 01, endTime.Hour(), endTime.Minute(), 0, 0, time.UTC)
+								// kinda hacky but it works
+								startTime = time.Date(1970, 01, 01, startTime.Hour(), startTime.Minute(), 0, 0, time.UTC)
+								endTime = time.Date(1970, 01, 01, endTime.Hour(), endTime.Minute(), 0, 0, time.UTC)
 
-							satMeeting := false
-							sunMeeting := false
+								satMeeting := false
+								sunMeeting := false
 
-							if strings.Contains("SSu", meeting.Pattern) {
-								satMeeting = true
-								sunMeeting = true
-							} else if strings.Contains("Su", meeting.Pattern) {
-								sunMeeting = true
-							} else if strings.Contains("S", meeting.Pattern) {
-								satMeeting = true
-							}
+								if strings.Contains("SSu", meeting.Pattern) {
+									satMeeting = true
+									sunMeeting = true
+								} else if strings.Contains("Su", meeting.Pattern) {
+									sunMeeting = true
+								} else if strings.Contains("S", meeting.Pattern) {
+									satMeeting = true
+								}
 
-							_, err = tx.Exec(`INSERT INTO cornell_events (
+								_, err = tx.Exec(`INSERT INTO cornell_events (
 		title,
 		userId,
 		subject,
@@ -228,36 +230,37 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		building
 	)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-								course.Title,
-								user.ID,
-								course.Subject,
-								course.CatalogNumber,
-								section.ClassNum,
-								section.Component,
-								section.ComponentLong,
-								section.Section,
-								section.Campus,
-								section.CampusDesc,
-								section.Location,
-								section.LocationDesc,
-								startDate.Format("2006-01-02"),
-								endDate.Format("2006-01-02"),
-								startTime.Unix(),
-								endTime.Unix(),
-								strings.Contains(meeting.Pattern, "M"),
-								strings.Contains(meeting.Pattern, "T"),
-								strings.Contains(meeting.Pattern, "W"),
-								strings.Contains(meeting.Pattern, "R"),
-								strings.Contains(meeting.Pattern, "F"),
-								satMeeting,
-								sunMeeting,
-								meeting.FacilityDescShort,
-								meeting.FacilityDesc,
-								meeting.BuildingDesc,
-							)
+									course.Title,
+									user.ID,
+									course.Subject,
+									course.CatalogNumber,
+									section.ClassNum,
+									section.Component,
+									section.ComponentLong,
+									section.Section,
+									section.Campus,
+									section.CampusDesc,
+									section.Location,
+									section.LocationDesc,
+									startDate.Format("2006-01-02"),
+									endDate.Format("2006-01-02"),
+									startTime.Unix(),
+									endTime.Unix(),
+									strings.Contains(meeting.Pattern, "M"),
+									strings.Contains(meeting.Pattern, "T"),
+									strings.Contains(meeting.Pattern, "W"),
+									strings.Contains(meeting.Pattern, "R"),
+									strings.Contains(meeting.Pattern, "F"),
+									satMeeting,
+									sunMeeting,
+									meeting.FacilityDescShort,
+									meeting.FacilityDesc,
+									meeting.BuildingDesc,
+								)
 
-							if err != nil {
-								return nil, err
+								if err != nil {
+									return nil, err
+								}
 							}
 						}
 					}
