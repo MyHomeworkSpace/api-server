@@ -39,7 +39,7 @@ type enrollGroup struct {
 	SessionBegin              string      `json:"sessionBeginDt"`
 	SessionEnd                string      `json:"sessionEndDt"`
 	Session                   string      `json:"sessionLong"`
-	SyllabusReferenceMap      interface{} `json:"syllabusReferenceMap"` //no idea what this is meant to be user for
+	SyllabusReferenceMap      interface{} `json:"syllabusReferenceMap"` //no idea what this is meant to be used for
 	SyllabusReferenceMapCount int         `json:"syllabusReferenceMapCount"`
 	SyllabusPublishedMapCount int         `json:"syllabusPublishedMapCount"`
 	Syllabuses                []syllabus  `json:"syllabusReferences"`
