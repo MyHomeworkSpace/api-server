@@ -38,7 +38,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	for rows.Next() {
 		hasClassesInt := -1
 		h := holiday{}
-		rows.Scan(&h.ID, &h.StartDate, &h.EndDate, &h.Name, &hasClassesInt)
+		err = rows.Scan(&h.ID, &h.StartDate, &h.EndDate, &h.Name, &hasClassesInt)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
 		h.HasClasses = hasClassesInt == 1
 		holidays = append(holidays, h)
 	}
