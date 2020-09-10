@@ -88,12 +88,12 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		return nil, data.SchoolError{Code: "internal_server_error"}
 	}
 
-	waThing, exists := confirmationDoc.Find("input[name=wa]").First().Attr("value")
+	webauthToken, exists := confirmationDoc.Find("input[name=wa]").First().Attr("value")
 	if !exists {
 		return nil, data.SchoolError{Code: "internal_server_error"}
 	}
 
-	schedulerResp, err := c.PostForm(classesURL, url.Values{"wa": {waThing}})
+	schedulerResp, err := c.PostForm(classesURL, url.Values{"wa": {webauthToken}})
 	if err != nil {
 		return nil, err
 	}
