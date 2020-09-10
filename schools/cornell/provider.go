@@ -61,7 +61,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			for currentDate.Before(endTime) {
 				iso8601CurrentDate := currentDate.Format("2006-01-02")
 				hasClasses := 1
-				db.QueryRow("SELECT hasClasses FROM cornell_holidays WHERE startDate <= DATE(?) AND endDate >= DATE(?)", iso8601CurrentDate, iso8601CurrentDate).Scan(&hasClasses)
+				errNoRows := db.QueryRow("SELECT hasClasses FROM cornell_holidays WHERE startDate <= ? AND endDate >= ?", iso8601CurrentDate, iso8601CurrentDate).Scan(&hasClasses)
+				if errNoRows != nil && errNoRows != sql.ErrNoRows {
+					return data.ProviderData{}, errNoRows
+				}
 				if startDateTime.After(currentDate) || hasClasses == 0 {
 					currentDate = currentDate.Add(time.Hour * 24)
 					continue
@@ -121,7 +124,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			iso8601CurrentDate := currentDate.Format("2006-01-02")
 			name := ""
 			ID := -1
-			errNoRows := db.QueryRow("SELECT id, name FROM cornell_holidays WHERE startDate <= DATE(?) AND endDate >= DATE(?)", iso8601CurrentDate, iso8601CurrentDate).Scan(&ID, &name)
+			errNoRows := db.QueryRow("SELECT id, name FROM cornell_holidays WHERE startDate <= ? AND endDate >= ?", iso8601CurrentDate, iso8601CurrentDate).Scan(&ID, &name)
 
 			if errNoRows == nil {
 				announcement := data.PlannerAnnouncement{
