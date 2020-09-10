@@ -15,6 +15,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
 	"github.com/MyHomeworkSpace/api-server/schools"
+	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -171,7 +172,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 			if details.CourseID == course.CourseID {
 				// we matched the details with the course!
 				for _, section := range details.EnrollGroups[0].ClassSections {
-					if contains(course.ClassNumbers, section.ClassNum) {
+					if util.IntSliceContains(course.ClassNumbers, section.ClassNum) {
 						for _, meeting := range section.Meetings {
 
 							startDate, err := time.Parse("01/02/2006", meeting.StartDate)
@@ -276,15 +277,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
 		"name":   name,
 		"status": schools.ImportStatusOK,
 	}, nil
-}
-
-func contains(s []int, e int) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *school) NeedsUpdate(db *sql.DB) (bool, error) {
