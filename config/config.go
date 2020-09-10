@@ -58,8 +58,10 @@ type CORSConfig struct {
 }
 
 type SlackConfig struct {
-	SlackEnabled bool
-	SlackURL     string
+	SlackEnabled    bool
+	SlackURL        string
+	SlackLogEnabled bool
+	SlackLogURL     string
 }
 
 type TasksConfig struct {
@@ -116,6 +118,8 @@ SlackURL = ""
 [tasks.slack]
 SlackEnabled = false
 SlackURL = ""
+SlackLogEnabled = false
+SlackLogURL = ""
 
 [mit]
 AuthProxyURL = ""

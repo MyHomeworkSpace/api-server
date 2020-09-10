@@ -68,10 +68,19 @@ func updateLastCompletion(taskID string, db *sql.DB) error {
 func taskResult(taskID string, taskName string, ok bool, err error, response taskResponse) {
 	taskSlackConfig := config.GetCurrent().Tasks.Slack
 
-	if taskSlackConfig.SlackEnabled {
+	// log messages are harmless notifications that a task completed
+	// non-log messages are for errors that require attention
+	isLogMessage := ok
+
+	if (!isLogMessage && taskSlackConfig.SlackEnabled) || (isLogMessage && taskSlackConfig.SlackLogEnabled) {
 		message := fmt.Sprintf("'%s' (%s) failed!", taskName, taskID)
 		color := "danger"
 		text := "The error has been logged."
+
+		reportURL := taskSlackConfig.SlackURL
+		if isLogMessage {
+			reportURL = taskSlackConfig.SlackLogURL
+		}
 
 		if ok {
 			message = fmt.Sprintf("'%s' (%s) completed", taskName, taskID)
@@ -85,15 +94,15 @@ func taskResult(taskID string, taskName string, ok bool, err error, response tas
 			text = fmt.Sprintf("%d row(s) affected", response.RowsAffected)
 		}
 
-		err := slack.Post(taskSlackConfig.SlackURL, slack.WebhookMessage{
+		err := slack.Post(reportURL, slack.WebhookMessage{
 			Attachments: []slack.WebhookAttachment{
-				slack.WebhookAttachment{
+				{
 					Fallback: message,
 					Color:    color,
 					Title:    message,
 					Text:     text,
 					Fields: []slack.WebhookField{
-						slack.WebhookField{
+						{
 							Title: "Host",
 							Value: config.GetCurrent().Server.HostName,
 							Short: true,
