@@ -13,8 +13,36 @@ type provider struct {
 	schools.Provider
 }
 
+type holiday struct {
+	ID         int
+	StartDate  string
+	EndDate    string
+	Name       string
+	HasClasses bool
+}
+
 func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time, dataType data.ProviderDataType) (data.ProviderData, error) {
 	results := data.ProviderData{}
+	// startTimeISO8601 := startTime.Format("2006-01-02")
+	// endTimeISO8601 := endTime.Format("2006-01-02")
+
+	rows, err := db.Query("SELECT id, startDate, endDate, name, hasClasses FROM cornell_holidays")
+	if err != nil {
+		return data.ProviderData{}, err
+	}
+
+	holidays := []holiday{}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		hasClassesInt := -1
+		h := holiday{}
+		rows.Scan(&h.ID, &h.StartDate, &h.EndDate, &h.Name, &hasClassesInt)
+		h.HasClasses = hasClassesInt == 1
+		holidays = append(holidays, h)
+	}
+
 	if dataType&data.ProviderDataEvents != 0 {
 		events := []data.Event{}
 		rows, err := db.Query("SELECT title, subject, catalogNum, component, componentLong, section, startDate, endDate, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday, facilityLong FROM cornell_events WHERE userId = ?", user.ID)
@@ -58,13 +86,11 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				return data.ProviderData{}, err
 			}
 			for currentDate.Before(endTime) {
-				iso8601CurrentDate := currentDate.Format("2006-01-02")
-				hasClasses := 1
-				errNoRows := db.QueryRow("SELECT hasClasses FROM cornell_holidays WHERE startDate <= ? AND endDate >= ?", iso8601CurrentDate, iso8601CurrentDate).Scan(&hasClasses)
-				if errNoRows != nil && errNoRows != sql.ErrNoRows {
-					return data.ProviderData{}, errNoRows
+				hasHoliday, currentHoliday, err := getHolidayForDate(currentDate, holidays)
+				if err != nil {
+					return data.ProviderData{}, err
 				}
-				if startDateTime.After(currentDate) || hasClasses == 0 {
+				if (hasHoliday && !currentHoliday.HasClasses) || startDateTime.After(currentDate) {
 					currentDate = currentDate.Add(time.Hour * 24)
 					continue
 				} else if endDateTime.Before(currentDate) {
@@ -120,20 +146,18 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 		currentDate := startTime
 		for currentDate.Before(endTime) {
-			iso8601CurrentDate := currentDate.Format("2006-01-02")
-			name := ""
-			ID := -1
-			errNoRows := db.QueryRow("SELECT id, name FROM cornell_holidays WHERE startDate <= ? AND endDate >= ?", iso8601CurrentDate, iso8601CurrentDate).Scan(&ID, &name)
+			hasHoliday, currentHoliday, err := getHolidayForDate(currentDate, holidays)
+			if err != nil {
+				return data.ProviderData{}, err
+			}
 
-			if errNoRows == nil {
+			if hasHoliday {
 				announcement := data.PlannerAnnouncement{
-					ID:   ID,
-					Date: iso8601CurrentDate,
-					Text: name,
+					ID:   currentHoliday.ID,
+					Date: currentDate.Format("2006-01-02"),
+					Text: currentHoliday.Name,
 				}
 				announcements = append(announcements, announcement)
-			} else if errNoRows != sql.ErrNoRows {
-				return data.ProviderData{}, errNoRows
 			}
 
 			currentDate = currentDate.Add(time.Hour * 24)
@@ -142,4 +166,21 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		results.Announcements = announcements
 	}
 	return results, nil
+}
+
+func getHolidayForDate(date time.Time, holidays []holiday) (bool, holiday, error) {
+	for _, h := range holidays {
+		hStartDate, err := time.Parse("2006-01-02", h.StartDate)
+		hEndDate, err := time.Parse("2006-01-02", h.EndDate)
+		if err != nil {
+			return false, holiday{}, err
+		}
+
+		hEndDate = hEndDate.Add(24 * time.Hour) // we need to do that because both sides are inclusive
+
+		if hStartDate.Before(date) && hEndDate.After(date) {
+			return true, h, nil
+		}
+	}
+	return false, holiday{}, nil
 }
