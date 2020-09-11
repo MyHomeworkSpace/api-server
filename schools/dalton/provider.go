@@ -230,6 +230,11 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			for _, termToCheck := range availableTerms {
 				dates := TermMap[termToCheck.Name]
+				if dates == nil {
+					// this is an old schedule, just ignore it
+					continue
+				}
+
 				startDate, endDate := dates[0], dates[1]
 				if currentDay.Add(time.Second).After(startDate) && currentDay.Before(endDate) {
 					// special exception: in normal mode, seniors stop having classes at a certain point
