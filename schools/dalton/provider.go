@@ -213,7 +213,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		availableTerms := []term{}
 		for termRows.Next() {
 			term := term{}
-			termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
+			err = termRows.Scan(&term.ID, &term.TermID, &term.Name, &term.UserID)
+			if err != nil {
+				return data.ProviderData{}, err
+			}
 			availableTerms = append(availableTerms, term)
 		}
 
@@ -291,7 +294,11 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 						}
 					}
 
-					if rotationNumber != -1 {
+					if rotationNumber == 1 {
+						// the first rotation gets the normal day number
+						// this is by default for friday, but needs to explicitly stated for virtual school, with wednesday rotations
+						dayNumber = int(rotationDay)
+					} else if rotationNumber != -1 {
 						dayNumber = 4 + rotationNumber
 					} else {
 						continue
