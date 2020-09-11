@@ -33,20 +33,20 @@ func LogError(desc string, err error) {
 		title := fmt.Sprintf("An error occurred - %s", desc)
 		err = slack.Post(config.GetCurrent().ErrorLog.SlackURL, slack.WebhookMessage{
 			Attachments: []slack.WebhookAttachment{
-				slack.WebhookAttachment{
+				{
 					Fallback: title,
 					Color:    "danger",
 					Title:    title,
 					Text:     "```" + stackTrace + "```",
 					Fields: []slack.WebhookField{
-						slack.WebhookField{
+						{
 							Title: "Host",
 							Value: config.GetCurrent().Server.HostName,
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "Message",
-							Value: err.Error(),
+							Value: errDesc,
 							Short: true,
 						},
 					},
