@@ -309,7 +309,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					continue
 				}
 
-				rows, err := db.Query("SELECT dalton_periods.id, dalton_classes.termId, dalton_classes.sectionId, dalton_classes.`name`, dalton_classes.ownerId, dalton_classes.ownerName, dalton_periods.dayNumber, dalton_periods.block, dalton_periods.buildingName, dalton_periods.roomNumber, dalton_periods.`start`, dalton_periods.`end`, dalton_periods.userId FROM dalton_periods INNER JOIN dalton_classes ON dalton_periods.classId = dalton_classes.sectionId WHERE dalton_periods.userId = ? AND (dalton_classes.termId = ? OR dalton_classes.termId = -1) AND dalton_periods.dayNumber = ? GROUP BY dalton_periods.id, dalton_classes.termId, dalton_classes.name, dalton_classes.ownerId, dalton_classes.ownerName", user.ID, currentTerm.TermID, dayNumber)
+				rows, err := db.Query("SELECT dalton_periods.id, dalton_classes.termId, dalton_classes.sectionId, dalton_classes.`name`, dalton_classes.ownerId, dalton_classes.ownerName, dalton_periods.dayNumber, dalton_periods.block, dalton_periods.buildingName, dalton_periods.roomNumber, dalton_periods.`start`, dalton_periods.`end`, dalton_periods.userId FROM dalton_periods INNER JOIN dalton_classes ON dalton_periods.classId = dalton_classes.sectionId WHERE dalton_periods.userId = ? AND dalton_classes.userId = ? AND (dalton_classes.termId = ? OR dalton_classes.termId = -1) AND dalton_periods.dayNumber = ? GROUP BY dalton_periods.id, dalton_classes.termId, dalton_classes.name, dalton_classes.ownerId, dalton_classes.ownerName", user.ID, user.ID, currentTerm.TermID, dayNumber)
 				if err != nil {
 					return data.ProviderData{}, err
 				}
