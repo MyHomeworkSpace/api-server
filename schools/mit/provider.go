@@ -177,11 +177,12 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			event.ID = -1
 			event.UniqueID = offering.ID + "-" + offering.Section + "-" + dayString
-			event.Name = offering.ID + " - " + offering.Title + " - " + offering.Section
+			event.Name = offering.ID + " - " + offering.Title
 
 			typeDisplay, _ := sectionCharToDisplayName[offering.Section[0]]
 
 			event.Tags[data.EventTagShortName] = offering.ID + " " + typeDisplay
+			event.Tags[data.EventTagSection] = offering.Section
 			event.Tags[data.EventTagReadOnly] = true
 			event.Tags[data.EventTagCancelable] = true
 			if offering.Place != "VIRTUAL" {
