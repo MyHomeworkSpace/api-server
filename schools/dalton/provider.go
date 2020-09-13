@@ -32,7 +32,10 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]d
 	blocks := []data.OffBlock{}
 	for offBlockRows.Next() {
 		block := data.OffBlock{}
-		offBlockRows.Scan(&block.StartID, &block.StartText, &block.Name, &block.Grade)
+		err = offBlockRows.Scan(&block.StartID, &block.StartText, &block.Name, &block.Grade)
+		if err != nil {
+			return nil, err
+		}
 		blocks = append(blocks, block)
 	}
 
@@ -44,7 +47,10 @@ func getOffBlocksStartingBefore(db *sql.DB, before string, groupSQL string) ([]d
 		}
 		defer offBlockEndRows.Close()
 		if offBlockEndRows.Next() {
-			offBlockEndRows.Scan(&blocks[i].EndText)
+			err = offBlockEndRows.Scan(&blocks[i].EndText)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -91,7 +97,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	rotations := []data.PlannerFriday{}
 	for rotationRows.Next() {
 		rotation := data.PlannerFriday{}
-		rotationRows.Scan(&rotation.ID, &rotation.Date, &rotation.Index)
+		err = rotationRows.Scan(&rotation.ID, &rotation.Date, &rotation.Index)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
 		rotations = append(rotations, rotation)
 	}
 	rotationRows.Close()
@@ -105,7 +114,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	announcements := []data.PlannerAnnouncement{}
 	for announcementRows.Next() {
 		resp := data.PlannerAnnouncement{}
-		announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
+		err = announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text, &resp.Grade, &resp.Type)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
 		announcements = append(announcements, resp)
 	}
 
@@ -321,7 +333,10 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 					termID, classID, ownerID, ownerName, dayNumber, block, buildingName, roomNumber := -1, -1, -1, "", -1, "", "", ""
 
-					rows.Scan(&event.ID, &termID, &classID, &event.Name, &ownerID, &ownerName, &dayNumber, &block, &buildingName, &roomNumber, &event.Start, &event.End, &event.UserID)
+					err = rows.Scan(&event.ID, &termID, &classID, &event.Name, &ownerID, &ownerName, &dayNumber, &block, &buildingName, &roomNumber, &event.Start, &event.End, &event.UserID)
+					if err != nil {
+						return data.ProviderData{}, err
+					}
 
 					event.UniqueID = strconv.Itoa(event.ID) + "-" + strconv.Itoa(classID) + "-" + dayString
 
