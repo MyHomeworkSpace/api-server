@@ -28,7 +28,7 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, p httproute
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		errorlog.LogError("enrolling in school", err)
+		errorlog.LogError("getting settings for school", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -88,7 +88,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		errorlog.LogError("enrolling in school", err)
+		errorlog.LogError("setting settings for school", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
