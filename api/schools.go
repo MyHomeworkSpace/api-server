@@ -47,7 +47,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, p httprouter.Par
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		errorlog.LogError("enrolling in school - "+school.ID(), err)
+		errorlog.LogError("enrolling in school - "+r.FormValue("school"), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}

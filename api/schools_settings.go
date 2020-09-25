@@ -28,7 +28,7 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, p httproute
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		errorlog.LogError("getting settings for school", err)
+		errorlog.LogError("getting settings for school - "+r.FormValue("school"), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -68,7 +68,7 @@ func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, p httproute
 		}
 
 		// server error
-		errorlog.LogError("getting settings for school", err)
+		errorlog.LogError("getting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -88,7 +88,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
 		return
 	} else if err != nil {
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+r.FormValue("school"), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -143,7 +143,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 		}
 
 		// server error
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -152,7 +152,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 	schoolData, err := data.GetDataForSchool(&userSchool, c.User)
 	if err != nil {
 		tx.Rollback()
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -165,7 +165,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 	schoolDataBytes, err := json.Marshal(schoolData)
 	if err != nil {
 		tx.Rollback()
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -174,7 +174,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 	_, err = tx.Exec("UPDATE schools SET data = ? WHERE schoolId = ? AND userId = ?", string(schoolDataBytes), userSchool.ID(), c.User.ID)
 	if err != nil {
 		tx.Rollback()
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
@@ -182,7 +182,7 @@ func routeSchoolsSettingsSet(w http.ResponseWriter, r *http.Request, p httproute
 	// commit
 	err = tx.Commit()
 	if err != nil {
-		errorlog.LogError("setting settings for school", err)
+		errorlog.LogError("setting settings for school - "+registrySchool.ID(), err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}
