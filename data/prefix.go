@@ -16,56 +16,56 @@ type Prefix struct {
 
 // DefaultPrefixes is the list of prefixes that all users start out with.
 var DefaultPrefixes = []Prefix{
-	Prefix{
+	{
 		ID:         -1,
 		Background: "4C6C9B",
 		Color:      "FFFFFF",
 		Words:      []string{"HW", "Read", "Reading"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "9ACD32",
 		Color:      "FFFFFF",
 		Words:      []string{"Project"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "C3A528",
 		Color:      "FFFFFF",
 		Words:      []string{"Report", "Essay", "Paper", "Write"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "FFA500",
 		Color:      "FFFFFF",
 		Words:      []string{"Quiz", "PopQuiz", "GradedHW", "GradedHomework"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "EE5D1E",
 		Color:      "FFFFFF",
 		Words:      []string{"Quest"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "DC143C",
 		Color:      "FFFFFF",
 		Words:      []string{"Test", "Final", "Exam", "Midterm"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "2AC0F1",
 		Color:      "FFFFFF",
 		Words:      []string{"ICA", "FieldTrip"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "2AF15E",
 		Color:      "FFFFFF",
@@ -73,28 +73,28 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "000000",
 		Color:      "00FF00",
 		Words:      []string{"Trojun", "Hex"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "5000BC",
 		Color:      "FFFFFF",
 		Words:      []string{"OptionalHW", "Challenge"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "000099",
 		Color:      "FFFFFF",
 		Words:      []string{"Presentation", "Prez"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "123456",
 		Color:      "FFFFFF",
@@ -102,7 +102,7 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "5A1B87",
 		Color:      "FFFFFF",
@@ -110,7 +110,7 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "01B501",
 		Color:      "FFFFFF",
@@ -118,18 +118,18 @@ var DefaultPrefixes = []Prefix{
 		TimedEvent: true,
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "E34000",
 		Color:      "FFFFFF",
 		Words:      []string{"Apply", "Application", "Deadline"},
 		Default:    true,
 	},
-	Prefix{
+	{
 		ID:         -1,
 		Background: "3F4146",
 		Color:      "FFFFFF",
-		Words:      []string{"Form", "File", "Submit"},
+		Words:      []string{"Form", "File", "Submit", "Upload"},
 		Default:    true,
 	},
 }
