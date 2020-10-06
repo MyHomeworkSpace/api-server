@@ -175,10 +175,27 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 					for _, section := range eg.ClassSections {
 						if util.IntSliceContains(course.ClassNumbers, section.ClassNum) {
 							for _, meeting := range section.Meetings {
+								if meeting.StartTime == "" || meeting.EndTime == "" {
+									// this class is missing a time
+									// not super clear what these are, skip it
+									continue
+								}
 
 								startDate, err := time.Parse("01/02/2006", meeting.StartDate)
+								if err != nil {
+									return nil, err
+								}
+
 								endDate, err := time.Parse("01/02/2006", meeting.EndDate)
+								if err != nil {
+									return nil, err
+								}
+
 								startTime, err := time.Parse("3:04PM", meeting.StartTime)
+								if err != nil {
+									return nil, err
+								}
+
 								endTime, err := time.Parse("3:04PM", meeting.EndTime)
 								if err != nil {
 									return nil, err
