@@ -141,15 +141,15 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 		// add rotations as announcements
 		for _, rotation := range rotations {
-			dayName := "Friday "
-			if CurrentMode == SchoolModeVirtual {
-				dayName = "Wednesday "
+			date, err := time.Parse("2006-01-02", rotation.Date)
+			if err != nil {
+				return data.ProviderData{}, err
 			}
 
 			rotationAnnouncement := data.PlannerAnnouncement{
 				ID:    -1,
 				Date:  rotation.Date,
-				Text:  dayName + strconv.Itoa(rotation.Index),
+				Text:  date.Weekday().String() + " " + strconv.Itoa(rotation.Index),
 				Grade: -1,
 				Type:  0,
 			}
