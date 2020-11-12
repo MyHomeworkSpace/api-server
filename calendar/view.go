@@ -111,6 +111,8 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			}
 
 			event.Tags[data.EventTagCancelable] = true
+			event.Tags[data.EventTagOriginalStart] = event.Start
+			event.Tags[data.EventTagOriginalEnd] = event.End
 		}
 
 		eventTimes := event.CalculateTimes(endTime)
