@@ -108,7 +108,7 @@ func routeSchoolsEnroll(w http.ResponseWriter, r *http.Request, p httprouter.Par
 		if err != nil {
 			tx.Rollback()
 
-			errorlog.LogError("enrolling in school   - + school.ID()- unenrolling before enroll", err)
+			errorlog.LogError("enrolling in school - "+school.ID()+" - unenrolling before enroll", err)
 			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 			return
 		}
