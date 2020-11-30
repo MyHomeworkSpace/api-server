@@ -1,2 +1,4 @@
 config.toml
 roamer.*.toml
+!.devcontainer/config.toml
+!.devcontainer/roamer.local.toml
