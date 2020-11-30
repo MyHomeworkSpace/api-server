@@ -1,6 +1,6 @@
 # MyHomeworkSpace configuration
 [server]
-HostName = "local"
+HostName = "localhost"
 Port = 3010
 APIURLBase = "http://api-v2.myhomework.invalid/"
 AppURLBase = "http://app.myhomework.invalid/#!"
@@ -16,14 +16,14 @@ Database = "myhomeworkspace"
 Enabled = true
 FromAddress = "misconfigured@myhomework.invalid"
 FromDisplay = "MyHomeworkSpace Codespace <misconfigured@myhomework.invalid>"
-SMTPHost = "mailhog"
+SMTPHost = "localhost"
 SMTPPort = 1025
 SMTPSecure = false
 SMTPUsername = "accounts@myhomework.space"
 SMTPPassword = "password123"
 
 [redis]
-Host = "redis"
+Host = "localhost"
 Port = 6379
 
 [cors]

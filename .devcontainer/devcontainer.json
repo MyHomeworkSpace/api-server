@@ -2,8 +2,7 @@
 	"name": "MyHomeworkSpace",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
-	"workspaceFolder": "/workspace",
-	
+	"workspaceFolder": "/go/src/github.com/myhomeworkspace/api-server",
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
@@ -37,8 +36,6 @@
 	// 3306 - MySQL
 	"forwardPorts": [3010, 8025, 3306],
 
-	// "postStartCommand": ".devcontainer/startup.sh"
-
-	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": ".devcontainer/init.sh",
+	"remoteUser": "vscode"
 }

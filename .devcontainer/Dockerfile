@@ -8,6 +8,9 @@ RUN tar zvxf roamer.tar.gz
 RUN mv roamer /usr/local/bin/roamer
 RUN rm roamer.tar.gz
 
+RUN chmod 777 -R /go
+RUN mkdir -p /go/src/github.com/myhomeworkspace
+
 # install dependencies for the go vscode extension
 RUN go get -u -v github.com/acroca/go-symbols
 RUN go get -u -v github.com/cweill/gotests/...
