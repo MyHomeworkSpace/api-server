@@ -41,6 +41,4 @@
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": ".devcontainer/init.sh",
-
-	"remoteUser": "myhomeworkspace"
 }
