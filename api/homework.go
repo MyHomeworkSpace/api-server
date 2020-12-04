@@ -296,7 +296,11 @@ func routeHomeworkGetWeek(w http.ResponseWriter, r *http.Request, p httprouter.P
 }
 
 func routeHomeworkGetPickerSuggestions(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
-	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due > NOW() AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` ASC", c.User.ID)
+	rows, err := DB.Query(
+		"SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE userId = ? AND due >= ? AND id NOT IN (SELECT homework.id FROM homework INNER JOIN calendar_hwevents ON calendar_hwevents.homeworkId = homework.id) ORDER BY `due` ASC",
+		c.User.ID,
+		time.Now().Format("2006-01-02"),
+	)
 	if err != nil {
 		errorlog.LogError("getting homework picker suggestions", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
