@@ -18,12 +18,22 @@ func GetTermByCode(code string) (TermInfo, error) {
 			Code:   "FA20",
 			CSCode: "2020fa",
 		}, nil
+	} else if code == "WI21" {
+		return TermInfo{
+			Code:   "WI21",
+			CSCode: "2021wi", // the CS department doesn't offer winter courses, but if they did, this is probably what the code would be
+		}, nil
+	} else if code == "SP21" {
+		return TermInfo{
+			Code:   "SP21",
+			CSCode: "2021sp",
+		}, nil
 	}
 	return TermInfo{}, ErrBadTermCode
 }
 
 // GetCurrentTerm returns a TermInfo struct for the current academic term.
 func GetCurrentTerm() TermInfo {
-	term, _ := GetTermByCode("FA20")
+	term, _ := GetTermByCode("WI21")
 	return term
 }
