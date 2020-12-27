@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -167,7 +168,7 @@ func MakeADLogin(loginDetails map[string]interface{}, email string, password str
 	params.Add("i2", "1")
 	params.Add("i17", "")
 	params.Add("i18", "")
-	params.Add("i19", string(1000+rand.Intn(4000)))
+	params.Add("i19", strconv.Itoa(1000+rand.Intn(4000)))
 
 	client := http.Client{Jar: jar}
 
@@ -215,7 +216,7 @@ func BypassKMSIPage(loginDetails map[string]interface{}, jar http.CookieJar) err
 	params.Add("i2", "")
 	params.Add("i17", "")
 	params.Add("i18", "")
-	params.Add("i19", string(1000+rand.Intn(4000)))
+	params.Add("i19", strconv.Itoa(1000+rand.Intn(4000)))
 
 	client := http.Client{Jar: jar}
 
