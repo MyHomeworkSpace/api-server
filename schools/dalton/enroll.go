@@ -106,7 +106,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		groupInfo := group.(map[string]interface{})
 		groupName := groupInfo["GroupName"].(string)
 
-		if strings.Contains(strings.ToLower(groupName), "house") {
+		if strings.Contains(strings.ToLower(groupName), "house") && !strings.Contains(strings.ToLower(groupName), "greenhouse") {
 			// found it!
 			foundHouseGroup = true
 			houseSectionID = int(groupInfo["SectionId"].(float64))
