@@ -76,10 +76,12 @@ var (
 		},
 	}
 
-	// days that are overriden with another weekday's schedule
+	// days that are overridden with another weekday's schedule
 	ExceptionDays = map[string]time.Weekday{
 		"2020-12-16": time.Thursday,
 		"2020-12-17": time.Friday,
+		"2021-01-20": time.Monday,
+		"2021-02-10": time.Friday,
 	}
 
 	// import ranges
