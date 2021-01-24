@@ -28,7 +28,7 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, p httprouter.Param
 
 	if config.GetCurrent().Feedback.SlackEnabled {
 		screenshotStatement := "No screenshot included."
-		if r.FormValue("screenshot") != "" {
+		if r.FormValue("screenshot") != "" && r.FormValue("screenshot") != "null" {
 			screenshotStatement = "View screenshot on admin console."
 		}
 

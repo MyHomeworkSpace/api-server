@@ -38,7 +38,7 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, p httprout
 		resp := data.Feedback{}
 		var screenshot string
 		rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
-		if screenshot != "" {
+		if screenshot != "" && screenshot != "null" {
 			resp.HasScreenshot = true
 		}
 		feedbacks = append(feedbacks, resp)
