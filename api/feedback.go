@@ -34,38 +34,38 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, p httprouter.Param
 
 		err = slack.Post(config.GetCurrent().Feedback.SlackURL, slack.WebhookMessage{
 			Attachments: []slack.WebhookAttachment{
-				slack.WebhookAttachment{
+				{
 					Fallback: "New feedback submission",
 					Color:    "good",
 					Title:    "New feedback submission",
 					Text:     r.FormValue("text"),
 					Fields: []slack.WebhookField{
-						slack.WebhookField{
+						{
 							Title: "Feedback type",
 							Value: r.FormValue("type"),
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "Host",
 							Value: config.GetCurrent().Server.HostName,
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "User (name)",
 							Value: c.User.Name,
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "User (email)",
 							Value: c.User.Email,
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "User (type)",
 							Value: c.User.Type,
 							Short: true,
 						},
-						slack.WebhookField{
+						{
 							Title: "Screenshot",
 							Value: screenshotStatement,
 							Short: true,
