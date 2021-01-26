@@ -9,4 +9,5 @@ type Feedback struct {
 	UserName      string `json:"userName"`
 	UserEmail     string `json:"userEmail"`
 	HasScreenshot bool   `json:"hasScreenshot"`
+	UserAgent     string `json:"userAgent"`
 }

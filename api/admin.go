@@ -26,7 +26,7 @@ type userCountResponse struct {
 }
 
 func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
-	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
+	rows, err := DB.Query("SELECT feedback.id, feedback.userId, feedback.type, feedback.text, feedback.screenshot, feedback.timestamp, feedback.userAgent, users.name, users.email FROM feedback INNER JOIN users ON feedback.userId = users.id")
 	if err != nil {
 		errorlog.LogError("getting all feedback", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -34,10 +34,19 @@ func routeAdminGetAllFeedback(w http.ResponseWriter, r *http.Request, p httprout
 	}
 
 	feedbacks := []data.Feedback{}
+
+	defer rows.Close()
+
 	for rows.Next() {
 		resp := data.Feedback{}
 		var screenshot string
-		rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserName, &resp.UserEmail)
+		err = rows.Scan(&resp.ID, &resp.UserID, &resp.Type, &resp.Text, &screenshot, &resp.Timestamp, &resp.UserAgent, &resp.UserName, &resp.UserEmail)
+		if err != nil {
+			errorlog.LogError("scanning feedback", err)
+			writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+			return
+
+		}
 		if screenshot != "" {
 			resp.HasScreenshot = true
 		}

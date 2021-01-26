@@ -17,8 +17,8 @@ func routeFeedbackAdd(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 
 	_, err := DB.Exec(
-		"INSERT INTO feedback(userId, type, text, screenshot) VALUES(?, ?, ?, ?)",
-		c.User.ID, r.FormValue("type"), r.FormValue("text"), r.FormValue("screenshot"),
+		"INSERT INTO feedback(userId, type, text, screenshot, userAgent) VALUES(?, ?, ?, ?, ?)",
+		c.User.ID, r.FormValue("type"), r.FormValue("text"), r.FormValue("screenshot"), r.UserAgent(),
 	)
 	if err != nil {
 		errorlog.LogError("adding feedback", err)
