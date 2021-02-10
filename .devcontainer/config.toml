@@ -1,10 +1,10 @@
 # MyHomeworkSpace configuration
 [server]
-HostName = "localhost"
 Port = 3010
 APIURLBase = "http://api-v2.myhomework.invalid/"
 AppURLBase = "http://app.myhomework.invalid/#!"
 ReverseProxyHeader = ""
+HostName = "local"
 
 [database]
 Host = "localhost"
@@ -30,15 +30,21 @@ Port = 6379
 Enabled = false
 Origins = [ "https://app.myhomework.invalid", "https://myhomework.invalid" ]
 
-[feedback]
-SlackEnabled = false
-SlackURL = ""
-
 [errorlog]
 SlackEnabled = false
 SlackURL = ""
 
+[feedback]
+SlackEnabled = false
+SlackURL = ""
+
+[tasks.slack]
+SlackEnabled = false
+SlackURL = ""
+SlackLogEnabled = false
+SlackLogURL = ""
+
 [mit]
+AuthProxyURL = ""
 DataProxyURL = ""
-DataProxyToken = ""
-CurrentTermCode = "2020FA"
+ProxyToken = ""
