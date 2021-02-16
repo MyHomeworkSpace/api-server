@@ -33,7 +33,7 @@ func routePrefsGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, 
 		return
 	}
 
-	resp := data.Pref{-1, "", ""}
+	resp := data.Pref{}
 	rows.Scan(&resp.ID, &resp.Key, &resp.Value)
 
 	writeJSON(w, http.StatusOK, prefResponse{"ok", resp})
