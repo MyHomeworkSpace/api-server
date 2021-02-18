@@ -1,3 +1,3 @@
--- Description: record user agent in feedback
+-- Description: Record user agent in feedback
 -- Down migration
-ALTER TABLE `myhomeworkspace`.`feedback` DROP COLUMN `userAgent`;
+ALTER TABLE `feedback` DROP COLUMN `userAgent`;

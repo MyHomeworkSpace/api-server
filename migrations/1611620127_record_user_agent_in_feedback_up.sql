@@ -1,6 +1,4 @@
--- Description: record user agent in feedback
+-- Description: Record user agent in feedback
 -- Up migration
-ALTER TABLE feedback
-ADD COLUMN userAgent varchar(255);
-UPDATE feedback
-SET userAgent = '';
+ALTER TABLE feedback ADD userAgent varchar(255) NOT NULL DEFAULT '';
+ALTER TABLE feedback CHANGE `userAgent` `userAgent` varchar(255) NOT NULL;
