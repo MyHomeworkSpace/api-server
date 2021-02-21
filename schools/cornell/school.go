@@ -47,6 +47,20 @@ func (s *school) Prefixes() []data.Prefix {
 			Words:      []string{"Prelim", "Preliminary", "SemiFinal"},
 			Default:    true,
 		},
+		{
+			ID:         -1,
+			Background: "2AC0F1",
+			Color:      "FFFFFF",
+			Words:      []string{"Workshop"},
+			Default:    true,
+		},
+		{
+			ID:         -1,
+			Background: "C3A528",
+			Color:      "FFFFFF",
+			Words:      []string{"PreLab", "PostLab"},
+			Default:    true,
+		},
 	}
 }
 
