@@ -33,6 +33,9 @@ const (
 
 	// SchoolModeVirtual refers to the Dalton schedule as modified to respond to the COVID-19 pandemic: three semesters with classes varying in duration.
 	SchoolModeVirtual
+
+	// SchoolModeVirtualModified refers to SchoolModeVirtual with the new, non-rotating Wednesday schedule.
+	SchoolModeVirtualModified
 )
 
 type importTerm struct {
@@ -56,7 +59,7 @@ var (
 	Grade_ClassOf2019 AnnouncementGrade = 13
 
 	// the current school mode
-	CurrentMode = SchoolModeVirtual
+	CurrentMode = SchoolModeVirtualModified
 
 	// only relevant in SchoolModeNormal
 	Day_SeniorEnd, _ = time.Parse("2006-01-02", "2020-04-23")
@@ -96,11 +99,10 @@ var (
 			},
 		},
 		{
-			Start: time.Date(2021, time.January, 4, 0, 0, 0, 0, time.UTC),
-			End:   time.Date(2021, time.March, 19, 0, 0, 0, 0, time.UTC),
+			Start: time.Date(2021, time.February, 22, 0, 0, 0, 0, time.UTC),
+			End:   time.Date(2021, time.February, 28, 0, 0, 0, 0, time.UTC),
 			DayOffsets: []int{
 				2,
-				((7 * 1) + 2),
 			},
 		},
 		{

@@ -139,21 +139,23 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	if dataType&data.ProviderDataAnnouncements != 0 {
 		result.Announcements = []data.PlannerAnnouncement{}
 
-		// add rotations as announcements
-		for _, rotation := range rotations {
-			date, err := time.Parse("2006-01-02", rotation.Date)
-			if err != nil {
-				return data.ProviderData{}, err
-			}
+		if CurrentMode != SchoolModeVirtualModified {
+			// add rotations as announcements
+			for _, rotation := range rotations {
+				date, err := time.Parse("2006-01-02", rotation.Date)
+				if err != nil {
+					return data.ProviderData{}, err
+				}
 
-			rotationAnnouncement := data.PlannerAnnouncement{
-				ID:    -1,
-				Date:  rotation.Date,
-				Text:  date.Weekday().String() + " " + strconv.Itoa(rotation.Index),
-				Grade: -1,
-				Type:  0,
+				rotationAnnouncement := data.PlannerAnnouncement{
+					ID:    -1,
+					Date:  rotation.Date,
+					Text:  date.Weekday().String() + " " + strconv.Itoa(rotation.Index),
+					Grade: -1,
+					Type:  0,
+				}
+				result.Announcements = append(result.Announcements, rotationAnnouncement)
 			}
-			result.Announcements = append(result.Announcements, rotationAnnouncement)
 		}
 
 		// add exception day announcements
@@ -253,7 +255,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				startDate, endDate := dates[0], dates[1]
 				if currentDay.Add(time.Second).After(startDate) && currentDay.Before(endDate) {
 					// special exception: in normal mode, seniors stop having classes at a certain point
-					if CurrentMode == SchoolModeVirtual {
+					if CurrentMode == SchoolModeVirtual || CurrentMode == SchoolModeVirtualModified {
 						// if user is a senior, their classes end earlier
 						if grade == 12 && currentDay.After(Day_SeniorEnd) {
 							currentTerm = nil
@@ -297,7 +299,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					rotationDay = time.Wednesday
 				}
 
-				if !isException && dayTime.Weekday() == rotationDay {
+				if !isException && dayTime.Weekday() == rotationDay && CurrentMode != SchoolModeVirtualModified {
 					rotationNumber := -1
 					for _, rotation := range rotations {
 						if dayString == rotation.Date {

@@ -212,6 +212,9 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	if CurrentMode == SchoolModeVirtual {
 		rotationDay = time.Wednesday
 		rotationDayCount = 2
+	} else if CurrentMode == SchoolModeVirtualModified {
+		rotationDay = time.Wednesday
+		rotationDayCount = 1
 	}
 
 	// find all periods of classes
@@ -337,7 +340,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 				term.Start.Add(time.Duration(term.DayOffsets[2]) * 24 * time.Hour),
 				term.Start.Add(time.Duration(term.DayOffsets[3]) * 24 * time.Hour),
 			}
-		} else {
+		} else if CurrentMode == SchoolModeVirtual {
 			// SchoolModeVirtual
 			termDates = []time.Time{
 				term.Start,
@@ -346,6 +349,15 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 				term.Start.Add(3 * 24 * time.Hour),
 				term.Start.Add(4 * 24 * time.Hour),
 				term.Start.Add(time.Duration(term.DayOffsets[1]) * 24 * time.Hour),
+			}
+		} else {
+			// SchoolModeVirtualModified
+			termDates = []time.Time{
+				term.Start,
+				term.Start.Add(1 * 24 * time.Hour),
+				term.Start.Add(time.Duration(term.DayOffsets[0]) * 24 * time.Hour),
+				term.Start.Add(3 * 24 * time.Hour),
+				term.Start.Add(4 * 24 * time.Hour),
 			}
 		}
 
