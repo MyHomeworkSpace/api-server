@@ -121,6 +121,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		offerings = append(offerings, info)
 	}
 
+	daysToAnnounce := map[string]string{}
 	for _, offering := range offerings {
 		currentDay := startTime
 		for i := 0; i < dayCount; i++ {
@@ -145,6 +146,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			newWeekday, isException := termInfo.ExceptionDays[currentDay.Format("2006-01-02")]
 			if isException {
 				currentEffectiveWeekday = newWeekday
+				daysToAnnounce[currentDay.Format("2006-01-02")] = newWeekday.String() + " Class Schedule"
 			}
 
 			foundWeekday := false
@@ -204,6 +206,16 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			result.Events = append(result.Events, event)
 		}
+	}
+
+	for dayString, announcementText := range daysToAnnounce {
+		result.Announcements = append(result.Announcements, data.PlannerAnnouncement{
+			ID:    -1,
+			Date:  dayString,
+			Text:  announcementText,
+			Grade: -1,
+			Type:  0,
+		})
 	}
 
 	if school.peInfo != nil && school.showPE {
