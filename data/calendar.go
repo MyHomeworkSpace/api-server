@@ -106,8 +106,16 @@ type RecurRule struct {
 }
 
 // CalculateTimes returns a list of all times the given event will take place, using its RecurRule information.
-func (e *Event) CalculateTimes(until time.Time) []time.Time {
+func (e *Event) CalculateTimes(until time.Time) ([]time.Time, error) {
 	eventStartTime := time.Unix(int64(e.Start), 0).UTC()
+
+	if e.StartTimezone != "" {
+		location, err := time.LoadLocation(e.StartTimezone)
+		if err != nil {
+			return nil, err
+		}
+		eventStartTime = eventStartTime.In(location)
+	}
 
 	eventTimes := []time.Time{}
 
@@ -156,5 +164,5 @@ func (e *Event) CalculateTimes(until time.Time) []time.Time {
 		}
 	}
 
-	return eventTimes
+	return eventTimes, nil
 }

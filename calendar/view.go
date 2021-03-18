@@ -117,7 +117,11 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			event.Tags[data.EventTagOriginalEnd] = event.End
 		}
 
-		eventTimes := event.CalculateTimes(endTime)
+		eventTimes, err := event.CalculateTimes(endTime)
+		if err != nil {
+			return View{}, err
+		}
+
 		eventLength := time.Duration(event.End-event.Start) * time.Second
 
 		for _, eventTime := range eventTimes {
