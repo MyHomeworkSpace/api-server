@@ -52,15 +52,17 @@ const (
 
 // An Event is an event on a user's calendar. It could be from their schedule, homework, or manually added.
 type Event struct {
-	ID        int                          `json:"id"`
-	UniqueID  string                       `json:"uniqueId"`
-	Name      string                       `json:"name"`
-	Start     int                          `json:"start"`
-	End       int                          `json:"end"`
-	RecurRule *RecurRule                   `json:"recurRule"`
-	Tags      map[EventTagType]interface{} `json:"tags"`
-	Source    int                          `json:"source"`
-	UserID    int                          `json:"userId"`
+	ID            int                          `json:"id"`
+	UniqueID      string                       `json:"uniqueId"`
+	Name          string                       `json:"name"`
+	Start         int                          `json:"start"`
+	End           int                          `json:"end"`
+	StartTimezone string                       `json:"startTimezone"`
+	EndTimezone   string                       `json:"endTimezone"`
+	RecurRule     *RecurRule                   `json:"recurRule"`
+	Tags          map[EventTagType]interface{} `json:"tags"`
+	Source        int                          `json:"source"`
+	UserID        int                          `json:"userId"`
 }
 
 // An EventAction is an action that can be performed on an Event; for example, a link to open a class's website.

@@ -85,8 +85,10 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	for plainEventRows.Next() {
 		event := data.Event{
-			Tags:   map[data.EventTagType]interface{}{},
-			Source: -1,
+			StartTimezone: "America/New_York", // TODO: make this part of the event
+			EndTimezone:   "America/New_York", // TODO: make this part of the event
+			Tags:          map[data.EventTagType]interface{}{},
+			Source:        -1,
 		}
 		desc := ""
 		recurRule := data.RecurRule{

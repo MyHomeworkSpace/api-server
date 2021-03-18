@@ -61,12 +61,14 @@ func (p *Provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 		}
 
 		event := data.Event{
-			ID:        -1,
-			UniqueID:  externalEvent.UID,
-			Name:      externalEvent.Name,
-			Start:     int(externalEvent.Start),
-			End:       int(externalEvent.End),
-			RecurRule: nil,
+			ID:            -1,
+			UniqueID:      externalEvent.UID,
+			Name:          externalEvent.Name,
+			Start:         int(externalEvent.Start),
+			End:           int(externalEvent.End),
+			StartTimezone: "America/New_York", // TODO: make this part of the event
+			EndTimezone:   "America/New_York", // TODO: make this part of the event
+			RecurRule:     nil,
 			Tags: map[data.EventTagType]interface{}{
 				data.EventTagReadOnly: true,
 			},
