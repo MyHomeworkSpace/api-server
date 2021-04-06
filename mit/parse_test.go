@@ -155,4 +155,9 @@ func TestTimeParser(t *testing.T) {
 		StartSeconds: (16 * hourSeconds) + (30 * minuteSeconds),
 		EndSeconds:   (17 * hourSeconds) + (30 * minuteSeconds),
 	}, nil, nil)
+	testSingleTime(t, "TR 10:30-12p", &ScheduledMeeting{
+		Weekdays:     []time.Weekday{time.Tuesday, time.Thursday},
+		StartSeconds: (10 * hourSeconds) + (30 * minuteSeconds),
+		EndSeconds:   12 * hourSeconds,
+	}, nil, nil)
 }
