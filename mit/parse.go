@@ -38,6 +38,12 @@ func parseTime(timeString string, forceAM bool) (int, error) {
 		isPM = true
 	}
 
+	// also check for just "p"
+	if strings.Contains(timeString, "p") || strings.Contains(timeString, "P") {
+		timeString = strings.Replace(strings.Replace(timeString, "p", "", -1), "P", "", -1)
+		isPM = true
+	}
+
 	// it's a time like "4" or "5.30"
 	parts := strings.Split(timeString, ".")
 	if len(parts) > 2 {
