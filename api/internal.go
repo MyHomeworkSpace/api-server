@@ -14,7 +14,7 @@ func routeInternalStartTask(w http.ResponseWriter, r *http.Request, p httprouter
 	task := r.FormValue("task")
 
 	if task == "" {
-		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "missing_params"})
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
 		return
 	}
 
