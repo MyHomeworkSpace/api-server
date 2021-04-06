@@ -69,6 +69,10 @@ func parseTime(timeString string, forceAM bool) (int, error) {
 	} else {
 		// assume PM
 		hour += 12
+		if hour == 24 {
+			// 12 PM is actually noon
+			hour = 12
+		}
 	}
 
 	timeSeconds := ((hour * 60) + minute) * 60
