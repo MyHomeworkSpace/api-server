@@ -95,7 +95,7 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 
 	normalizedMeetingString := strings.ToUpper(strings.TrimSpace(strings.Replace(scheduledMeetingString, "*", "", -1)))
 
-	if normalizedMeetingString == "SECTION CANCELLED" || normalizedMeetingString == "TO BE ARRANGED" || normalizedMeetingString == "TBA" || normalizedMeetingString == "TBD" || normalizedMeetingString == "ARRANGED" {
+	if normalizedMeetingString == "SECTION CANCELLED" || normalizedMeetingString == "TO BE ARRANGED" || normalizedMeetingString == "TBA" || normalizedMeetingString == "TBD" || normalizedMeetingString == "ARRANGED" || normalizedMeetingString == "SCHEDULED INDIVIDUALLY" {
 		// oof
 		return nil, nil, nil, nil
 	}
