@@ -15,7 +15,6 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/api"
 	"github.com/MyHomeworkSpace/api-server/auth"
-	"github.com/MyHomeworkSpace/api-server/calendar"
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/email"
@@ -48,8 +47,6 @@ func main() {
 	}
 
 	email.Init()
-
-	calendar.InitCalendar()
 
 	api.DB = DB
 	api.MainRegistry = schools.MainRegistry

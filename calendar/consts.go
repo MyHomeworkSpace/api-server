@@ -1,5 +1,0 @@
-package calendar
-
-func InitCalendar() {
-
-}
