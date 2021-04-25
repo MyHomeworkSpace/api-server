@@ -48,8 +48,15 @@ func routeClassesGetID(w http.ResponseWriter, r *http.Request, p httprouter.Para
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
+
 	resp := data.HomeworkClass{-1, "", "", "", -1, -1}
-	rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
+	err = rows.Scan(&resp.ID, &resp.Name, &resp.Teacher, &resp.Color, &resp.SortIndex, &resp.UserID)
+	if err != nil {
+		errorlog.LogError("getting class information", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, singleClassResponse{"ok", resp})
 }
 
@@ -66,8 +73,15 @@ func routeClassesHWInfo(w http.ResponseWriter, r *http.Request, p httprouter.Par
 		writeJSON(w, http.StatusForbidden, errorResponse{"error", "forbidden"})
 		return
 	}
+
 	resp := -1
-	rows.Scan(&resp)
+	err = rows.Scan(&resp)
+	if err != nil {
+		errorlog.LogError("getting class information", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, hwInfoResponse{"ok", resp})
 }
 
