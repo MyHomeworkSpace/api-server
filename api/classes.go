@@ -185,6 +185,11 @@ func routeClassesDelete(w http.ResponseWriter, r *http.Request, p httprouter.Par
 
 	// use a transaction so that you can't delete just the hw or the class entry - either both or nothing
 	tx, err := DB.Begin()
+	if err != nil {
+		errorlog.LogError("deleting class", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
 
 	// delete HW calendar events
 	_, err = tx.Exec("DELETE calendar_hwevents FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE homework.classId = ?", id)
