@@ -100,6 +100,12 @@ func ParseScheduledMeeting(scheduledMeetingString string, termInfo TermInfo) (*S
 		return nil, nil, nil, nil
 	}
 
+	// HACK: some classes use "TH" for thursday instead of a single character
+	// for example, 12.803 has "TTH 10:30 - 12 PM"
+	// we work around this by replacing "TH" with the correct code, "R"
+	// this works because H is not used for anything else
+	scheduledMeetingString = strings.ReplaceAll(scheduledMeetingString, "TH", "R")
+
 	parsedATime := false
 
 	if strings.Contains(scheduledMeetingString, "(") {
