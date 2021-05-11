@@ -137,8 +137,8 @@ ProxyToken = ""
 [webauthn]
 DisplayName = "MyHomeworkSpace"
 RPID = "myhomework.localhost"
-RPOrigin = "https://app.myhomework.localhost"
-RPIcon = "https://app.myhomework.localhost/img/icon.svg"`
+RPOrigin = "http://app.myhomework.localhost"
+RPIcon = "http//app.myhomework.localhost/img/icon.svg"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
