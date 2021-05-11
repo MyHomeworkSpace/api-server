@@ -19,6 +19,7 @@ type Config struct {
 	Feedback SlackConfig
 	Tasks    TasksConfig
 	MIT      MITConfig
+	Webauthn WebAuthnConfig
 }
 
 type ServerConfig struct {
@@ -74,6 +75,13 @@ type MITConfig struct {
 	ProxyToken   string
 }
 
+type WebAuthnConfig struct {
+	DisplayName string
+	RPID        string
+	RPOrigin    string
+	RPIcon      string
+}
+
 func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
@@ -124,7 +132,13 @@ SlackLogURL = ""
 [mit]
 AuthProxyURL = ""
 DataProxyURL = ""
-ProxyToken = ""`
+ProxyToken = ""
+
+[webauthn]
+DisplayName = "MyHomeworkSpace"
+RPID = "myhomework.invalid"
+RPOrigin = "https://app.myhomework.invalid"
+RPIcon = "https://app.myhomework.invalid/img/icon.svg"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)

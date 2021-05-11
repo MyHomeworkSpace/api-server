@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/deckarep/golang-set v1.7.1
+	github.com/duo-labs/webauthn v0.0.0-20200714211715-1daaee874e43 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/onsi/ginkgo v1.14.1 // indirect

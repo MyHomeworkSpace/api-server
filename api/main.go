@@ -12,6 +12,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/config"
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/errorlog"
+	"github.com/duo-labs/webauthn/webauthn"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -29,6 +30,7 @@ const (
 )
 
 var DB *sql.DB
+var WebAuthnHandler *webauthn.WebAuthn
 var RedisClient *redis.Client
 
 type statusResponse struct {
