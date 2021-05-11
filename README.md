@@ -39,12 +39,12 @@ This guide might seem long and complicated! However, don't worry: it's supposed 
 12. For the `[email]` section (assuming you're using MailHog):
 ```
 Enabled = true
-FromAddress = "hello@myhomework.invalid"
-FromDisplay = "MyHomeworkSpace <hello@myhomework.invalid>"
+FromAddress = "hello@myhomework.localhost"
+FromDisplay = "MyHomeworkSpace <hello@myhomework.localhost>"
 SMTPHost = "localhost"
 SMTPPort = 1025
 SMTPSecure = false
-SMTPUsername = "hello@myhomework.invalid"
+SMTPUsername = "hello@myhomework.localhost"
 SMTPPassword = "password123"
 ```
 13. For the `[redis]` section: the defaults are fine, unless you've changed Redis' default settings.
@@ -53,15 +53,15 @@ SMTPPassword = "password123"
 16. Save your changes to `config.toml`, and re-run `go run/github.com/MyHomeworkSpace/api-server` in the terminal from step 4. Leave this running.
 17. Visit http://localhost:3001 in your browser. You should see a page saying "MyHomeworkSpace API server".
 18. Now, it's time to set up OpenResty. OpenResty will act as the main webserver that everything goes through. That way, you're able to host both the API server and the client on the same computer, or even other unrelated projects!
-19. First, however, we'll set up local domain records. This is the myhomework.invalid that was mentioned earlier, and will make it so that you can access your local copy of MyHomeworkSpace by going to myhomework.invalid in your browser.
+19. First, however, we'll set up local domain records. This is the myhomework.localhost that was mentioned earlier, and will make it so that you can access your local copy of MyHomeworkSpace by going to myhomework.localhost in your browser.
 20. You need to open the _hosts_ file on your computer. On Linux and macOS, this is located at `/etc/hosts`. On Windows, this is located at `C:\Windows\System32\drivers\etc\hosts`. Editing this file will likely require administrator privileges.
 21. In the hosts file, add the following entries:
 ```
-127.0.0.1	myhomework.invalid
-127.0.0.1	api-v2.myhomework.invalid
-127.0.0.1	app.myhomework.invalid
+127.0.0.1	myhomework.localhost
+127.0.0.1	api-v2.myhomework.localhost
+127.0.0.1	app.myhomework.localhost
 ```
-22. Save your changes, and try to go to http://api-v2.myhomework.invalid in your browser. You should see a generic "Welcome to OpenResty!" page.
+22. Save your changes, and try to go to http://api-v2.myhomework.localhost in your browser. You should see a generic "Welcome to OpenResty!" page.
 23. Now, open up the OpenResty configuration file. On Linux, this is probably at `/etc/openresty/nginx.conf`. On macOS, this is probably at `/usr/local/etc/openresty/nginx.conf`. You might need administrator privileges to edit this file.
 24. You'll see a big `http {}` block, with lots of stuff in it. At the bottom of this block, *right before the last `}`*, you will want to add the following (which will set up the API server, client, and main website all at once):
 ```
@@ -74,7 +74,7 @@ SMTPPassword = "password123"
 		listen 80;
 		listen [::]:80;
 
-		server_name api-v2.myhomework.invalid;
+		server_name api-v2.myhomework.localhost;
 
 		location / {
 			proxy_pass http://127.0.0.1:3001;
@@ -85,7 +85,7 @@ SMTPPassword = "password123"
 		listen 80;
 		listen [::]:80;
 
-		server_name app.myhomework.invalid;
+		server_name app.myhomework.localhost;
 
 		proxy_buffering off;
 
@@ -105,7 +105,7 @@ SMTPPassword = "password123"
 		listen 80;
 		listen [::]:80;
 
-		server_name myhomework.invalid;
+		server_name myhomework.localhost;
 
 		location / {
 			proxy_pass http://127.0.0.1:4003;
@@ -113,7 +113,7 @@ SMTPPassword = "password123"
 	}
 ```
 25. Save these changes. Now you need to tell OpenResty that you changed the config file. This can be done by running `sudo openresty -s reload`. You can also do `sudo openresty -t` to verify the syntax of the config file.
-26. Try going to http://api-v2.myhomework.invalid in your browser now. You should see the "MyHomeworkSpace API server" page from before.
+26. Try going to http://api-v2.myhomework.localhost in your browser now. You should see the "MyHomeworkSpace API server" page from before.
 27. Congratulations! You've set up the MyHomeworkSpace API server. You probably want to set up the [client](https://github.com/MyHomeworkSpace/client) or [website](https://github.com/MyHomeworkSpace/website) now.
 
 ## Running the server

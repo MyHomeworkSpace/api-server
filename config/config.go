@@ -86,8 +86,8 @@ func createNewConfig() {
 	newConfig := `# MyHomeworkSpace configuration
 [server]
 Port = 3000
-APIURLBase = "http://api-v2.myhomework.invalid/"
-AppURLBase = "http://app.myhomework.invalid/#!"
+APIURLBase = "http://api-v2.myhomework.localhost/"
+AppURLBase = "http://app.myhomework.localhost/#!"
 ReverseProxyHeader = ""
 HostName = "local"
 
@@ -99,12 +99,12 @@ Database = "myhomeworkspace"
 
 [email]
 Enabled = false
-FromAddress = "misconfigured@misconfigured.invalid"
-FromDisplay = "Misconfigured MyHomeworkSpace <misconfigured@myhomeworkspace.invalid>"
+FromAddress = "misconfigured@misconfigured.localhost"
+FromDisplay = "Misconfigured MyHomeworkSpace <misconfigured@myhomeworkspace.localhost>"
 SMTPHost = "localhost"
 SMTPPort = 465
 SMTPSecure = true
-SMTPUsername = "misconfigured@myhomework.invalid"
+SMTPUsername = "misconfigured@myhomework.localhost"
 SMTPPassword = "password123"
 
 [redis]
@@ -113,7 +113,7 @@ Port = 6379
 
 [cors]
 Enabled = false
-Origins = [ "http://myhomework.invalid", "http://app.myhomework.invalid" ]
+Origins = [ "http://myhomework.localhost", "http://app.myhomework.localhost" ]
 
 [errorlog]
 SlackEnabled = false
@@ -136,9 +136,9 @@ ProxyToken = ""
 
 [webauthn]
 DisplayName = "MyHomeworkSpace"
-RPID = "myhomework.invalid"
-RPOrigin = "https://app.myhomework.invalid"
-RPIcon = "https://app.myhomework.invalid/img/icon.svg"`
+RPID = "myhomework.localhost"
+RPOrigin = "https://app.myhomework.localhost"
+RPIcon = "https://app.myhomework.localhost/img/icon.svg"`
 	err := ioutil.WriteFile("config.toml", []byte(newConfig), 0644)
 	if err != nil {
 		panic(err)
