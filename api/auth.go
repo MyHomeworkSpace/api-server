@@ -647,7 +647,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 			return
 		}
 
-		if enrolled2fa {
+		if enrolled2fa.totp {
 			if r.FormValue("code") == "" {
 				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "totp_required"})
 				return

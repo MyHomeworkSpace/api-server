@@ -1,10 +1,12 @@
 package data
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"strconv"
 	"time"
 
+	"github.com/duo-labs/webauthn/webauthn"
 	"gopkg.in/redis.v5"
 )
 
@@ -40,6 +42,41 @@ type User struct {
 	CreatedAt          int          `json:"createdAt"`
 	LastLoginAt        int          `json:"lastLoginAt"`
 	Schools            []SchoolInfo `json:"schools"`
+}
+
+func (u User) WebAuthnID() []byte {
+	buf := make([]byte, binary.MaxVarintLen64)
+	binary.PutVarint(buf, int64(u.ID))
+	return buf
+}
+
+func (u User) WebAuthnName() string {
+	return u.Email
+}
+
+func (u User) WebAuthnDisplayName() string {
+	return u.Name
+}
+
+func (u User) WebAuthnIcon() string {
+	return ""
+}
+func (u User) WebAuthnCredentials() []webauthn.Credential {
+	// We can't return an error so I guess we just keep working until something breaks?
+	rows, _ := DB.Query("SELECT publicKey, AAGUID, signCount, cloneWarning FROM webauthn WHERE userId = ?", u.ID)
+	defer rows.Close()
+
+	creds := []webauthn.Credential{}
+	for rows.Next() {
+		cred := webauthn.Credential{}
+		cloneWarning := 0
+		rows.Scan(&cred.PublicKey, &cred.Authenticator.AAGUID, &cred.Authenticator.SignCount, &cloneWarning)
+		cred.Authenticator.CloneWarning = (cloneWarning == 1)
+		creds = append(creds, cred)
+	}
+
+	return creds
+
 }
 
 type Tab struct {

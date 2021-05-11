@@ -3,12 +3,14 @@ package api
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"image/png"
 	"net/http"
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/errorlog"
+	"github.com/duo-labs/webauthn/webauthn"
 
 	"github.com/julienschmidt/httprouter"
 
@@ -16,8 +18,9 @@ import (
 )
 
 type enrollmentResponse struct {
-	Status   string `json:"status"`
-	Enrolled bool   `json:"enrolled"`
+	Status           string `json:"status"`
+	EnrolledTOTP     bool   `json:"enrolledTOTP"`
+	EnrolledWebAuthn bool   `json:"enrolledWebAuthn"`
 }
 
 type totpSecretResponse struct {
@@ -26,26 +29,29 @@ type totpSecretResponse struct {
 	ImageURL string `json:"imageURL"`
 }
 
+type user2faStatus struct {
+	totp     bool
+	webauthn bool
+}
+
 /*
  * helpers
  */
 
-func isUser2FAEnrolled(userID int) (bool, error) {
-	rows, err := DB.Query("SELECT COUNT(totp) FROM `2fa` WHERE userId = ?", userID)
+func isUser2FAEnrolled(userID int) (user2faStatus, error) {
+	rows, err := DB.Query("SELECT totp, webauthn FROM `2fa` WHERE userId = ?", userID)
 	if err != nil {
-		return false, err
+		return user2faStatus{false, false}, err
 	}
 
-	secretCount := -1
+	totp := ""
+	webauthn := ""
 
 	rows.Next()
-	rows.Scan(&secretCount)
 
-	if secretCount == 0 {
-		return false, nil
-	}
+	rows.Scan(&totp, &webauthn)
 
-	return true, nil
+	return user2faStatus{totp != "", webauthn != ""}, nil
 }
 
 /*
@@ -61,7 +67,7 @@ func routeAuth2faBeginEnroll(w http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	if enrolled {
+	if enrolled.totp {
 		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
 		return
 	}
@@ -122,7 +128,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, p httpro
 		return
 	}
 
-	if enrolled {
+	if enrolled.totp {
 		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "already_enrolled"})
 		return
 	}
@@ -164,7 +170,7 @@ func routeAuth2faStatus(w http.ResponseWriter, r *http.Request, p httprouter.Par
 		return
 	}
 
-	writeJSON(w, http.StatusOK, enrollmentResponse{"ok", enrolled})
+	writeJSON(w, http.StatusOK, enrollmentResponse{"ok", enrolled.totp, enrolled.webauthn})
 }
 
 func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
@@ -185,7 +191,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.P
 		return
 	}
 
-	if !enrolled {
+	if !enrolled.totp {
 		writeJSON(w, http.StatusNotFound, errorResponse{"error", "not_found"})
 		return
 	}
@@ -215,6 +221,91 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.P
 	_, err = DB.Exec("DELETE FROM 2fa WHERE userID = ?", userID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
+}
+
+func routeAuth2faBeginWebAuthn(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	credOpts, sessionData, err := WebAuthnHandler.BeginRegistration(c.User)
+	if err != nil {
+		errorlog.LogError("starting webauhtn enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	jsonSessionData, err := json.Marshal(sessionData)
+	if err != nil {
+		errorlog.LogError("starting webauthn enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	redisKeyName := fmt.Sprintf("user:%d:webauthn_tmp", c.User.ID)
+	redisResponse := RedisClient.Set(redisKeyName, jsonSessionData, time.Hour)
+	if redisResponse.Err() != nil {
+		errorlog.LogError("starting webauthn enrollment", redisResponse.Err())
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, credOpts)
+}
+
+func routeAuth2faCompleteWebAuthn(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	redisKeyName := fmt.Sprintf("user:%d:webauthn_tmp", c.User.ID)
+
+	jsonSessionData, err := RedisClient.Get(redisKeyName).Result()
+	if err != nil {
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	var sessionData webauthn.SessionData
+	err = json.Unmarshal([]byte(jsonSessionData), &sessionData)
+	if err != nil {
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	cred, err := WebAuthnHandler.FinishRegistration(c.User, sessionData, r)
+	if err != nil {
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	tx, err := DB.Begin()
+	if err != nil {
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	_, err = tx.Exec("INSERT INTO webauthn (userId, publicKey, AAGUID, signCount, cloneWarning) VALUES (?, ?, ?, ?, ?)", c.User.ID, cred.PublicKey, cred.Authenticator.AAGUID, cred.Authenticator.SignCount, cred.Authenticator.CloneWarning)
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	_, err = tx.Exec("UPDATE `2fa` SET `webauthn` = '1' WHERE userId = ?", c.User.ID)
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("completing TOTP enrollment", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		errorlog.LogError("completing TOTP enrollment", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 		return
 	}

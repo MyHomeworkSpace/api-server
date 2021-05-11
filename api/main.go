@@ -293,6 +293,8 @@ func Init(router *httprouter.Router) {
 
 	router.POST("/auth/2fa/beginEnroll", route(routeAuth2faBeginEnroll, authLevelLoggedIn))
 	router.POST("/auth/2fa/completeEnroll", route(routeAuth2faCompleteEnroll, authLevelLoggedIn))
+	router.POST("/auth/2fa/beginWebAuthn", route(routeAuth2faBeginWebAuthn, authLevelLoggedIn))
+	router.POST("/auth/2fa/completeWebAuthn", route(routeAuth2faCompleteWebAuthn, authLevelLoggedIn))
 	router.GET("/auth/2fa/status", route(routeAuth2faStatus, authLevelLoggedIn))
 	router.POST("/auth/2fa/unenroll", route(routeAuth2faUnenroll, authLevelLoggedIn))
 

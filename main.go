@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/MyHomeworkSpace/api-server/schools"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/MyHomeworkSpace/api-server/schools/cornell"
@@ -38,6 +38,7 @@ func main() {
 
 	initDatabase()
 	initRedis()
+	initWebAuthn()
 
 	migrationName := flag.String("migrate", "", "If specified, the API server will run the migration with the given name.")
 	flag.Parse()
@@ -49,24 +50,13 @@ func main() {
 
 	email.Init()
 
-	webAuthnHandler, err := webauthn.New(&webauthn.Config{
-		RPDisplayName: config.GetCurrent().Webauthn.DisplayName, // Display Name for your site
-		RPID:          config.GetCurrent().Webauthn.RPID,        // Generally the FQDN for your site
-		RPOrigin:      config.GetCurrent().Webauthn.RPOrigin,    // The origin URL for WebAuthn requests
-		RPIcon:        config.GetCurrent().Webauthn.RPIcon,      // Optional icon URL for your site
-	})
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	api.DB = DB
 	api.MainRegistry = schools.MainRegistry
 	api.RedisClient = RedisClient
+	api.WebAuthnHandler = WebAuthnHandler
 
 	auth.DB = DB
 	auth.RedisClient = RedisClient
-	api.WebAuthnHandler = webAuthnHandler
 
 	data.DB = DB
 	data.MainRegistry = schools.MainRegistry
@@ -86,10 +76,18 @@ func main() {
 	api.Init(router) // API init delayed because router must be started first
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// if it's a preflight, handle it here
+
+		origin := "*"
+
+		referer, err := url.Parse(r.Referer())
+		if err == nil {
+			origin = referer.Scheme + "://" + referer.Host
+		}
+
 		if r.Method == "OPTIONS" {
-			w.Header().Set("Access-Control-Allow-Credentials", "false")
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Headers", "authorization")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Headers", "authorization, content-type")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -99,7 +97,7 @@ func main() {
 	}))
 
 	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
