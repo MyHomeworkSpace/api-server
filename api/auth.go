@@ -653,7 +653,7 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 				return
 			}
 
-			secretRows, err := DB.Query("SELECT totp FROM `2fa` WHERE userId = ?", userID)
+			secretRows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
 			if err != nil {
 				errorlog.LogError("getting user 2fa secret", err)
 				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

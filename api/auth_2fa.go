@@ -31,7 +31,7 @@ type totpSecretResponse struct {
  */
 
 func isUser2FAEnrolled(userID int) (bool, error) {
-	rows, err := DB.Query("SELECT COUNT(totp) FROM `2fa` WHERE userId = ?", userID)
+	rows, err := DB.Query("SELECT COUNT(*) FROM totp WHERE userId = ?", userID)
 	if err != nil {
 		return false, err
 	}
@@ -145,7 +145,7 @@ func routeAuth2faCompleteEnroll(w http.ResponseWriter, r *http.Request, p httpro
 	}
 
 	// store the secret and remove it from redis
-	_, err = DB.Exec("INSERT INTO 2fa(userId, totp) VALUES(?, ?)", c.User.ID, secret)
+	_, err = DB.Exec("INSERT INTO totp(userId, secret) VALUES(?, ?)", c.User.ID, secret)
 	if err != nil {
 		errorlog.LogError("starting TOTP enrollment", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -191,7 +191,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.P
 	}
 
 	// get their secret
-	rows, err := DB.Query("SELECT totp FROM 2fa WHERE userId = ?", userID)
+	rows, err := DB.Query("SELECT secret FROM totp WHERE userId = ?", userID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -212,7 +212,7 @@ func routeAuth2faUnenroll(w http.ResponseWriter, r *http.Request, p httprouter.P
 	}
 
 	// remove their secret
-	_, err = DB.Exec("DELETE FROM 2fa WHERE userID = ?", userID)
+	_, err = DB.Exec("DELETE FROM totp WHERE userID = ?", userID)
 	if err != nil {
 		errorlog.LogError("handling TOTP unenrollment", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
