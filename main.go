@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/MyHomeworkSpace/api-server/schools"
-	"github.com/duo-labs/webauthn/webauthn"
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/MyHomeworkSpace/api-server/schools/cornell"
@@ -38,6 +37,7 @@ func main() {
 
 	initDatabase()
 	initRedis()
+	initWebauthn()
 
 	migrationName := flag.String("migrate", "", "If specified, the API server will run the migration with the given name.")
 	flag.Parse()
@@ -49,24 +49,13 @@ func main() {
 
 	email.Init()
 
-	webAuthnHandler, err := webauthn.New(&webauthn.Config{
-		RPDisplayName: config.GetCurrent().Webauthn.DisplayName, // Display Name for your site
-		RPID:          config.GetCurrent().Webauthn.RPID,        // Generally the FQDN for your site
-		RPOrigin:      config.GetCurrent().Webauthn.RPOrigin,    // The origin URL for WebAuthn requests
-		RPIcon:        config.GetCurrent().Webauthn.RPIcon,      // Optional icon URL for your site
-	})
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	api.DB = DB
 	api.MainRegistry = schools.MainRegistry
 	api.RedisClient = RedisClient
+	api.WebAuthnHandler = WebAuthnHandler
 
 	auth.DB = DB
 	auth.RedisClient = RedisClient
-	api.WebAuthnHandler = webAuthnHandler
 
 	data.DB = DB
 	data.MainRegistry = schools.MainRegistry
@@ -99,7 +88,7 @@ func main() {
 	}))
 
 	log.Printf("Listening on port %d", config.GetCurrent().Server.Port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", config.GetCurrent().Server.Port), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
