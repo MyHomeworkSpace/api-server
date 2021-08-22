@@ -37,7 +37,7 @@ func main() {
 
 	initDatabase()
 	initRedis()
-	initWebauthn()
+	// initWebauthn()
 
 	migrationName := flag.String("migrate", "", "If specified, the API server will run the migration with the given name.")
 	flag.Parse()
