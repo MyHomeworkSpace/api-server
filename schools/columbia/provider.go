@@ -36,6 +36,33 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 	dayCount := int((endTime.Sub(startTime).Hours() / 24) + 0.5)
 
+	// check for any holidays during the time period
+	announcementRows, err := db.Query("SELECT id, date, text FROM columbia_holidays WHERE date >= ? AND date <= ?", startTime.Format("2006-01-02"), endTime.Format("2006-01-02"))
+	if err != nil {
+		return data.ProviderData{}, err
+	}
+	defer announcementRows.Close()
+	for announcementRows.Next() {
+		resp := data.PlannerAnnouncement{
+			Type: data.AnnouncementTypeFullOff,
+		}
+
+		err := announcementRows.Scan(&resp.ID, &resp.Date, &resp.Text)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
+
+		result.Announcements = append(result.Announcements, resp)
+	}
+
+	// generate list of all off days in time period
+	offDays := map[string]bool{}
+	for _, announcement := range result.Announcements {
+		if announcement.Type == data.AnnouncementTypeFullOff {
+			offDays[announcement.Date] = true
+		}
+	}
+
 	if dataType&data.ProviderDataEvents != 0 {
 		meetingRows, err := db.Query("SELECT id, department, number, section, name, building, room, dow, start, end, beginDate, endDate, userID FROM columbia_meetings WHERE userID = ?", user.ID)
 		if err != nil {
@@ -95,8 +122,14 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				currentDay = currentDay.Add(24 * time.Hour)
 			}
 
-			meetingsForDay := meetingMap[currentDay.Weekday()]
 			dayString := currentDay.Format("2006-01-02")
+
+			_, isOffDay := offDays[dayString]
+			if isOffDay {
+				continue
+			}
+
+			meetingsForDay := meetingMap[currentDay.Weekday()]
 			dayTime, err := time.ParseInLocation("2006-01-02", dayString, location)
 			if err != nil {
 				return data.ProviderData{}, err
