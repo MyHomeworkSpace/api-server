@@ -2,12 +2,43 @@ package columbia
 
 import (
 	"database/sql"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/PuerkitoBio/goquery"
 )
+
+func (s *school) parseSSOLViewOptionsForm(doc *goquery.Document) (string, url.Values, error) {
+	ret := url.Values{}
+
+	viewOptionsForm := doc.Find("#Content form:has(.FormGridViewOpt)")
+
+	fields := viewOptionsForm.Find("input[type=hidden], input[type=submit]")
+	for i := 0; i < fields.Length(); i++ {
+		field := fields.Eq(i)
+		fieldName := field.AttrOr("name", "")
+		fieldValue := field.AttrOr("value", "")
+
+		if fieldName != "" {
+			ret[fieldName] = []string{fieldValue}
+		}
+	}
+
+	selections := viewOptionsForm.Find("select:has(option[selected])")
+	for i := 0; i < selections.Length(); i++ {
+		selection := selections.Eq(i)
+		selectionName := selection.AttrOr("name", "")
+		selectionSelected := selection.Find("option[selected]")
+
+		if selectionName != "" {
+			ret[selectionName] = []string{selectionSelected.AttrOr("value", "")}
+		}
+	}
+
+	return viewOptionsForm.AttrOr("action", ""), ret, nil
+}
 
 func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery.Document) (string, string, error) {
 	dataGrids := doc.Find(".DataGrid")
