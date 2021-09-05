@@ -94,10 +94,15 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 		classParts := strings.Split(classCellText, " ")
 		classDepartment := classParts[0]
 		classNumber := classParts[1]
-		classSection := "" // TODO
 
 		// the text in the font tag tells us the name
 		className := strings.TrimSpace(classCell.Find("font").Text())
+
+		// parse out the section
+		classInfo := strings.ReplaceAll(classCellText, className, "")
+		classSectionParts := strings.Split(classInfo, "sec")
+		classSectionInfo := strings.TrimSpace(classSectionParts[len(classSectionParts)-1])
+		classSection := strings.Split(classSectionInfo, " ")[0]
 
 		instructorCell := classRowColumns.Eq(2)
 
