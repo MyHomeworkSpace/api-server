@@ -9,7 +9,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery.Document) (string, error) {
+func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery.Document) (string, string, error) {
 	dataGrids := doc.Find(".DataGrid")
 
 	// first data grid is user info (we just need the name)
@@ -21,12 +21,29 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 	studentName = strings.TrimSpace(studentName)
 	studentName = strings.ReplaceAll(studentName, "   ", " ")
 
+	// get uni
+	studentUNI := ""
+	studentDataCells := dataGrids.Eq(0).Find(".clsDataGridData td")
+	uniIsNext := false
+	for i := 0; i < studentDataCells.Length(); i++ {
+		studentDataCellText := strings.TrimSpace(studentDataCells.Eq(i).Text())
+
+		if uniIsNext {
+			studentUNI = studentDataCellText
+			break
+		}
+
+		if studentDataCellText == "UNI:" {
+			uniIsNext = true
+		}
+	}
+
 	// get class list from second data grid
 	classRows := dataGrids.Eq(1).Find("tr")
 
 	classInsertStmt, err := tx.Prepare("INSERT INTO columbia_classes(department, number, section, name, instructorName, instructorEmail, userID) VALUES (?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer classInsertStmt.Close()
 
@@ -75,7 +92,7 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 			user.ID,
 		)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 	}
 
@@ -84,7 +101,7 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 
 	meetingInsertStmt, err := tx.Prepare("INSERT INTO columbia_meetings(department, number, section, name, building, room, dow, start, end, beginDate, endDate, userID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer meetingInsertStmt.Close()
 
@@ -134,11 +151,11 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 			timeParts := strings.Split(timeText, "-")
 			startTime, err := time.Parse("3:04pm", timeParts[0])
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 			endTime, err := time.Parse("3:04pm", timeParts[1])
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			startTime = startTime.AddDate(1970, 0, 0)
@@ -148,11 +165,11 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 			termParts := strings.Split(termText, "-")
 			beginDate, err := time.Parse("01/02/06", termParts[0])
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 			endDate, err := time.Parse("01/02/06", termParts[1])
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			// get info from map
@@ -174,7 +191,7 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 				user.ID,
 			)
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 		case 1:
@@ -182,5 +199,5 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 		}
 	}
 
-	return studentName, nil
+	return studentName, studentUNI, nil
 }

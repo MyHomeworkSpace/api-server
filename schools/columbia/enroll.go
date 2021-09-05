@@ -39,7 +39,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		return nil, err
 	}
 
-	studentName, err := s.parseSSOLSchedulePage(tx, user, ssolScheduleDoc)
+	studentName, studentUNI, err := s.parseSSOLSchedulePage(tx, user, ssolScheduleDoc)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		"status": schools.ImportStatusOK,
 
 		"name":     studentName,
-		"username": "tst1234", // TODO: fix
+		"username": studentUNI,
 	}, nil
 }
 
