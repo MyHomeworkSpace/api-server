@@ -353,6 +353,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					event.Tags[data.EventTagBlock] = block
 					event.Tags[data.EventTagBuildingName] = buildingName
 					event.Tags[data.EventTagRoomNumber] = roomNumber
+					event.Tags[data.EventTagHideBuildingName] = true
 
 					event.Start += dayOffset
 					event.End += dayOffset
