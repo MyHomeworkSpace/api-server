@@ -9,6 +9,7 @@ import (
 	"github.com/MyHomeworkSpace/api-server/schools"
 	"github.com/julienschmidt/httprouter"
 
+	"github.com/MyHomeworkSpace/api-server/schools/columbia"
 	"github.com/MyHomeworkSpace/api-server/schools/cornell"
 	"github.com/MyHomeworkSpace/api-server/schools/dalton"
 	"github.com/MyHomeworkSpace/api-server/schools/mit"
@@ -64,6 +65,8 @@ func main() {
 	schools.MainRegistry.Register(dalton.CreateSchool())
 	schools.MainRegistry.Register(mit.CreateSchool())
 	schools.MainRegistry.Register(cornell.CreateSchool())
+	schools.MainRegistry.Register(columbia.CreateSchool(false))
+	schools.MainRegistry.Register(columbia.CreateSchool(true))
 
 	router := httprouter.New()
 
