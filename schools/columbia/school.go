@@ -8,6 +8,8 @@ import (
 )
 
 type school struct {
+	barnard bool
+
 	importStatus schools.ImportStatus
 
 	name     string
@@ -15,14 +17,26 @@ type school struct {
 }
 
 func (s *school) ID() string {
+	if s.barnard {
+		return "barnard"
+	}
+
 	return "columbia"
 }
 
 func (s *school) Name() string {
+	if s.barnard {
+		return "Barnard College"
+	}
+
 	return "Columbia University"
 }
 
 func (s *school) ShortName() string {
+	if s.barnard {
+		return "Barnard"
+	}
+
 	return "Columbia"
 }
 
@@ -31,10 +45,18 @@ func (s *school) UserDetails() string {
 }
 
 func (s *school) EmailAddress() string {
+	if s.barnard {
+		return s.username + "@barnard.edu"
+	}
+
 	return s.username + "@columbia.edu"
 }
 
 func (s *school) EmailDomain() string {
+	if s.barnard {
+		return "barnard.edu"
+	}
+
 	return "columbia.edu"
 }
 
@@ -60,6 +82,8 @@ func (s *school) CalendarProvider() data.Provider {
 }
 
 // CreateSchool returns a new instance of the school.
-func CreateSchool() *school {
-	return &school{}
+func CreateSchool(barnard bool) *school {
+	return &school{
+		barnard: barnard,
+	}
 }

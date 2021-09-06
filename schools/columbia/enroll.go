@@ -26,6 +26,13 @@ func clearUserData(tx *sql.Tx, user *data.User) error {
 }
 
 func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface{}) (map[string]interface{}, error) {
+	// a student can only be enrolled in either columbia or barnard, but not both
+	for _, schoolInfo := range user.Schools {
+		if schoolInfo.SchoolID == "columbia" || schoolInfo.SchoolID == "barnard" {
+			return nil, data.SchoolError{Code: "already_enrolled"}
+		}
+	}
+
 	usernameRaw, ok := params["username"]
 	passwordRaw, ok2 := params["password"]
 
