@@ -69,6 +69,13 @@ func GetTermByCode(code string) (TermInfo, error) {
 				"2021-03-09": time.Monday,
 			},
 		}, nil
+	} else if code == "2022FA" {
+		return TermInfo{
+			Code:              "2022FA",
+			FirstDayOfClasses: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC),
+			LastDayOfClasses:  time.Date(2021, 12, 9, 0, 0, 0, 0, time.UTC),
+			ExceptionDays:     map[string]time.Weekday{},
+		}, nil
 	}
 
 	return TermInfo{}, ErrBadTermCode
