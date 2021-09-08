@@ -18,7 +18,9 @@ import (
 )
 
 // some classes have weird times and aren't on the catalog, so we just give up on them
-var skipClasses = []string{"20.051", "21M.442"}
+var skipClasses = map[string][]string{
+	"2021SP": []string{"20.051", "21M.442"},
+}
 
 type catalogListing struct {
 	ID         string `json:"id"`
@@ -323,7 +325,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 				continue
 			}
 
-			if util.StringSliceContains(skipClasses, offering.ID) {
+			if util.StringSliceContains(skipClasses[currentTerm.Code], offering.ID) {
 				continue
 			}
 
