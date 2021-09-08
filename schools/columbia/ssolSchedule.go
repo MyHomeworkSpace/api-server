@@ -52,6 +52,9 @@ func (s *school) parseSSOLSchedulePage(tx *sql.Tx, user *data.User, doc *goquery
 	studentName = strings.TrimSpace(studentName)
 	studentName = strings.ReplaceAll(studentName, "   ", " ")
 
+	// if a student doesn't have a middle name, then they'll have an extra space where the middle name would be
+	studentName = strings.ReplaceAll(studentName, "  ", " ")
+
 	// get uni
 	studentUNI := ""
 	studentDataCells := dataGrids.Eq(0).Find(".clsDataGridData td")
