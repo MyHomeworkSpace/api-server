@@ -55,6 +55,8 @@ const (
 type Event struct {
 	ID            int                          `json:"id"`
 	UniqueID      string                       `json:"uniqueId"`
+	SeriesID      string                       `json:"seriesId"`
+	SeriesName    string                       `json:"seriesName"`
 	Name          string                       `json:"name"`
 	Start         int                          `json:"start"`
 	End           int                          `json:"end"`
