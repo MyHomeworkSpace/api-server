@@ -102,10 +102,12 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				weekday := currentDate.Weekday()
 				if (weekday == time.Monday && monday == 1) || (weekday == time.Tuesday && tuesday == 1) || (weekday == time.Wednesday && wednesday == 1) || (weekday == time.Thursday && thursday == 1) || (weekday == time.Friday && friday == 1) || (weekday == time.Saturday && saturday == 1) || (weekday == time.Sunday && sunday == 1) {
 					event := data.Event{
-						UniqueID: fmt.Sprintf("%s%s-%s-%d", subject, catalogNum, component, eventStartTime+int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, time.UTC).Unix())),
-						Name:     fmt.Sprintf("%s (%s)", title, componentLong),
-						Start:    eventStartTime + int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, location).Unix()),
-						End:      eventEndTime + int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, location).Unix()),
+						UniqueID:   fmt.Sprintf("%s%s-%s-%d", subject, catalogNum, component, eventStartTime+int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, time.UTC).Unix())),
+						SeriesID:   fmt.Sprintf("%s%s", subject, catalogNum),
+						SeriesName: fmt.Sprintf("%s %s", subject, catalogNum),
+						Name:       fmt.Sprintf("%s (%s)", title, componentLong),
+						Start:      eventStartTime + int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, location).Unix()),
+						End:        eventEndTime + int(time.Date(currentDate.Year(), currentDate.Month(), currentDate.Day(), 0, 0, 0, 0, location).Unix()),
 						Tags: map[data.EventTagType]interface{}{
 							data.EventTagLocation:   facility,
 							data.EventTagCancelable: true,

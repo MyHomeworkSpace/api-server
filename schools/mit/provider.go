@@ -179,6 +179,8 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			event.ID = -1
 			event.UniqueID = offering.ID + "-" + offering.Section + "-" + dayString
+			event.SeriesID = offering.ID
+			event.SeriesName = offering.ID
 			event.Name = offering.ID + " - " + offering.Title
 
 			typeDisplay, _ := sectionCharToDisplayName[offering.Section[0]]

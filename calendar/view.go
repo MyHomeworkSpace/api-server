@@ -210,6 +210,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			}
 
 			event.UniqueID = provider.ID() + "-" + event.UniqueID
+			event.SeriesID = provider.ID() + "-" + event.SeriesID
 			event.Source = providerIndex
 
 			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)

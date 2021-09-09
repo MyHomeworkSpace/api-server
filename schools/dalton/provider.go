@@ -341,6 +341,8 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 					}
 
 					event.UniqueID = strconv.Itoa(event.ID) + "-" + strconv.Itoa(classID) + "-" + dayString
+					event.SeriesID = strconv.Itoa(classID)
+					event.SeriesName = event.Name
 
 					event.Tags[data.EventTagShortName] = strings.TrimSpace(strings.SplitN(event.Name, " - ", 2)[0])
 					event.Tags[data.EventTagReadOnly] = true
