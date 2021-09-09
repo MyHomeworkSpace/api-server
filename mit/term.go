@@ -83,6 +83,6 @@ func GetTermByCode(code string) (TermInfo, error) {
 
 // GetCurrentTerm returns a TermInfo struct for the current academic term.
 func GetCurrentTerm() TermInfo {
-	term, _ := GetTermByCode("2021SP")
+	term, _ := GetTermByCode("2022FA")
 	return term
 }
