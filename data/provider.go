@@ -37,7 +37,6 @@ func GetProvidersForUser(db *sql.DB, user *User) ([]Provider, error) {
 
 	providers := []Provider{}
 	for _, school := range schools {
-
 		needsUpdate, err := school.NeedsUpdate(db)
 		if err != nil {
 			return nil, err
