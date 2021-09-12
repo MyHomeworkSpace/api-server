@@ -24,7 +24,7 @@ func routePlannerGetWeekInfo(w http.ResponseWriter, r *http.Request, p httproute
 	}
 	endDate := startDate.Add(time.Hour * 24 * 7)
 
-	providers, err := data.GetProvidersForUser(c.User)
+	providers, err := data.GetProvidersForUser(DB, c.User)
 	if err != nil {
 		errorlog.LogError("getting calendar providers", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})

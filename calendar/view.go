@@ -38,7 +38,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		Days:            []ViewDay{},
 	}
 
-	providers, err := data.GetProvidersForUser(user)
+	providers, err := data.GetProvidersForUser(db, user)
 	if err != nil {
 		return View{}, err
 	}

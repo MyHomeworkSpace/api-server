@@ -29,7 +29,7 @@ type ProviderData struct {
 }
 
 // GetProvidersForUser returns a list of calendar providers associated with the given user
-func GetProvidersForUser(user *User) ([]Provider, error) {
+func GetProvidersForUser(db *sql.DB, user *User) ([]Provider, error) {
 	schools, err := GetSchoolsForUser(user)
 	if err != nil {
 		return nil, err
@@ -37,6 +37,16 @@ func GetProvidersForUser(user *User) ([]Provider, error) {
 
 	providers := []Provider{}
 	for _, school := range schools {
+
+		needsUpdate, err := school.NeedsUpdate(db)
+		if err != nil {
+			return nil, err
+		}
+
+		if needsUpdate {
+			continue
+		}
+
 		providers = append(providers, school.CalendarProvider())
 	}
 
