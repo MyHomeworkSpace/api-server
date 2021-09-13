@@ -12,6 +12,7 @@ require (
 	github.com/onsi/ginkgo v1.14.1 // indirect
 	github.com/onsi/gomega v1.10.2 // indirect
 	github.com/pquerna/otp v1.2.0
+	github.com/thatoddmailbox/titlecase v0.1.0
 	github.com/thatoddmailbox/touchstone-client v0.0.0-20200120031740-ed0bae9b6369
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	gopkg.in/redis.v5 v5.2.9
