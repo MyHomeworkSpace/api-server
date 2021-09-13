@@ -160,7 +160,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				event.Tags[data.EventTagSection] = meetingForDay.Section
 				event.Tags[data.EventTagReadOnly] = true
 				event.Tags[data.EventTagCancelable] = true
-				event.Tags[data.EventTagBuildingName] = meetingForDay.Building
+				event.Tags[data.EventTagBuildingName] = titlecase.Title(meetingForDay.Building)
 				event.Tags[data.EventTagRoomNumber] = meetingForDay.Room
 
 				event.Start = meetingForDay.Start
