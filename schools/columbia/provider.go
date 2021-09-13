@@ -6,6 +6,8 @@ import (
 
 	"github.com/MyHomeworkSpace/api-server/data"
 	"github.com/MyHomeworkSpace/api-server/schools"
+
+	"github.com/thatoddmailbox/titlecase"
 )
 
 type provider struct {
@@ -153,7 +155,7 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				event.UniqueID = meetingForDay.Department + "-" + meetingForDay.Number + "-" + meetingForDay.Section + "-" + dayString
 				event.SeriesID = meetingForDay.Department + "-" + meetingForDay.Number
 				event.SeriesName = meetingForDay.Department + " " + meetingForDay.Number
-				event.Name = meetingForDay.Department + " " + meetingForDay.Number + ": " + meetingForDay.Name
+				event.Name = meetingForDay.Department + " " + meetingForDay.Number + ": " + titlecase.Title(meetingForDay.Name)
 
 				event.Tags[data.EventTagSection] = meetingForDay.Section
 				event.Tags[data.EventTagReadOnly] = true
