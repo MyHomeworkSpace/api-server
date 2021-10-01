@@ -20,7 +20,7 @@ import (
 // some classes have weird times and aren't on the catalog, so we just give up on them
 var skipClasses = map[string][]string{
 	"2021SP": {"20.051", "21M.442"},
-	"2022FA": {"15.S24", "15.830", "21M.460"},
+	"2022FA": {"15.S24", "15.830", "21M.138", "21M.460"},
 }
 
 type catalogListing struct {
