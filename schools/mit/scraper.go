@@ -247,27 +247,48 @@ func parseDocForPEInfo(doc *goquery.Document) (*peInfo, error) {
 	peInfo.ParsedSkipDays = []string{}
 
 	if peInfo.RawCalendarNotes != "" {
-		// so far, the only format i know for this is "no classes 11/11, 11/26, 11/27"
+		// so far, the only formats I know for this is "no classes 11/11, 11/26, 11/27" and "No Classes 11/11, 22, 23, 24, 25"
 		parsedNotes := false
-		if strings.HasPrefix(peInfo.RawCalendarNotes, "no classes ") {
-			noPrefixString := strings.Replace(peInfo.RawCalendarNotes, "no classes ", "", -1)
+		calendarNotes := strings.ToLower(peInfo.RawCalendarNotes)
+		if strings.HasPrefix(calendarNotes, "no classes ") {
+			noPrefixString := strings.Replace(calendarNotes, "no classes ", "", -1)
 			parts := strings.Split(noPrefixString, ", ")
 
+			lastMonth := 0
 			for _, rawSkipDay := range parts {
 				// these are in the format "11/26"
 				skipDayParts := strings.Split(rawSkipDay, "/")
-				if len(skipDayParts) != 2 {
+				if len(skipDayParts) > 2 {
 					continue
 				}
 
-				month, err := strconv.Atoi(skipDayParts[0])
-				if err != nil {
-					continue
-				}
+				month, date := 0, 0
+				if len(skipDayParts) == 1 {
+					// it's one number
+					// this implies that we use the same month as before
+					if lastMonth == 0 {
+						// there is no last month???
+						// not sure what's going on here!!!
+						continue
+					}
 
-				date, err := strconv.Atoi(skipDayParts[1])
-				if err != nil {
-					continue
+					month = lastMonth
+					date, err = strconv.Atoi(skipDayParts[0])
+					if err != nil {
+						continue
+					}
+				} else if len(skipDayParts) == 2 {
+					// it's two numbers
+					// it's a date like 11/26
+					month, err = strconv.Atoi(skipDayParts[0])
+					if err != nil {
+						continue
+					}
+
+					date, err = strconv.Atoi(skipDayParts[1])
+					if err != nil {
+						continue
+					}
 				}
 
 				// the year not given to us and must be guessed
