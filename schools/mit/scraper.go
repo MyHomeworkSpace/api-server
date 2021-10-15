@@ -200,7 +200,14 @@ func parseDocForPEInfo(doc *goquery.Document) (*peInfo, error) {
 	tableRows := sectionContainer.Find("tr")
 	tableRows.Each(func(i int, s *goquery.Selection) {
 		key := strings.TrimSpace(s.Find("th").Text())
-		value := strings.TrimSpace(s.Find("td").Text())
+
+		// hack to get <br> tags as newlines
+		v := s.Find("td")
+		h, err := v.Html()
+		if err != nil {
+			panic(err)
+		}
+		value := strings.TrimSpace(v.SetHtml(strings.ReplaceAll(h, "<br/>", "\n")).Text())
 
 		if key == "Status" {
 			if value == "Registered" {
@@ -322,9 +329,17 @@ func parseDocForPEInfo(doc *goquery.Document) (*peInfo, error) {
 	}
 
 	// now we have to parse the schedule field
-	peInfo.ParsedDaysOfWeek, peInfo.ParsedStartTime, peInfo.ParsedEndTime, peInfo.ParsedLocation, err = parsePESchedule(peInfo.RawSchedule)
-	if err != nil {
-		return nil, err
+	scheduleLines := strings.Split(peInfo.RawSchedule, "\n")
+	peInfo.ParsedOccurrences = []peInfoOccurrence{}
+	for _, scheduleLine := range scheduleLines {
+		occurrence := peInfoOccurrence{}
+
+		occurrence.ParsedDaysOfWeek, occurrence.ParsedStartTime, occurrence.ParsedEndTime, occurrence.ParsedLocation, err = parsePESchedule(scheduleLine)
+		if err != nil {
+			return nil, err
+		}
+
+		peInfo.ParsedOccurrences = append(peInfo.ParsedOccurrences, occurrence)
 	}
 
 	return &peInfo, nil

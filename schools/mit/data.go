@@ -2,6 +2,13 @@ package mit
 
 import "time"
 
+type peInfoOccurrence struct {
+	ParsedDaysOfWeek []time.Weekday `json:"parsedDaysOfWeek"`
+	ParsedStartTime  int            `json:"parsedStartTime"`
+	ParsedEndTime    int            `json:"parsedEndTime"`
+	ParsedLocation   string         `json:"parsedLocation"`
+}
+
 type peInfo struct {
 	SectionID   string `json:"sectionID"`
 	Activity    string `json:"activity"`
@@ -13,10 +20,7 @@ type peInfo struct {
 	RawLastDay       string `json:"rawLastDay"`
 	RawCalendarNotes string `json:"rawCalendarNotes"`
 
-	ParsedDaysOfWeek []time.Weekday `json:"parsedDaysOfWeek"`
-	ParsedStartTime  int            `json:"parsedStartTime"`
-	ParsedEndTime    int            `json:"parsedEndTime"`
-	ParsedLocation   string         `json:"parsedLocation"`
+	ParsedOccurrences []peInfoOccurrence `json:"parsedOccurrences"`
 
 	ParsedFirstDay string   `json:"parsedFirstDay"`
 	ParsedLastDay  string   `json:"parsedLastDay"`

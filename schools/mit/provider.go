@@ -257,51 +257,53 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 				currentEffectiveWeekday = newWeekday
 			}
 
-			foundWeekday := false
-			for _, weekday := range peInfo.ParsedDaysOfWeek {
-				if currentEffectiveWeekday == weekday {
-					foundWeekday = true
-					break
+			for _, occurrence := range peInfo.ParsedOccurrences {
+				foundWeekday := false
+				for _, weekday := range occurrence.ParsedDaysOfWeek {
+					if currentEffectiveWeekday == weekday {
+						foundWeekday = true
+						break
+					}
 				}
-			}
-			if !foundWeekday {
-				continue
-			}
-
-			dayString := currentDay.Format("2006-01-02")
-			dayTime, _ := time.ParseInLocation("2006-01-02", dayString, location)
-			dayOffset := int(dayTime.Unix())
-
-			if peInfo.ParsedSkipDays != nil {
-				if util.StringSliceContains(peInfo.ParsedSkipDays, dayString) {
+				if !foundWeekday {
 					continue
 				}
+
+				dayString := currentDay.Format("2006-01-02")
+				dayTime, _ := time.ParseInLocation("2006-01-02", dayString, location)
+				dayOffset := int(dayTime.Unix())
+
+				if peInfo.ParsedSkipDays != nil {
+					if util.StringSliceContains(peInfo.ParsedSkipDays, dayString) {
+						continue
+					}
+				}
+
+				// check if it's an off day
+				if util.StringSliceContains(offDays, dayString) {
+					continue
+				}
+
+				event := data.Event{
+					Tags: map[data.EventTagType]interface{}{},
+				}
+
+				event.ID = -1
+				event.UniqueID = peInfo.SectionID + "-" + dayString
+				event.Name = peInfo.SectionID + " - " + peInfo.Activity + " - " + peInfo.CourseTitle
+
+				event.Tags[data.EventTagReadOnly] = true
+				event.Tags[data.EventTagCancelable] = true
+				event.Tags[data.EventTagLocation] = occurrence.ParsedLocation
+
+				event.Start = occurrence.ParsedStartTime
+				event.End = occurrence.ParsedEndTime
+
+				event.Start += dayOffset
+				event.End += dayOffset
+
+				result.Events = append(result.Events, event)
 			}
-
-			// check if it's an off day
-			if util.StringSliceContains(offDays, dayString) {
-				continue
-			}
-
-			event := data.Event{
-				Tags: map[data.EventTagType]interface{}{},
-			}
-
-			event.ID = -1
-			event.UniqueID = peInfo.SectionID + "-" + dayString
-			event.Name = peInfo.SectionID + " - " + peInfo.Activity + " - " + peInfo.CourseTitle
-
-			event.Tags[data.EventTagReadOnly] = true
-			event.Tags[data.EventTagCancelable] = true
-			event.Tags[data.EventTagLocation] = peInfo.ParsedLocation
-
-			event.Start = peInfo.ParsedStartTime
-			event.End = peInfo.ParsedEndTime
-
-			event.Start += dayOffset
-			event.End += dayOffset
-
-			result.Events = append(result.Events, event)
 		}
 	}
 
