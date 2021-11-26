@@ -503,7 +503,7 @@ func routeHomeworkMarkOverdueDone(w http.ResponseWriter, r *http.Request, p http
 		hiddenClassesSet = hiddenClassesSet + strconv.Itoa(hiddenClassID)
 	}
 
-	_, err = DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() AND userId = ? AND FIND_IN_SET(classId, ?) = 0", c.User.ID, hiddenClassesSet)
+	_, err = DB.Exec("UPDATE homework SET complete = 1 WHERE due < NOW() - INTERVAL 1 DAY AND userId = ? AND FIND_IN_SET(classId, ?) = 0", c.User.ID, hiddenClassesSet)
 	if err != nil {
 		errorlog.LogError("marking overdue homework as done", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
