@@ -84,16 +84,19 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 			}
 
 			startDateTime, err := time.Parse("2006-01-02", startDate)
+			if err != nil {
+				return data.ProviderData{}, err
+			}
 			endDateTime, err := time.Parse("2006-01-02", endDate)
 			if err != nil {
 				return data.ProviderData{}, err
 			}
 			for currentDate.Before(endTime) {
-				hasHoliday, currentHoliday, err := getHolidayForDate(currentDate, holidays)
+				hasClasses, currentHoliday, err := getHolidaysForDate(currentDate, holidays)
 				if err != nil {
 					return data.ProviderData{}, err
 				}
-				if (hasHoliday && !currentHoliday.HasClasses) || startDateTime.After(currentDate) {
+				if (len(currentHoliday) != 0 && !hasClasses) || startDateTime.After(currentDate) {
 					currentDate = currentDate.Add(time.Hour * 24)
 					continue
 				} else if endDateTime.Before(currentDate) {
@@ -151,12 +154,12 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 		currentDate := startTime
 		for currentDate.Before(endTime) {
-			hasHoliday, currentHoliday, err := getHolidayForDate(currentDate, holidays)
+			_, currentHolidays, err := getHolidaysForDate(currentDate, holidays)
 			if err != nil {
 				return data.ProviderData{}, err
 			}
 
-			if hasHoliday {
+			for _, currentHoliday := range currentHolidays {
 				announcement := data.PlannerAnnouncement{
 					ID:   currentHoliday.ID,
 					Date: currentDate.Format("2006-01-02"),
@@ -173,19 +176,27 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 	return results, nil
 }
 
-func getHolidayForDate(date time.Time, holidays []holiday) (bool, holiday, error) {
+func getHolidaysForDate(date time.Time, holidays []holiday) (bool, []holiday, error) {
+	dateHolidays := []holiday{}
+	hasClasses := true
+
 	for _, h := range holidays {
 		hStartDate, err := time.Parse("2006-01-02", h.StartDate)
+		if err != nil {
+			return true, dateHolidays, err
+		}
+
 		hEndDate, err := time.Parse("2006-01-02", h.EndDate)
 		if err != nil {
-			return false, holiday{}, err
+			return true, dateHolidays, err
 		}
 
 		hEndDate = hEndDate.Add(24 * time.Hour) // we need to do that because both sides are inclusive
 
 		if hStartDate.Before(date) && hEndDate.After(date) {
-			return true, h, nil
+			dateHolidays = append(dateHolidays, h)
+			hasClasses = hasClasses && h.HasClasses
 		}
 	}
-	return false, holiday{}, nil
+	return hasClasses, dateHolidays, nil
 }
