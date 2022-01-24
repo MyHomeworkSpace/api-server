@@ -43,7 +43,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	term := GetCurrentTerm().Code
 
-	resp, err := c.Get("https://classes.cornell.edu/sascuwalogin/login/redirect?redirectUri=https%3A//classes.cornell.edu/scheduler/roster/" + term)
+	resp, err := c.Get("https://classes.cornell.edu/sascuwalogin/login/redirect?redirectUri=https%3A%2F%2Fclasses.cornell.edu%2Fscheduler%2Froster%2F" + term)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +59,12 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	}
 
 	values := url.Values{
-		"netid":    {netID},
-		"password": {password},
-		"Submit":   {"Login"},
+		"j_username":       {netID},
+		"j_password":       {password},
+		"_eventId_proceed": {"Login"},
 	}
 
-	loginResp, err := c.PostForm(resp.Request.URL.Scheme+"://"+resp.Request.URL.Host+"/"+loginForm, values)
+	loginResp, err := c.PostForm(resp.Request.URL.Scheme+"://"+resp.Request.URL.Host+loginForm, values)
 	if err != nil {
 		return nil, err
 	}
@@ -78,21 +78,22 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	// otherwise we're logged in! Unfortunately, CUWebLogin has this intermediate screen that says Your login credentials are being transmitted to the website via POST. This only works if you use javascript, so we need to manually transmit the token
 
-	if err != nil {
-		return nil, err
-	}
-
 	classesURL, exists := confirmationDoc.Find("form").First().Attr("action")
 	if !exists {
 		return nil, data.SchoolError{Code: "internal_server_error"}
 	}
 
-	webauthToken, exists := confirmationDoc.Find("input[name=wa]").First().Attr("value")
+	relayState, exists := confirmationDoc.Find("input[name=RelayState]").First().Attr("value")
 	if !exists {
 		return nil, data.SchoolError{Code: "internal_server_error"}
 	}
 
-	schedulerResp, err := c.PostForm(classesURL, url.Values{"wa": {webauthToken}})
+	samlResponse, exists := confirmationDoc.Find("input[name=SAMLResponse]").First().Attr("value")
+	if !exists {
+		return nil, data.SchoolError{Code: "internal_server_error"}
+	}
+
+	schedulerResp, err := c.PostForm(classesURL, url.Values{"RelayState": {relayState}, "SAMLResponse": {samlResponse}})
 	if err != nil {
 		return nil, err
 	}

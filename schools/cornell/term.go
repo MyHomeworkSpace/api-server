@@ -1,6 +1,8 @@
 package cornell
 
-import "errors"
+import (
+	"errors"
+)
 
 // ErrBadTermCode is reported when the given term code doesn't exist.
 var ErrBadTermCode = errors.New("cornell: unknown term code")
