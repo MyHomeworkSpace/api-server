@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -17,6 +18,8 @@ import (
 	"github.com/MyHomeworkSpace/api-server/util"
 	"github.com/PuerkitoBio/goquery"
 )
+
+var ErrUnexpectedPageStructure = errors.New("cornell: Unexpected page structure")
 
 var apiKeyRegexp = regexp.MustCompile(`"key":"(?P<Key>[^"]*)`)
 var nameRegexp = regexp.MustCompile(`login.*"name":"([^"]*)`) //kinda hacky, I should fix this
@@ -55,7 +58,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	loginForm, exists := doc.Find("form").First().Attr("action")
 	if !exists {
-		return nil, data.SchoolError{Code: "internal_server_error"}
+		return nil, ErrUnexpectedPageStructure
 	}
 
 	values := url.Values{
@@ -80,17 +83,16 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 
 	classesURL, exists := confirmationDoc.Find("form").First().Attr("action")
 	if !exists {
-		return nil, data.SchoolError{Code: "internal_server_error"}
+		return nil, ErrUnexpectedPageStructure
 	}
 
 	relayState, exists := confirmationDoc.Find("input[name=RelayState]").First().Attr("value")
 	if !exists {
-		return nil, data.SchoolError{Code: "internal_server_error"}
-	}
+		return nil, ErrUnexpectedPageStructure
 
 	samlResponse, exists := confirmationDoc.Find("input[name=SAMLResponse]").First().Attr("value")
 	if !exists {
-		return nil, data.SchoolError{Code: "internal_server_error"}
+		return nil, ErrUnexpectedPageStructure
 	}
 
 	schedulerResp, err := c.PostForm(classesURL, url.Values{"RelayState": {relayState}, "SAMLResponse": {samlResponse}})
