@@ -89,6 +89,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 	relayState, exists := confirmationDoc.Find("input[name=RelayState]").First().Attr("value")
 	if !exists {
 		return nil, ErrUnexpectedPageStructure
+	}
 
 	samlResponse, exists := confirmationDoc.Find("input[name=SAMLResponse]").First().Attr("value")
 	if !exists {
