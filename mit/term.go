@@ -88,7 +88,9 @@ func GetTermByCode(code string) (TermInfo, error) {
 			Code:              "2022SP",
 			FirstDayOfClasses: time.Date(2022, 1, 31, 0, 0, 0, 0, time.UTC),
 			LastDayOfClasses:  time.Date(2022, 5, 10, 0, 0, 0, 0, time.UTC),
-			ExceptionDays:     map[string]time.Weekday{},
+			ExceptionDays: map[string]time.Weekday{
+				// Feb 22: Monday schedule of classes to be held.
+				"2022-02-22": time.Monday},
 		}, nil
 	}
 
