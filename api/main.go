@@ -327,7 +327,7 @@ func Init(router *httprouter.Router) {
 	router.GET("/homework/getHWView", route(routeHomeworkGetHWView, authLevelLoggedIn))
 	router.GET("/homework/getHWViewSorted", route(routeHomeworkGetHWViewSorted, authLevelLoggedIn))
 	router.GET("/homework/get/:id", route(routeHomeworkGetID, authLevelLoggedIn))
-	router.GET("/homework/getWeek/:monday", route(routeHomeworkGetWeek, authLevelLoggedIn))
+	router.GET("/homework/getWeek/:date", route(routeHomeworkGetWeek, authLevelLoggedIn))
 	router.GET("/homework/getPickerSuggestions", route(routeHomeworkGetPickerSuggestions, authLevelLoggedIn))
 	router.GET("/homework/search", route(routeHomeworkSearch, authLevelLoggedIn))
 	router.POST("/homework/add", route(routeHomeworkAdd, authLevelLoggedIn))
