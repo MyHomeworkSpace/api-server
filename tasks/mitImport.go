@@ -22,6 +22,7 @@ var skipClasses = map[string][]string{
 	"2021SP": {"20.051", "21M.442"},
 	"2022FA": {"15.S24", "15.830", "21M.138", "21M.460"},
 	"2022SP": {"8.962"},
+	"2023FA": {"15.401", "15.830", "21M.460"},
 }
 
 type catalogListing struct {
