@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,7 +23,7 @@ var skipClasses = map[string][]string{
 	"2021SP": {"20.051", "21M.442"},
 	"2022FA": {"15.S24", "15.830", "21M.138", "21M.460"},
 	"2022SP": {"8.962"},
-	"2023FA": {"15.401", "15.830", "21M.460"},
+	"2023FA": {"12.703", "15.401", "15.830", "21M.460"},
 }
 
 type catalogListing struct {
@@ -340,6 +341,7 @@ func importFromMIT(lastCompletion *time.Time, source string, db *sql.DB) (taskRe
 			// check that we can parse the time info
 			_, err = mit.ParseTimeInfo(offering.Time, termInfo)
 			if err != nil {
+				log.Printf("%+v", offering)
 				return taskResponse{}, fmt.Errorf("mit: failed to parse time of offering of %s (%s): %s", offering.ID, offering.Section, err.Error())
 			}
 
