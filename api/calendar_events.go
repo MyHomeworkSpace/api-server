@@ -14,18 +14,21 @@ import (
 
 // structs for data
 type CalendarEvent struct {
-	ID     int    `json:"id"`
-	Name   string `json:"name"`
-	Start  int    `json:"start"`
-	End    int    `json:"end"`
-	Desc   string `json:"desc"`
-	UserID int    `json:"userId"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Start    int    `json:"start"`
+	End      int    `json:"end"`
+	Location string `json:"location"`
+	Desc     string `json:"desc"`
+	UserID   int    `json:"userId"`
 }
 type CalendarHWEvent struct {
 	ID       int           `json:"id"`
 	Homework data.Homework `json:"homework"`
 	Start    int           `json:"start"`
 	End      int           `json:"end"`
+	Location string        `json:"location"`
+	Desc     string        `json:"desc"`
 	UserID   int           `json:"userId"`
 }
 type CalendarScheduleItem struct {
@@ -132,20 +135,11 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, p httpro
 			announcements = append(announcements, announcement)
 		}
 		for _, event := range day.Events {
-			descriptionInterface, isPlain := event.Tags[data.EventTagDescription]
+			descriptionInterface, hasDescription := event.Tags[data.EventTagDescription]
+			locationInterface, hasLocation := event.Tags[data.EventTagLocation]
 			homeworkInterface, isHomework := event.Tags[data.EventTagHomework]
 			_, isSchedule := event.Tags[data.EventTagClassID]
-			if isPlain {
-				plainEvent := CalendarEvent{
-					ID:     event.ID,
-					Name:   event.Name,
-					Start:  event.Start,
-					End:    event.End,
-					Desc:   descriptionInterface.(string),
-					UserID: event.UserID,
-				}
-				plainEvents = append(plainEvents, plainEvent)
-			} else if isHomework {
+			if isHomework {
 				homework := homeworkInterface.(data.Homework)
 				hwEvent := CalendarHWEvent{
 					ID:       event.ID,
@@ -153,6 +147,12 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, p httpro
 					Start:    event.Start,
 					End:      event.End,
 					UserID:   event.UserID,
+				}
+				if hasLocation {
+					hwEvent.Location = locationInterface.(string)
+				}
+				if hasDescription {
+					hwEvent.Desc = descriptionInterface.(string)
 				}
 				hwEvents = append(hwEvents, hwEvent)
 			} else if isSchedule {
@@ -173,6 +173,21 @@ func routeCalendarEventsGetWeek(w http.ResponseWriter, r *http.Request, p httpro
 					UserID:       event.UserID,
 				}
 				scheduleEvents[dayIndex] = append(scheduleEvents[dayIndex], scheduleEvent)
+			} else {
+				plainEvent := CalendarEvent{
+					ID:     event.ID,
+					Name:   event.Name,
+					Start:  event.Start,
+					End:    event.End,
+					UserID: event.UserID,
+				}
+				if hasLocation {
+					plainEvent.Location = locationInterface.(string)
+				}
+				if hasDescription {
+					plainEvent.Desc = descriptionInterface.(string)
+				}
+				plainEvents = append(plainEvents, plainEvent)
 			}
 		}
 	}
@@ -208,8 +223,8 @@ func routeCalendarEventsAdd(w http.ResponseWriter, r *http.Request, p httprouter
 
 	// insert the event
 	insertResult, err := DB.Exec(
-		"INSERT INTO calendar_events(name, `start`, `end`, `desc`, userId) VALUES(?, ?, ?, ?, ?)",
-		r.FormValue("name"), start, end, r.FormValue("desc"), c.User.ID,
+		"INSERT INTO calendar_events(name, `start`, `end`, location, `desc`, userId) VALUES(?, ?, ?, ?, ?, ?)",
+		r.FormValue("name"), start, end, r.FormValue("location"), r.FormValue("desc"), c.User.ID,
 	)
 	if err != nil {
 		errorlog.LogError("adding calendar event", err)
@@ -275,8 +290,8 @@ func routeCalendarEventsEdit(w http.ResponseWriter, r *http.Request, p httproute
 
 	// update the event
 	_, err = DB.Exec(
-		"UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, `desc` = ? WHERE id = ?",
-		r.FormValue("name"), start, end, r.FormValue("desc"), r.FormValue("id"),
+		"UPDATE calendar_events SET name = ?, `start` = ?, `end` = ?, location = ?, `desc` = ? WHERE id = ?",
+		r.FormValue("name"), start, end, r.FormValue("location"), r.FormValue("desc"), r.FormValue("id"),
 	)
 	if err != nil {
 		errorlog.LogError("editing calendar event", err)
@@ -420,8 +435,8 @@ func routeCalendarHWEventsAdd(w http.ResponseWriter, r *http.Request, p httprout
 	}
 
 	_, err = DB.Exec(
-		"INSERT INTO calendar_hwevents(homeworkId, `start`, `end`, userId) VALUES(?, ?, ?, ?)",
-		r.FormValue("homeworkId"), start, end, c.User.ID,
+		"INSERT INTO calendar_hwevents(homeworkId, `start`, `end`, location, `desc`, userId) VALUES(?, ?, ?, ?, ?, ?)",
+		r.FormValue("homeworkId"), start, end, r.FormValue("location"), r.FormValue("desc"), c.User.ID,
 	)
 	if err != nil {
 		errorlog.LogError("adding calendar homework event", err)
@@ -472,8 +487,8 @@ func routeCalendarHWEventsEdit(w http.ResponseWriter, r *http.Request, p httprou
 	}
 
 	_, err = DB.Exec(
-		"UPDATE calendar_hwevents SET homeworkId = ?, `start` = ?, `end` = ? WHERE id = ?",
-		r.FormValue("homeworkId"), start, end, r.FormValue("id"),
+		"UPDATE calendar_hwevents SET homeworkId = ?, `start` = ?, `end` = ?, location = ?, `desc` = ? WHERE id = ?",
+		r.FormValue("homeworkId"), start, end, r.FormValue("location"), r.FormValue("desc"), r.FormValue("id"),
 	)
 	if err != nil {
 		errorlog.LogError("editing calendar homework event", err)

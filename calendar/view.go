@@ -73,7 +73,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 
 	// get plain events
 	plainEventRows, err := db.Query(
-		"SELECT calendar_events.id, calendar_events.name, calendar_events.`start`, calendar_events.`end`, calendar_events.`desc`, calendar_events.userId, calendar_event_rules.id, calendar_event_rules.eventId, calendar_event_rules.frequency, calendar_event_rules.interval, calendar_event_rules.byDay, calendar_event_rules.byMonthDay, calendar_event_rules.byMonth, calendar_event_rules.until FROM calendar_events "+
+		"SELECT calendar_events.id, calendar_events.name, calendar_events.`start`, calendar_events.`end`, calendar_events.location, calendar_events.`desc`, calendar_events.userId, calendar_event_rules.id, calendar_event_rules.eventId, calendar_event_rules.frequency, calendar_event_rules.interval, calendar_event_rules.byDay, calendar_event_rules.byMonthDay, calendar_event_rules.byMonth, calendar_event_rules.until FROM calendar_events "+
 			"LEFT JOIN calendar_event_rules ON calendar_events.id = calendar_event_rules.eventId "+
 			"WHERE calendar_events.userId = ? AND ((calendar_events.`end` >= ? AND calendar_events.`start` <= ?) OR calendar_event_rules.frequency IS NOT NULL)",
 		user.ID, startTime.Unix(), endTime.Unix(),
@@ -90,14 +90,16 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			Tags:          map[data.EventTagType]interface{}{},
 			Source:        -1,
 		}
+		location := ""
 		desc := ""
 		recurRule := data.RecurRule{
 			ID: -1,
 		}
 		plainEventRows.Scan(
-			&event.ID, &event.Name, &event.Start, &event.End, &desc, &event.UserID,
+			&event.ID, &event.Name, &event.Start, &event.End, &location, &desc, &event.UserID,
 			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
 		)
+		event.Tags[data.EventTagLocation] = location
 		event.Tags[data.EventTagDescription] = desc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
@@ -147,7 +149,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 	// get homework events
 	hwEventRows, err := db.Query(
 		"SELECT "+
-			"calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId, "+
+			"calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.location, calendar_hwevents.`desc`, calendar_hwevents.userId, "+
 			"classes.id, classes.name, classes.teacher, classes.color, classes.sortIndex, classes.userId "+
 			"FROM calendar_hwevents "+
 			"INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id "+
@@ -167,13 +169,17 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		}
 		homework := data.Homework{}
 		class := data.HomeworkClass{}
+		location := ""
+		desc := ""
 		hwEventRows.Scan(
-			&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &event.UserID,
+			&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &location, &desc, &event.UserID,
 			&class.ID, &class.Name, &class.Teacher, &class.Color, &class.SortIndex, &class.UserID,
 		)
 		event.UniqueID = "mhs-hw-" + strconv.Itoa(event.ID)
 		event.Tags[data.EventTagHomework] = homework
 		event.Tags[data.EventTagHomeworkClass] = class
+		event.Tags[data.EventTagLocation] = location
+		event.Tags[data.EventTagDescription] = desc
 		event.Name = homework.Name
 
 		eventStartTime := time.Unix(int64(event.Start), 0)
