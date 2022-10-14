@@ -145,7 +145,16 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 	}
 
 	// get homework events
-	hwEventRows, err := db.Query("SELECT calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId FROM calendar_hwevents INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)", user.ID, startTime.Unix(), endTime.Unix())
+	hwEventRows, err := db.Query(
+		"SELECT "+
+			"calendar_hwevents.id, homework.id, homework.name, homework.`due`, homework.`desc`, homework.`complete`, homework.classId, homework.userId, calendar_hwevents.`start`, calendar_hwevents.`end`, calendar_hwevents.userId, "+
+			"classes.id, classes.name, classes.teacher, classes.color, classes.sortIndex, classes.userId "+
+			"FROM calendar_hwevents "+
+			"INNER JOIN homework ON calendar_hwevents.homeworkId = homework.id "+
+			"INNER JOIN classes ON homework.classId = classes.id "+
+			"WHERE calendar_hwevents.userId = ? AND (calendar_hwevents.`end` >= ? AND calendar_hwevents.`start` <= ?)",
+		user.ID, startTime.Unix(), endTime.Unix(),
+	)
 	if err != nil {
 		return View{}, err
 	}
@@ -157,9 +166,14 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			Source: -1,
 		}
 		homework := data.Homework{}
-		hwEventRows.Scan(&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &event.UserID)
+		class := data.HomeworkClass{}
+		hwEventRows.Scan(
+			&event.ID, &homework.ID, &homework.Name, &homework.Due, &homework.Desc, &homework.Complete, &homework.ClassID, &homework.UserID, &event.Start, &event.End, &event.UserID,
+			&class.ID, &class.Name, &class.Teacher, &class.Color, &class.SortIndex, &class.UserID,
+		)
 		event.UniqueID = "mhs-hw-" + strconv.Itoa(event.ID)
 		event.Tags[data.EventTagHomework] = homework
+		event.Tags[data.EventTagHomeworkClass] = class
 		event.Name = homework.Name
 
 		eventStartTime := time.Unix(int64(event.Start), 0)
