@@ -599,7 +599,6 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 			return
 		}
 
-		needsConversion := false
 		// first we check for the easy path: they have a hash stored with us
 		if user.PasswordHash != "" {
 			// they do
@@ -620,18 +619,10 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 			isDalton := strings.HasSuffix(user.Email, "@dalton.org")
 			if isDalton {
 				// they are
-				// this means we must authenticate with dalton
-
-				daltonUsername := strings.Replace(user.Email, "@dalton.org", "", -1)
-				_, resp, _, _, err := auth.DaltonLogin(daltonUsername, password)
-				if resp != "" || err != nil {
-					writeJSON(w, http.StatusUnauthorized, errorResponse{"error", resp})
-					return
-				}
-
-				// the sign-in worked
-				// flag the account for conversion after passing 2fa
-				needsConversion = true
+				// we can't really authenticate them anymore
+				// just tell them the password is wrong and hope that they reset it
+				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "password_incorrect"})
+				return
 			} else {
 				errorlog.LogError("user login", errors.New("user is missing password hash"))
 				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
@@ -668,26 +659,6 @@ func routeAuthLogin(w http.ResponseWriter, r *http.Request, p httprouter.Params,
 
 			if !totp.Validate(r.FormValue("code"), secret) {
 				writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "bad_totp_code"})
-				return
-			}
-		}
-
-		if needsConversion {
-			// if we got here, they signed in with dalton
-
-			// generate their hash
-			hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-			if err != nil {
-				errorlog.LogError("converting Dalton user", err)
-				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
-				return
-			}
-
-			// save their hash
-			_, err = DB.Exec("UPDATE users SET password = ? WHERE id = ?", string(hash), userID)
-			if err != nil {
-				errorlog.LogError("converting Dalton user", err)
-				writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
 				return
 			}
 		}
