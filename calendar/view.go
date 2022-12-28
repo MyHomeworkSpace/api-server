@@ -97,21 +97,16 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		}
 		plainEventRows.Scan(
 			&event.ID, &event.Name, &event.Start, &event.End, &location, &desc, &event.UserID,
-			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.UntilString,
+			&recurRule.ID, &recurRule.EventID, &recurRule.Frequency, &recurRule.Interval, &recurRule.ByDayString, &recurRule.ByMonthDay, &recurRule.ByMonth, &recurRule.Until,
 		)
 		event.Tags[data.EventTagLocation] = location
 		event.Tags[data.EventTagDescription] = desc
 		if recurRule.ID != -1 {
 			event.RecurRule = &recurRule
 
-			if event.RecurRule.UntilString == "2099-12-12" {
+			if event.RecurRule.Until == "2099-12-12" {
 				// just a placeholder value for mysql, ignore it
-				event.RecurRule.UntilString = ""
-			} else {
-				event.RecurRule.Until, err = time.Parse("2006-01-02", event.RecurRule.UntilString)
-				if err != nil {
-					return View{}, err
-				}
+				event.RecurRule.Until = ""
 			}
 
 			event.Tags[data.EventTagCancelable] = true

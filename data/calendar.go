@@ -105,8 +105,7 @@ type RecurRule struct {
 	ByDay       []time.Weekday `json:"byDay"`
 	ByMonthDay  int            `json:"byMonthDay"`
 	ByMonth     time.Month     `json:"byMonth"`
-	UntilString string         `json:"until"`
-	Until       time.Time      `json:"-"`
+	Until       string         `json:"until"`
 }
 
 // CalculateTimes returns a list of all times the given event will take place, using its RecurRule information.
@@ -128,6 +127,22 @@ func (e *Event) CalculateTimes(until time.Time) ([]time.Time, error) {
 
 	if e.RecurRule != nil {
 		currentTime := eventStartTime
+
+		var ruleUntilTime time.Time
+		haveRuleUntilTime := false
+		if e.RecurRule.Until != "" {
+			haveRuleUntilTime = true
+
+			location, err := time.LoadLocation(e.EndTimezone)
+			if err != nil {
+				return nil, err
+			}
+
+			ruleUntilTime, err = time.ParseInLocation("2006-01-02", e.RecurRule.Until, location)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		for currentTime.Before(until) {
 			years := 0
@@ -156,10 +171,8 @@ func (e *Event) CalculateTimes(until time.Time) ([]time.Time, error) {
 				break
 			}
 
-			if e.RecurRule.UntilString != "" {
-				ruleUntil := e.RecurRule.Until
-
-				if ruleUntil.Sub(currentTime) < -24*time.Hour {
+			if haveRuleUntilTime {
+				if ruleUntilTime.Sub(currentTime) < -24*time.Hour {
 					break
 				}
 			}
