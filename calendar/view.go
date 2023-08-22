@@ -30,6 +30,107 @@ type ProviderInfo struct {
 	Name string `json:"name"`
 }
 
+func doesEventInstanceOccurInTimeframe(instanceStart time.Time, duration time.Duration, startTime time.Time, endTime time.Time) bool {
+	instanceEnd := instanceStart.Add(duration)
+
+	// if the start time is in range, show the event
+	if instanceStart.After(startTime) && instanceStart.Before(endTime) {
+		return true
+	}
+
+	// if the end time is in range, show the event
+	if instanceEnd.After(startTime) && instanceEnd.Before(endTime) {
+		return true
+	}
+
+	// if the event encompasses our range, show it
+	if startTime.Before(instanceStart) && endTime.After(instanceEnd) {
+		return true
+	}
+
+	return false
+}
+
+func addEventToView(view *View, event data.Event, eventTime time.Time, eventDuration time.Duration, startTime time.Time, endTime time.Time) {
+	dayOffset := int(math.Floor(eventTime.Sub(startTime).Hours() / 24))
+
+	durationLeft := eventDuration
+	currentStart := eventTime
+	for {
+		day := startTime.AddDate(0, 0, dayOffset)
+		endOfDayTime := time.Date(
+			day.Year(),
+			day.Month(),
+			day.Day()+1,
+			0,
+			0,
+			0,
+			0,
+			day.Location(),
+		)
+
+		if dayOffset > len(view.Days)-1 {
+			// no more chunks to add, we've run out of days
+			break
+		}
+
+		if durationLeft <= 0 {
+			// no more duration to add, we're done
+			break
+		}
+
+		if dayOffset < 0 {
+			// out of range, need to advance till we get in range
+			// note that we still subtract time from the event's duration
+
+			chunkDuration := endOfDayTime.Sub(currentStart)
+			durationLeft -= chunkDuration
+
+			currentStart = endOfDayTime
+			dayOffset += 1
+			continue
+		}
+
+		eventCopy := event
+
+		eventCopy.Tags = map[data.EventTagType]interface{}{}
+		for tag, value := range event.Tags {
+			eventCopy.Tags[tag] = value
+		}
+
+		// calculate new end time for this chunk
+		updatedEnd := currentStart.Add(durationLeft)
+		if updatedEnd.After(endOfDayTime) {
+			updatedEnd = endOfDayTime
+		}
+
+		// update how much time we have left to add
+		chunkDuration := updatedEnd.Sub(currentStart)
+		durationLeft -= chunkDuration
+
+		// update chunk's start and end times
+		eventCopy.Start = int(currentStart.Unix())
+		eventCopy.End = int(updatedEnd.Unix())
+
+		// leave full start/end in tags
+		// note that a recurring event will also have OriginalStart and OriginalEnd, which takes precedent
+		eventCopy.Tags[data.EventTagInstanceStart] = event.Start
+		eventCopy.Tags[data.EventTagInstanceEnd] = event.End
+
+		// if our start isn't the original start, then this is a continuation
+		eventCopy.Tags[data.EventTagIsContinuation] = (currentStart != eventTime)
+
+		// if there's more time left, then this event continues onto the next day
+		eventCopy.Tags[data.EventTagContinues] = durationLeft > 0
+
+		// actually add the event to the view
+		view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, eventCopy)
+
+		currentStart = endOfDayTime
+		dayOffset += 1
+	}
+}
+
 // GetView retrieves a CalendarView for the given user with the given parameters.
 func GetView(db *sql.DB, user *data.User, location *time.Location, startTime time.Time, endTime time.Time) (View, error) {
 	view := View{
@@ -122,9 +223,7 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 		eventLength := time.Duration(event.End-event.Start) * time.Second
 
 		for _, eventTime := range eventTimes {
-			dayOffset := int(math.Floor(eventTime.Sub(startTime).Hours() / 24))
-
-			if dayOffset < 0 || dayOffset > len(view.Days)-1 {
+			if !doesEventInstanceOccurInTimeframe(eventTime, eventLength, startTime, endTime) {
 				continue
 			}
 
@@ -137,7 +236,14 @@ func GetView(db *sql.DB, user *data.User, location *time.Location, startTime tim
 			event.Tags = newTags
 			event.UniqueID = "mhs-" + strconv.Itoa(event.ID) + "-" + eventTime.Format("2006-01-02")
 
-			view.Days[dayOffset].Events = append(view.Days[dayOffset].Events, event)
+			addEventToView(
+				&view,
+				event,
+				eventTime,
+				eventLength,
+				startTime,
+				endTime,
+			)
 		}
 	}
 
