@@ -44,7 +44,7 @@ func doesEventInstanceOccurInTimeframe(instanceStart time.Time, duration time.Du
 	}
 
 	// if the event encompasses our range, show it
-	if startTime.Before(instanceStart) && endTime.After(instanceEnd) {
+	if instanceStart.Before(startTime) && instanceEnd.After(endTime) {
 		return true
 	}
 
