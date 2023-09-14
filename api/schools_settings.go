@@ -54,6 +54,37 @@ func handleSchoolSettingsLookup(w http.ResponseWriter, r *http.Request, p httpro
 	return true, userSchool
 }
 
+func routeSchoolsSettingsCallMethod(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	foundSchool, userSchool := handleSchoolSettingsLookup(w, r, p, c)
+	if !foundSchool {
+		return
+	}
+
+	if r.FormValue("methodName") == "" || r.FormValue("methodParams") == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		return
+	}
+
+	methodName := r.FormValue("methodName")
+	methodParams := r.FormValue("methodParams")
+
+	var methodParamsMap map[string]interface{}
+	err := json.Unmarshal([]byte(methodParams), &methodParamsMap)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "invalid_params"})
+		return
+	}
+
+	response, err := userSchool.CallSettingsMethod(DB, c.User, methodName, methodParamsMap)
+	if err != nil {
+		errorlog.LogError("call settings method for school - "+userSchool.ID(), err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
 func routeSchoolsSettingsGet(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	foundSchool, userSchool := handleSchoolSettingsLookup(w, r, p, c)
 	if !foundSchool {

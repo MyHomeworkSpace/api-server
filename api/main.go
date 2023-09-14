@@ -357,6 +357,7 @@ func Init(router *httprouter.Router) {
 	router.POST("/schools/setEnabled", route(routeSchoolsSetEnabled, authLevelLoggedIn))
 	router.POST("/schools/unenroll", route(routeSchoolsUnenroll, authLevelLoggedIn))
 
+	router.POST("/schools/settings/callMethod", route(routeSchoolsSettingsCallMethod, authLevelLoggedIn))
 	router.GET("/schools/settings/get", route(routeSchoolsSettingsGet, authLevelLoggedIn))
 	router.POST("/schools/settings/set", route(routeSchoolsSettingsSet, authLevelLoggedIn))
 }

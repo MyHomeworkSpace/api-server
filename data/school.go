@@ -21,6 +21,7 @@ type School interface {
 
 	Hydrate(data map[string]interface{}) error
 
+	CallSettingsMethod(db *sql.DB, user *User, methodName string, methodParams map[string]interface{}) (map[string]interface{}, error)
 	GetSettings(db *sql.DB, user *User) (map[string]interface{}, error)
 	SetSettings(db *sql.DB, user *User, settings map[string]interface{}) (*sql.Tx, map[string]interface{}, error)
 
