@@ -164,7 +164,7 @@ func (s *school) Enroll(tx *sql.Tx, user *data.User, params map[string]interface
 		return nil, err
 	}
 
-	classInsertStmt, err := tx.Prepare("INSERT INTO mit_classes(subjectID, sectionID, title, units, sections, userID) VALUES(?, ?, ?, ?, '', ?)")
+	classInsertStmt, err := tx.Prepare("INSERT INTO mit_classes(subjectID, sectionID, title, units, sections, custom, userID) VALUES(?, ?, ?, ?, '', 0, ?)")
 	if err != nil {
 		return nil, err
 	}

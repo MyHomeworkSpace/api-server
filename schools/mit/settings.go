@@ -2,13 +2,14 @@ package mit
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/MyHomeworkSpace/api-server/data"
 )
 
 func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{}, error) {
 	// get user's registration
-	classRows, err := db.Query("SELECT subjectID, sectionID, title, units, sections FROM mit_classes WHERE userID = ?", user.ID)
+	classRows, err := db.Query("SELECT subjectID, sectionID, title, units, sections, custom FROM mit_classes WHERE userID = ? ORDER BY custom, subjectID ASC", user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -16,9 +17,9 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 
 	registeredClasses := []map[string]interface{}{}
 	for classRows.Next() {
-		subjectID, sectionID, title, units, selectedSections := "", "", "", -1, ""
+		subjectID, sectionID, title, units, selectedSections, custom := "", "", "", -1, "", false
 
-		err = classRows.Scan(&subjectID, &sectionID, &title, &units, &selectedSections)
+		err = classRows.Scan(&subjectID, &sectionID, &title, &units, &selectedSections, &custom)
 		if err != nil {
 			return nil, err
 		}
@@ -59,6 +60,7 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 			"units":            units,
 			"selectedSections": selectedSections,
 			"sections":         sections,
+			"custom":           custom,
 		}
 		registeredClasses = append(registeredClasses, registeredClass)
 	}
@@ -71,6 +73,112 @@ func (s *school) GetSettings(db *sql.DB, user *data.User) (map[string]interface{
 }
 
 func (s *school) CallSettingsMethod(db *sql.DB, user *data.User, methodName string, methodParams map[string]interface{}) (map[string]interface{}, error) {
+	if methodName == "addCustomClass" {
+		subjectNumberInterface, ok := methodParams["subjectNumber"]
+		if !ok {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "missing_params",
+			}, nil
+		}
+
+		subjectNumber, ok := subjectNumberInterface.(string)
+		if !ok {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "invalid_params",
+			}, nil
+		}
+
+		subjectNumber = strings.TrimSpace(subjectNumber)
+		subjectNumber = strings.ToUpper(subjectNumber)
+
+		// find the class (should have a non-zero number of offerings)
+		rows, err := db.Query("SELECT title FROM mit_offerings WHERE id = ? LIMIT 1", subjectNumber)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		if !rows.Next() {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "invalid_params",
+				"hint":   "Subject number has no offerings this term.",
+			}, nil
+		}
+
+		name := ""
+		err = rows.Scan(&name)
+		if err != nil {
+			return nil, err
+		}
+
+		// the class exists this term
+		// add it to the user's registration
+		_, err = db.Exec(
+			"INSERT INTO mit_classes(subjectID, sectionID, title, units, sections, custom, userID) VALUES(?, ?, ?, ?, ?, ?, ?)",
+			subjectNumber,
+			"",
+			name,
+			0,
+			"",
+			1,
+			user.ID,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{
+			"status": "ok",
+		}, nil
+	} else if methodName == "removeCustomClass" {
+		subjectNumberInterface, ok := methodParams["subjectNumber"]
+		if !ok {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "missing_params",
+			}, nil
+		}
+
+		subjectNumber, ok := subjectNumberInterface.(string)
+		if !ok {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "invalid_params",
+			}, nil
+		}
+
+		subjectNumber = strings.TrimSpace(subjectNumber)
+		subjectNumber = strings.ToUpper(subjectNumber)
+
+		// find the user's custom registration of the class
+		rows, err := db.Query("SELECT subjectID FROM mit_classes WHERE subjectID = ? AND custom = 1 AND userID = ?", subjectNumber, user.ID)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		if !rows.Next() {
+			return map[string]interface{}{
+				"status": "error",
+				"error":  "invalid_params",
+				"hint":   "Class does not exist for user.",
+			}, nil
+		}
+
+		// it exists, we can delete it
+		_, err = db.Exec("DELETE FROM mit_classes WHERE subjectID = ? AND custom = 1 AND userID = ?", subjectNumber, user.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return map[string]interface{}{
+			"status": "ok",
+		}, nil
+	}
+
 	return map[string]interface{}{
 		"status": "error",
 		"error":  "invalid_params",
