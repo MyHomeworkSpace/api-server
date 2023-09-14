@@ -103,6 +103,9 @@ func (p *provider) GetData(db *sql.DB, user *data.User, location *time.Location,
 
 			&selectedSections,
 		)
+		if err != nil {
+			return data.ProviderData{}, err
+		}
 
 		if !strings.Contains(selectedSections, info.Section) {
 			continue
