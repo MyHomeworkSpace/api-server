@@ -122,7 +122,7 @@ func GetSessionInfo(r *http.Request) auth.SessionInfo {
 	return auth.GetSession(cookie.Value)
 }
 
-func isInternalRequest(r *http.Request) bool {
+func getRequestRemoteAddr(r *http.Request) string {
 	remoteAddr := r.RemoteAddr
 	if config.GetCurrent().Server.ReverseProxyHeader != "" {
 		if r.Header.Get(config.GetCurrent().Server.ReverseProxyHeader) != "" {
@@ -130,6 +130,11 @@ func isInternalRequest(r *http.Request) bool {
 			remoteAddr = strings.TrimSpace(header[len(header)-1])
 		}
 	}
+	return remoteAddr
+}
+
+func isInternalRequest(r *http.Request) bool {
+	remoteAddr := getRequestRemoteAddr(r)
 
 	if strings.Split(remoteAddr, ":")[0] == "127.0.0.1" || strings.HasPrefix(remoteAddr, "[::1]") {
 		return true
