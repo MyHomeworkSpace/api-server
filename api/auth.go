@@ -720,6 +720,67 @@ func routeAuthLogout(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	writeJSON(w, http.StatusOK, statusResponse{"ok"})
 }
 
+func routeAuthRequestAccountDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
+	if r.FormValue("clientType") == "" || r.FormValue("password") == "" {
+		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "missing_params"})
+		return
+	}
+
+	clientType := r.FormValue("clientType")
+	password := r.FormValue("password")
+
+	if c.User.PasswordHash == "" {
+		errorlog.LogError("user request account deletion", errors.New("user is missing password hash"))
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(c.User.PasswordHash), []byte(password))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		// bye
+		writeJSON(w, http.StatusUnauthorized, errorResponse{"error", "password_incorrect"})
+		return
+	} else if err != nil {
+		errorlog.LogError("user request account deletion", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	deviceText := map[string]string{
+		"web":     "our website",
+		"ios":     "an iOS device",
+		"android": "an Android device",
+	}[clientType]
+	ipAddress := getRequestRemoteAddr(r)
+
+	// if we got here, no error -> password correct
+
+	// send the deletion emails
+
+	err = email.Send("", c.User, "accountDeletionRequest", map[string]interface{}{
+		"DeviceText": deviceText,
+		"IPAddress":  ipAddress,
+	})
+	if err != nil {
+		errorlog.LogError("user request account deletion", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	adminEmail := "astuder@myhomework.space"
+	err = email.Send(adminEmail, c.User, "accountDeletionRequest", map[string]interface{}{
+		"DeviceText": deviceText,
+		"IPAddress":  ipAddress,
+	})
+	if err != nil {
+		errorlog.LogError("user request account deletion", err)
+		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, statusResponse{"ok"})
+}
+
 func routeAuthResendVerificationEmail(w http.ResponseWriter, r *http.Request, p httprouter.Params, c RouteContext) {
 	if c.User.EmailVerified {
 		writeJSON(w, http.StatusBadRequest, errorResponse{"error", "already_verified"})

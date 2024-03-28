@@ -1,0 +1,13 @@
+Hi {{.User.Name | fname}},
+
+You requested deletion of your MyHomeworkSpace account with email {{.User.Email}}. It will be deleted within 48 hours. This includes all homework, classes, and calendar events on your account.
+
+If you did not make this request, email hello@myhomework.space immediately to cancel it.
+
+Note that some of your data might remain on our systems even after your account is deleted - for example, your account might still be present in our automated database backups.
+
+The request was made on {{.Data.DeviceText}} from IP address {{.Data.IPAddress}}.
+
+We thank you for using our service. If you have any feedback to share, please email hello@myhomework.space.
+
+MyHomeworkSpace

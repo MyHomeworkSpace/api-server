@@ -287,6 +287,7 @@ func Init(router *httprouter.Router) {
 	router.POST("/auth/login", route(routeAuthLogin, authLevelNone))
 	router.GET("/auth/me", route(routeAuthMe, authLevelLoggedIn))
 	router.GET("/auth/logout", route(routeAuthLogout, authLevelLoggedIn))
+	router.POST("/auth/requestAccountDelete", route(routeAuthRequestAccountDelete, authLevelLoggedIn))
 	router.POST("/auth/resetPassword", route(routeAuthResetPassword, authLevelNone))
 	router.POST("/auth/resendVerificationEmail", route(routeAuthResendVerificationEmail, authLevelNone))
 	router.GET("/auth/session", route(routeAuthSession, authLevelNone))
