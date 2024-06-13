@@ -80,7 +80,7 @@ func routeHomeworkGetForClass(w http.ResponseWriter, r *http.Request, p httprout
 	}
 
 	// actually get the homework
-	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC", classID, c.User.ID)
+	rows, err := DB.Query("SELECT id, name, `due`, `desc`, `complete`, classId, userId FROM homework WHERE classId = ? AND userId = ? ORDER BY `due` ASC, id ASC", classID, c.User.ID)
 	if err != nil {
 		errorlog.LogError("getting homework for class", err)
 		writeJSON(w, http.StatusInternalServerError, errorResponse{"error", "internal_server_error"})
